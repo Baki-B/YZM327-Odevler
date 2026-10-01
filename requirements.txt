@@ -1,0 +1,3 @@
+Flask>=3.0
+# İsteğe bağlı: telefona ve tarayıcıya anlık bildirim için
+# pywebpush>=2.0

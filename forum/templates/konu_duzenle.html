@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import csrf %}
+{% block baslik %}Konuyu düzenle{% endblock %}
+{% block icerik %}
+<section class="kart orta">
+  <p class="soluk"><a href="{{ url_for('konular.konu', konu_id=konu.id) }}">← {{ konu.baslik }}</a></p>
+  <h1>Konuyu düzenle</h1>
+  <div class="uyari bilgi">Konu yalnızca oylama başlamadan önce düzenlenebilir. Eski hâli silinmez; konunun geçmişinde herkese görünür.</div>
+  <form method="post" class="form">
+    {{ csrf() }}
+    <label>Başlık <input name="baslik" value="{{ konu.baslik }}" required minlength="5" maxlength="150"></label>
+    <label>Açıklama <textarea name="aciklama" rows="8" required minlength="10">{{ konu.aciklama }}</textarea></label>
+    <div><button class="dugme">Kaydet</button></div>
+  </form>
+</section>
+{% endblock %}

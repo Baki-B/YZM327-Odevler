@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+
+# Çalışma verisi ve gizli dosyalar: veritabanı (kişisel bilgiler), oturum anahtarı, bildirim anahtarları, günlükler
+instance/
+*.db
+*.log
+*.pem
+firebase.json
+google-services.json
+
+# Node paketleri (npm install ile yeniden kurulur)
+node_modules/
+
+# Editör ve araç ayarları
+.vscode/
+.idea/
+AGENTS.md

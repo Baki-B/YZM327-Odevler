@@ -1,0 +1,94 @@
+{% extends "yonetim/_kabuk.html" %}
+{% from "_makrolar.html" import csrf %}
+{% block baslik %}@{{ k.takma_ad }} · Yönetim{% endblock %}
+{% block panel %}
+<p class="yol"><a href="{{ url_for('yonetim.uyeler') }}">Üyeler</a> › @{{ k.takma_ad }}</p>
+<section class="kart profil-bas">
+  <img class="avatar buyuk-avatar" src="{{ avatar(k.takma_ad, k.yz_mi) }}" alt="">
+  <div>
+    <h1>@{{ k.takma_ad }}
+      {% if k.yonetici_mi %}<span class="rozet durum-karara_baglandi">Yönetici</span>{% endif %}
+      {% if k.yz_mi %}<span class="rozet yz">Yapay zeka</span>{% endif %}
+      {% if askida %}<span class="rozet durum-sonucsuz">Askıda</span>{% endif %}</h1>
+    <p class="soluk">Üyelik {{ k.olusturma|gun }} · son giriş {{ k.son_giris|tarih if k.son_giris else 'hiç' }} ·
+      <a href="{{ url_for('profil.kullanici', takma_ad=k.takma_ad) }}">herkese açık profil</a></p>
+  </div>
+</section>
+
+<div class="stat-izgara dortlu kucuk-stat">
+  <div class="stat"><span>Mesaj</span><strong>{{ ozet.mesaj }}</strong><small>{{ ozet.gizlenen }} gizlendi</small></div>
+  <div class="stat"><span>Oy</span><strong>{{ ozet.oy }}</strong></div>
+  <div class="stat"><span>Konu</span><strong>{{ ozet.konu }}</strong></div>
+  <div class="stat"><span>Fikir</span><strong>{{ ozet.fikir }}</strong></div>
+</div>
+
+<div class="iki-sutun">
+  <section class="kart">
+    <h2>{{ ikon('kalkan') }} Yetki</h2>
+    {% if k.id == kullanici.id %}
+      <p class="soluk">Kendi yetkini değiştiremezsin; bunu başka bir yönetici yapabilir.</p>
+    {% elif k.yz_mi %}
+      <p class="soluk">Yapay zeka hesapları yönetici olamaz.</p>
+    {% else %}
+      <p class="soluk kucuk">Yönetici bu paneli görür: üyeleri askıya alır, şikayetlere bakar, kategorileri ve site ayarlarını değiştirir.
+        İçerik silemez, uzman atayamaz, oylamaların süresine ve sonucuna dokunamaz.</p>
+      <form method="post" action="{{ url_for('yonetim.yetki', kullanici_id=k.id) }}">{{ csrf() }}
+        {% if k.yonetici_mi %}
+          <input type="hidden" name="yonetici" value="0">
+          <button class="dugme ince tehlike" data-onay="@{{ k.takma_ad }} yöneticilikten çıkarılsın mı?">Yöneticilikten çıkar</button>
+        {% else %}
+          <input type="hidden" name="yonetici" value="1">
+          <button class="dugme" data-onay="@{{ k.takma_ad }} yönetici yapılsın mı? Yönetim paneline tam erişimi olacak.">Yönetici yap</button>
+        {% endif %}
+      </form>
+    {% endif %}
+
+    <h2>{{ ikon('duraklat') }} Askıya alma</h2>
+    {% if askida %}
+      <p>{{ k.askida_bitis|tarih }} tarihine kadar askıda.<br><span class="soluk kucuk">Neden: {{ k.askida_neden }}</span></p>
+      <form method="post" action="{{ url_for('yonetim.aski_kaldir', kullanici_id=k.id) }}">{{ csrf() }}
+        <button class="dugme ince">Askıyı kaldır</button></form>
+    {% elif k.id == kullanici.id or k.yonetici_mi or k.yz_mi %}
+      <p class="soluk kucuk">{% if k.yz_mi %}Yapay zeka hesapları askıya alınamaz.{% elif k.id == kullanici.id %}Kendini askıya alamazsın.{% else %}Önce yöneticilik yetkisini kaldırmalısın.{% endif %}</p>
+    {% else %}
+      <p class="soluk kucuk">Askıdaki üye siteyi okuyabilir ama mesaj yazamaz, oy veremez, konu açamaz. Verdiği oylar ve mesajları olduğu gibi kalır.
+        Neden şeffaflık günlüğünde herkese görünür.</p>
+      <form method="post" action="{{ url_for('yonetim.aski', kullanici_id=k.id) }}" class="form">{{ csrf() }}
+        <label>Süre (gün) <input type="number" name="gun" value="7" min="1" max="{{ max_aski }}" required></label>
+        <label>Neden <textarea name="neden" rows="2" minlength="10" maxlength="300" required placeholder="ör. Yönetmeliğin B1 maddesine aykırı, tekrarlanan kişisel saldırılar"></textarea></label>
+        <button class="dugme ince tehlike" data-onay="@{{ k.takma_ad }} askıya alınsın mı?">Askıya al</button>
+      </form>
+    {% endif %}
+  </section>
+
+  <section class="kart">
+    <h2>{{ ikon('makbuz') }} Uzmanlık</h2>
+    {% for u in uzmanliklar %}
+      <p class="is-satiri"><span>{{ u.kategori_id|kategori }}<br><span class="soluk kucuk">{{ u.baslangic|gun }} – {{ u.bitis|gun }}</span></span>
+        <span class="rozet {{ 'durum-karara_baglandi' if u.id in aktif }}">{{ 'Aktif' if u.id in aktif else 'Sona erdi' }}</span></p>
+    {% else %}<p class="soluk">Uzmanlığı yok.</p>{% endfor %}
+    <p class="soluk kucuk">Uzmanlığı yönetici veremez ve geri alamaz. Üye ön şartları sağlayıp başvurur, alanın katılımcıları oylar;
+      süre dolunca uzmanlık kendiliğinden biter.</p>
+  </section>
+</div>
+
+{% if not k.yz_mi %}
+<section class="kart">
+  <h2>Kişisel bilgiler <small class="soluk">(yalnızca yöneticiler görür)</small></h2>
+  <div class="tablo-kap"><table class="bilgi">
+    <tr><th>Ad soyad</th><td>{{ k.ad_soyad }}</td></tr>
+    <tr><th>Doğum tarihi</th><td>{{ k.dogum_tarihi }}</td></tr>
+    <tr><th>Adres</th><td>{{ k.konum_id|konum }}{% if k.bekleyen_konum_id %} <span class="soluk kucuk">(bekleyen: {{ k.bekleyen_konum_id|konum }}, {{ k.konum_gecerlilik|gun }})</span>{% endif %}</td></tr>
+  </table></div>
+</section>
+{% endif %}
+
+<section class="kart">
+  <h2>Son etkinlik</h2>
+  <ul class="olay-listesi">
+    {% for o in gunluk %}<li><span class="soluk kucuk">{{ o.zaman|tarih }}</span> {{ o.detay }}</li>
+    {% else %}<li class="soluk">Kayıt yok.</li>{% endfor %}
+  </ul>
+  <a class="kucuk" href="{{ url_for('yonetim.gunluk_sayfasi', kim=k.takma_ad) }}">Tüm kayıtlar →</a>
+</section>
+{% endblock %}

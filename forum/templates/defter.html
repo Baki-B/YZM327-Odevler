@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import csrf, sayfa_gezgini %}
+{% block baslik %}Kayıt defteri{% endblock %}
+{% block icerik %}
+<section class="kart">
+  <h1>{{ ikon('zincir') }} Kayıt defteri</h1>
+  <p>Öneriler, mesajlar, oylar, sonuçlar ve kararlar sırayla bir zincire blok olarak eklenir. Her blok bir öncekinin SHA-256
+    özetini taşır; eski bir blok değiştirilirse sonraki bağlar kopar ve bu hemen görünür. Zincirin üç kopyası üç ayrı
+    düğümde tutulur ve çoğunluğun kopyası geçerli sayılır. Deftere kişisel veri yazılmaz: mesajların yalnızca özeti,
+    oyların yalnızca seçimi açık etmeyen bir özeti yazılır.</p>
+</section>
+
+<section class="dugumler">
+  {% for d in durum.dugumler %}
+    <div class="kart dugum durum-{{ d.durum|lower }}">
+      <h3>{{ ikon('sunucu') }} Düğüm {{ d.ad }}</h3>
+      <p><span class="rozet dugum-{{ d.durum|lower }}">{{ {'UYUMLU': 'Uyumlu', 'BOZUK': 'Bozuk zincir', 'AYRISMIS': 'Ayrışmış', 'AZINLIKTA': 'Uzlaşma yok'}[d.durum] }}</span></p>
+      <p class="kucuk">{{ d.uzunluk }} blok<br>Baş: <code>{{ d.bas[:16] if d.bas else '—' }}…</code>
+        {% if d.bozuk_blok is not none %}<br><strong class="kirmizi-metin">#{{ d.bozuk_blok }} numaralı blok bozulmuş</strong>{% endif %}</p>
+    </div>
+  {% endfor %}
+</section>
+<p class="{{ 'uyari basari' if durum.saglikli else 'uyari hata' }}">
+  {% if durum.saglikli %}{{ ikon('tik') }} Bütün düğümler aynı zincirde uzlaşıyor ({{ durum.uzunluk }} blok).
+  {% elif durum.bas %}{{ ikon('uyari') }} Çoğunluk zinciri geçerli ama bazı düğümler uyumsuz; bozuk düğümler onarılana kadar yeni bloklar sadece sağlam düğümlere yazılır.
+  {% else %}{{ ikon('carpi') }} Düğümler arasında çoğunluk yok.{% endif %}</p>
+
+<div class="iki-sutun">
+  <section class="kart" id="makbuz">
+    <h2>{{ ikon('makbuz') }} Oyumu doğrula</h2>
+    <p class="soluk kucuk">Oy verdiğinde aldığın makbuz koduyla oyunun deftere yazıldığını ve neye oy verdiğini doğrulayabilirsin. Bunu yalnızca makbuz sahibi yapabilir.</p>
+    <form method="post" action="{{ url_for('genel.makbuz_dogrula') }}" class="form">{{ csrf() }}
+      <label>Oylama no <input type="number" name="teklif" min="1" required></label>
+      <label>Makbuz kodu <input name="makbuz" required placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off"></label>
+      <button class="dugme ince">Doğrula</button>
+    </form>
+  </section>
+  <section class="kart">
+    <h2>{{ ikon('ara') }} Veritabanı denetimi</h2>
+    <p class="soluk kucuk">Veritabanındaki mesajlar, oylar ve sonuçlar defterle karşılaştırılır. Silinmiş ya da sonradan değiştirilmiş kayıtlar listelenir.</p>
+    <a class="dugme ince" href="{{ url_for('genel.defter_sayfasi', denetle=1) }}">Tutarlılığı denetle</a>
+    {% if tutarlilik %}
+      {% if tutarlilik.sorunlar %}
+        <div class="uyari hata"><strong>{{ tutarlilik.sorunlar|length }} sorun bulundu:</strong><ul>{% for s in tutarlilik.sorunlar[:20] %}<li>{{ s }}</li>{% endfor %}</ul></div>
+      {% else %}
+        <div class="uyari basari">{{ ikon('tik') }} {{ tutarlilik.mesaj }} mesaj, {{ tutarlilik.oylama }} oylamanın oyları ve {{ tutarlilik.sonuc }} sonuç defterle birebir tutarlı.</div>
+      {% endif %}
+    {% endif %}
+    <form method="get" class="form satir-form">
+      <input name="blok" value="{{ aranan }}" placeholder="Blok no ya da hash başı" aria-label="Blok ara"><button class="dugme ince">Blok bul</button>
+    </form>
+    {% if aranan %}{% if bulunan %}
+      <div class="blok-detay"><strong>Blok #{{ bulunan.no }}</strong> · {{ bulunan.tur }} · {{ bulunan.zaman|tarih }}
+        <pre>{{ bulunan.veri_json|tojson(indent=2) }}</pre>
+        <small>hash: <code>{{ bulunan.hash }}</code><br>önceki: <code>{{ bulunan.onceki }}</code></small></div>
+    {% else %}<p class="soluk">Blok bulunamadı.</p>{% endif %}{% endif %}
+  </section>
+</div>
+
+<section class="kart">
+  <h2>Bloklar</h2>
+  <form method="get" class="filtreler">
+    <a class="cip {{ 'secili' if not tur }}" href="{{ url_for('genel.defter_sayfasi') }}">Tümü</a>
+    {% for t in turler %}<a class="cip {{ 'secili' if tur == t }}" href="{{ url_for('genel.defter_sayfasi', tur=t) }}">{{ t }}</a>{% endfor %}
+  </form>
+  <div class="tablo-kap"><table class="liste blok-tablosu">
+    <thead><tr><th>#</th><th>Zaman</th><th>Tür</th><th>Veri</th><th>Hash · önceki</th></tr></thead>
+    {% for b in bloklar %}
+      <tr><td>{{ b.no }}</td><td class="kucuk">{{ b.zaman|tarih }}</td><td><span class="rozet">{{ b.tur }}</span></td>
+          <td class="kucuk veri-hucresi">{% for k, v in b.veri_json.items() %}<span><b>{{ k }}</b>: {{ v if v is not mapping else '…' }}</span> {% endfor %}</td>
+          <td class="kucuk"><code>{{ b.hash[:12] }}</code><br><code class="soluk">{{ b.onceki[:12] }}</code></td></tr>
+    {% endfor %}
+  </table></div>
+  {{ sayfa_gezgini(sayfalama, 'genel.defter_sayfasi', request.args.to_dict()) }}
+</section>
+{% endblock %}

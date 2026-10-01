@@ -1,0 +1,33 @@
+{% extends "panel/_kabuk.html" %}
+{% from "_makrolar.html" import csrf, kisi %}
+{% block baslik %}Oy devri{% endblock %}
+{% block panel %}
+<section class="kart">
+  <h1>Oy devri</h1>
+  <p class="soluk">Oy hakkını güvendiğin bir üyeye ya da bir uzmana devredebilirsin. Bir oylamada kendin oy verirsen
+    o oylama için devir geçersiz olur. Yalnızca kendi oyun (1) devredilir; bir kişi en fazla {{ parametre('MAX_DEVIR') }} devredilmiş oy taşıyabilir.
+    Birden fazla devrin varsa en dar olan geçerlidir: önce konu, sonra kategori, sonra tüm forum.</p>
+  <h2>Verdiğin devirler</h2>
+  {% for d in verilen %}
+    <p class="is-satiri"><span>→ {{ kisi(d.alan_ad, d.alan_yz) }} · {{ kapsam_metni(d) }}</span>
+      <form method="post" action="{{ url_for('profil.devir_sil', devir_id=d.id) }}" class="satir-ici">{{ csrf() }}<button class="bag tehlike">geri al</button></form></p>
+  {% else %}<p class="soluk">Kimseye oy devretmedin.</p>{% endfor %}
+</section>
+<section class="kart">
+  <h2>Yeni devir</h2>
+  <form method="post" action="{{ url_for('profil.devir_ekle') }}" class="form devir-formu">{{ csrf() }}
+    <div class="iki-sutun">
+      <label>Kime? (takma ad) <input name="alan" required placeholder="ör. kaan.hoca"></label>
+      <label>Kapsam <select name="kapsam" class="kapsam-sec">
+        {% for k, ad in [('GENEL', 'Tüm forum'), ('KATEGORI', 'Bir kategori'), ('KONU', 'Tek bir konu')] %}<option value="{{ k }}">{{ ad }}</option>{% endfor %}</select></label>
+    </div>
+    <label class="kapsam-KATEGORI gizle">Kategori <select name="kategori_id">{% for id, ad in kategoriler %}<option value="{{ id }}">{{ ad }}</option>{% endfor %}</select></label>
+    <label class="kapsam-KONU gizle">Konu <select name="konu_id">{% for k in konu_secenekleri %}<option value="{{ k.id }}">#{{ k.id }} {{ k.baslik }}</option>{% endfor %}</select></label>
+    <div><button class="dugme">Oyumu devret</button></div>
+  </form>
+</section>
+<section class="kart">
+  <h2>Sana devredilenler</h2>
+  {% for d in alinan %}<p>← {{ kisi(d.veren_ad) }} · {{ kapsam_metni(d) }}</p>{% else %}<p class="soluk">Sana oy devreden yok.</p>{% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import teklif_durumu %}
+{% block baslik %}Gündem{% endblock %}
+{% block icerik %}
+<h1>Gündem</h1>
+{% if kullanici %}
+<section class="kart">
+  <h2>Oy hakkın olan oylamalar</h2>
+  {% if benim %}
+  <div class="tablo-kap"><table class="liste">
+    <thead><tr><th>Oylama</th><th>Kural</th><th>Kalan</th><th>Oyun</th><th>Durum</th></tr></thead>
+    {% for x in benim %}
+      <tr>
+        <td><a href="{{ url_for('oylamalar.teklif', teklif_id=x.teklif.id) }}">{{ x.baslik }}</a></td>
+        <td class="kucuk">{{ ayarlar.ESIKLER[x.teklif.esik].ad if x.teklif.esik in ayarlar.ESIKLER else 'Eleme turu' }}</td>
+        <td class="kucuk">{{ x.teklif.bitis|kalan }}</td>
+        <td>{{ x.durum.agirlik }} <small class="soluk">({{ x.durum.aciklama }})</small></td>
+        <td>{% if x.durum.oy %}<span class="rozet katilimci">Oy verdin</span>
+            {% elif x.durum.devir %}<span class="rozet">Devredildi → @{{ x.durum.devir.takma_ad }}</span>
+            {% else %}<span class="rozet teklif-acik">Bekliyor</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+  </table></div>
+  {% else %}<p class="soluk">Şu an oy hakkın olan açık oylama yok.</p>{% endif %}
+</section>
+{% endif %}
+
+{% if diger %}
+<section class="kart">
+  <h2>{{ 'Diğer süren oylamalar' if kullanici else 'Süren oylamalar' }}</h2>
+  <ul class="duz-liste">{% for x in diger %}<li><a href="{{ url_for('oylamalar.teklif', teklif_id=x.teklif.id) }}">{{ x.baslik }}</a> <span class="soluk kucuk">{{ x.teklif.bitis|kalan }}</span></li>{% endfor %}</ul>
+</section>
+{% endif %}
+
+<section class="kart">
+  <h2>Son sonuçlanan oylamalar</h2>
+  <div class="tablo-kap"><table class="liste">
+    {% for x in kapananlar %}
+      <tr><td><a href="{{ url_for('oylamalar.teklif', teklif_id=x.teklif.id) }}">{{ x.baslik }}</a></td>
+          <td>{{ teklif_durumu(x.teklif.durum) }}</td><td class="soluk kucuk">{{ x.teklif.kapanis|tarih }}</td></tr>
+    {% else %}<tr><td class="soluk">Henüz sonuçlanan oylama yok.</td></tr>{% endfor %}
+  </table></div>
+</section>
+{% endblock %}

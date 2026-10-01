@@ -1,0 +1,35 @@
+{% extends "yonetim/_kabuk.html" %}
+{% from "_makrolar.html" import csrf, konu_durumu, kategori_cipi, sayfa_gezgini %}
+{% block baslik %}Konular · Yönetim{% endblock %}
+{% block panel %}
+<div class="sayfa-bas"><div><h1>Konular</h1><p class="soluk kucuk">{{ sayfalama.toplam }} konu</p></div></div>
+<nav class="cipler" aria-label="Duruma göre süz">
+  {% for d, ad in filtreler %}<a class="cip {{ 'secili' if durum == d }}" href="{{ url_for('yonetim.konu_listesi', durum=d) }}">{{ ad }}</a>{% endfor %}
+</nav>
+<section class="kart sifir-dolgu">
+  <div class="tablo-kap"><table class="liste yonetim-tablosu">
+    <thead><tr><th>Konu</th><th>Durum</th><th class="genis">Sahibi</th><th class="genis">Mesaj</th>{% if config.DEMO %}<th>Sunum</th>{% endif %}</tr></thead>
+    {% for k in satirlar %}
+      <tr>
+        <td><a href="{{ url_for('konular.konu', konu_id=k.id) }}">#{{ k.id }} {{ k.baslik }}</a><br>{{ kategori_cipi(k.kategori_id) }}</td>
+        <td>{% if k.silindi %}<span class="rozet durum-sonucsuz">Kaldırıldı</span>{% else %}{{ konu_durumu(k.durum) }}
+          {% if k.durum == 'OYLAMA' %}<br><span class="soluk kucuk">{{ k.tur }}. tur</span>
+          {% elif k.durum == 'TARTISMA' and k.tartisma_bitis %}<br><span class="soluk kucuk">{{ k.tartisma_bitis|kalan }}</span>{% endif %}{% endif %}</td>
+        <td class="genis"><a href="{{ url_for('yonetim.uye', kullanici_id=k.sahip_id) }}">@{{ k.sahip }}</a></td>
+        <td class="genis">{{ k.mesaj_sayisi }}</td>
+        {% if config.DEMO %}
+        <td class="islem-hucresi">
+          {% if not k.silindi and k.durum in ayarlar.AKTIF_DURUMLAR %}
+            <form method="post" action="{{ url_for('yonetim.konu_ilerlet', konu_id=k.id) }}">{{ csrf() }}<input type="hidden" name="geri" value="{{ request.full_path }}">
+              <button class="dugme ince kucuk-dugme" data-onay="Süre beklenmeden bir sonraki aşamaya geçilsin mi? (Yalnızca sunum kipi)">Süreyi ilerlet</button></form>
+          {% else %}<span class="soluk kucuk">—</span>{% endif %}
+        </td>
+        {% endif %}
+      </tr>
+    {% else %}<tr><td colspan="5" class="bos-durum">Bu durumda konu yok.</td></tr>{% endfor %}
+  </table></div>
+</section>
+{{ sayfa_gezgini(sayfalama, 'yonetim.konu_listesi', request.args.to_dict()) }}
+<p class="soluk kucuk">Yönetici konulara dokunamaz: konu kaldırmak ya da mesaj gizlemek konu sayfasından açılan oylamayla olur; süreler kendiliğinden işler.
+  {% if config.DEMO %}<strong>Sunum kipi açık:</strong> “Süreyi ilerlet” yalnızca beklemeyi kısaltır, sayım kurallarını değiştirmez ve günlüğe yazılır.{% endif %}</p>
+{% endblock %}

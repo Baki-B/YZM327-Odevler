@@ -1,0 +1,36 @@
+{% extends "yonetim/_kabuk.html" %}
+{% from "_makrolar.html" import csrf, teklif_durumu, esik %}
+{% block baslik %}Oylamalar · Yönetim{% endblock %}
+{% block panel %}
+<h1>Oylamalar</h1>
+<section class="kart sifir-dolgu">
+  <h2 class="kart-ici-baslik">Süren oylamalar <span class="soluk kucuk">({{ acik|length }})</span></h2>
+  <div class="tablo-kap"><table class="liste yonetim-tablosu">
+    <thead><tr><th>Oylama</th><th>Tür</th><th>Eşik</th><th>Oy</th><th>Kalan</th>{% if config.DEMO %}<th>Sunum</th>{% endif %}</tr></thead>
+    {% for x in acik %}{% set t = x.t %}
+      <tr>
+        <td><a href="{{ url_for('oylamalar.teklif', teklif_id=t.id) }}">#{{ t.id }} {{ x.baslik }}</a></td>
+        <td class="kucuk">{{ ayarlar.TEKLIF_TIPLERI[t.tip].ad }}{% if t.tip == 'KARAR' %} ({{ t.tur_no }}. tur){% endif %}</td>
+        <td>{% if t.esik in ayarlar.ESIKLER %}{{ esik(t.esik) }}{% else %}<span class="soluk kucuk">tur kuralı</span>{% endif %}</td><td>{{ x.oy }}</td>
+        <td class="kucuk soluk">{{ t.bitis|kalan }}</td>
+        {% if config.DEMO %}<td><form method="post" action="{{ url_for('yonetim.oylama_ilerlet', teklif_id=t.id) }}">{{ csrf() }}
+          <button class="dugme ince kucuk-dugme" data-onay="Süre beklenmeden şimdiki oylarla sayım yapılsın mı? (Yalnızca sunum kipi)">Süreyi ilerlet</button></form></td>{% endif %}
+      </tr>
+    {% else %}<tr><td colspan="6" class="bos-durum">Süren oylama yok.</td></tr>{% endfor %}
+  </table></div>
+</section>
+<p class="soluk kucuk">Bu sayfa yalnızca izlemek içindir: yönetici oylamaların süresine ve sonucuna dokunamaz.
+  {% if config.DEMO %}<strong>Sunum kipi açık:</strong> “Süreyi ilerlet” beklemeden sayım yapar; kurallar ve eşikler değişmez, işlem günlüğe yazılır.{% endif %}</p>
+
+<section class="kart sifir-dolgu">
+  <h2 class="kart-ici-baslik">Son biten oylamalar</h2>
+  <div class="tablo-kap"><table class="liste yonetim-tablosu">
+    <thead><tr><th>Oylama</th><th>Tür</th><th>Sonuç</th><th>Bitiş</th></tr></thead>
+    {% for x in biten %}{% set t = x.t %}
+      <tr><td><a href="{{ url_for('oylamalar.teklif', teklif_id=t.id) }}">#{{ t.id }} {{ x.baslik }}</a></td>
+        <td class="kucuk">{{ (ayarlar.TEKLIF_TIPLERI.get(t.tip) or {'ad': 'Eski oylama'}).ad }}</td><td>{{ teklif_durumu(t.durum) }}</td>
+        <td class="kucuk soluk">{{ (t.kapanis or t.bitis)|gun }}</td></tr>
+    {% else %}<tr><td colspan="4" class="bos-durum">Henüz biten oylama yok.</td></tr>{% endfor %}
+  </table></div>
+</section>
+{% endblock %}

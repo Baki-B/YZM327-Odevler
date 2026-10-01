@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{#- Yönetim panelinin iskeleti: solda bölüm menüsü (telefonda üstte kaydırılabilir şerit), sağda sayfa. -#}
+{% block icerik %}
+{% set menu = [('yonetim.pano', 'Pano', 'pano'), ('yonetim.uyeler', 'Üyeler', 'kisiler'),
+               ('yonetim.sikayet_listesi', 'Şikayetler', 'bayrak'), ('yonetim.konu_listesi', 'Konular', 'sohbet'),
+               ('yonetim.oylamalar', 'Oylamalar', 'oy'), ('yonetim.bildirim_gonder', 'Toplu bildirim', 'zil'),
+               ('yonetim.kategoriler', 'Kategoriler', 'etiket'), ('yonetim.sistem', 'Sistem', 'sunucu'),
+               ('yonetim.gunluk_sayfasi', 'Günlük', 'belge')] %}
+{% set ep = request.endpoint %}
+<div class="panel-kabugu">
+  <nav class="panel-menu" aria-label="Yönetim paneli">
+    <p class="pm-baslik">{{ ikon('kalkan') }} Yönetim</p>
+    {% for e, ad, ik in menu %}
+      <a class="{{ 'secili' if ep == e or (e == 'yonetim.uyeler' and ep == 'yonetim.uye') }}"
+         {{ 'aria-current=page' if ep == e }} href="{{ url_for(e) }}">{{ ikon(ik) }}<span>{{ ad }}</span>
+        {% if e == 'yonetim.sikayet_listesi' and acik_sikayet %}<span class="sayac">{{ acik_sikayet }}</span>{% endif %}</a>
+    {% endfor %}
+    <p class="pm-not soluk kucuk">Yönetici yalnızca siteyi yönetir: içerik silemez, uzman atayamaz, oylamalara dokunamaz. Yaptığın her işlem şeffaflık günlüğüne yazılır.</p>
+  </nav>
+  <div class="panel-icerik">{% block panel %}{% endblock %}</div>
+</div>
+{% endblock %}

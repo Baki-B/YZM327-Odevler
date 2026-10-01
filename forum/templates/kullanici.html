@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import csrf %}
+{% block baslik %}@{{ k.takma_ad }}{% endblock %}
+{% block icerik %}
+<section class="kart orta profil-bas">
+  <img class="avatar buyuk-avatar" src="{{ avatar(k.takma_ad, k.yz_mi) }}" alt="">
+  <div>
+    <h1>@{{ k.takma_ad }} {% if k.yz_mi %}<span class="rozet yz">Yapay zeka</span>{% endif %}
+      {% for u in uzmanliklar %}<span class="rozet agirlik">Uzman: {{ u.kategori_id|kategori }}</span>{% endfor %}</h1>
+    <p class="soluk">Üyelik: {{ k.olusturma|gun }} · {{ takipci }} takipçi · {{ takip }} takip</p>
+    <p class="kucuk">Etki puanı: <strong>{{ etki }}</strong> · Devirle taşıdığı oy: <strong>{{ guc }}</strong>
+      {% if grup %} · <span class="grup-rengi" style="background: {{ grup.renk }}"></span>{{ grup.ad }}{% endif %}</p>
+    {% if kullanici and kullanici.id != k.id %}
+      <form method="post" action="{{ url_for('profil.takip_et', takma_ad=k.takma_ad) }}">{{ csrf() }}
+        <button class="dugme {{ 'ince' if takip_ediyor }}">{{ 'Takibi bırak' if takip_ediyor else '+ Takip et' }}</button></form>
+    {% endif %}
+  </div>
+</section>
+{% if k.yz_mi %}
+<section class="kart orta">
+  <p>Bu hesap bir yapay zeka. Yalnızca kısa özetler yazar: tartışmayı ve tur sonuçlarını özetler. Oy kullanmaz, fikir yazmaz.</p>
+  {% if aday_oylamasi %}
+    <p>Bu hesap için süren bir uzmanlık oylaması var. <a href="{{ url_for('oylamalar.teklif', teklif_id=aday_oylamasi.id) }}">Oylamayı gör →</a></p>
+  {% elif kullanici and not kullanici.yz_mi %}
+    <details><summary class="dugme ince">Uzmanlığa aday göster</summary>
+      <form method="post" action="{{ url_for('profil.uzmanlik_basvurusu') }}" class="form">{{ csrf() }}
+        <input type="hidden" name="aday" value="{{ k.id }}">
+        <p class="soluk kucuk">Yapay zeka hesapları da üyelerle aynı ön şartları sağlamalı ve aynı oylamadan geçmelidir.</p>
+        <label>Alan <select name="kategori_id">{% for id, ad in kategoriler %}<option value="{{ id }}">{{ ad }}</option>{% endfor %}</select></label>
+        <label>Gerekçe <textarea name="gerekce" rows="2" minlength="20" required placeholder="Bu alanda neden uzman sayılmalı?"></textarea></label>
+        <div><button class="dugme ince">Aday göster ve oylamaya sun</button></div></form></details>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if acik_oylar %}
+<section class="kart orta">
+  <h2>Uzman olarak verdiği oylar</h2>
+  <p class="soluk kucuk">Uzman oyları, oylama bittikten sonra gerekçeleriyle birlikte görünür.</p>
+  {% for o in acik_oylar %}
+    <div class="surum"><p><a href="{{ url_for('oylamalar.teklif', teklif_id=o.teklif_no) }}">{{ basliklar(o.teklif_no) }}</a> <span class="rozet agirlik">{{ o.agirlik }} oy</span></p>
+      {% if o.gerekce %}<div class="gerekce">{{ o.gerekce }}</div>{% endif %}</div>
+  {% endfor %}
+</section>
+{% endif %}
+
+<section class="kart orta">
+  <h2>Son mesajları</h2>
+  {% for m in son_mesajlar %}
+    <p><a href="{{ url_for('konular.konu', konu_id=m.konu_id, _anchor='m' ~ m.id) }}">{{ m.baslik }}</a> <span class="rozet mtip">{{ ayarlar.MESAJ_TIPLERI[m.tip] }}</span><br>
+      <span class="soluk">{{ m.icerik|truncate(160) }}</span></p>
+  {% else %}<p class="soluk">Henüz mesajı yok.</p>{% endfor %}
+</section>
+{% endblock %}

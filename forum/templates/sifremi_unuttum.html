@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import csrf, giris_kabugu %}
+{% block baslik %}Şifremi unuttum{% endblock %}
+{% block icerik %}
+{% call giris_kabugu('Hesabına geri dön', 'Forum e-posta istemez; kayıt olurken aldığın kurtarma kodu yeni şifre belirlemen için yeterli.') %}
+  <h1>Şifremi unuttum</h1>
+  <p class="soluk">Kayıt olurken sana verilen kurtarma koduyla (AGORA-XXXX-…) yeni şifre belirleyebilirsin.</p>
+  <form method="post" class="form">
+    {{ csrf() }}
+    <label>Takma ad <input name="takma_ad" value="{{ takma_ad }}" required></label>
+    <label>Kurtarma kodu <input name="kurtarma_kodu" required placeholder="AGORA-XXXX-XXXX-XXXX-XXXX" autocomplete="off"></label>
+    <div class="iki-sutun">
+      <label>Yeni şifre <input type="password" name="yeni" minlength="{{ ayarlar.SIFRE_MIN }}" required autocomplete="new-password"></label>
+      <label>Yeni şifre (tekrar) <input type="password" name="yeni_tekrar" minlength="{{ ayarlar.SIFRE_MIN }}" required autocomplete="new-password"></label>
+    </div>
+    <button class="dugme">Şifremi sıfırla</button>
+  </form>
+{% endcall %}
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block baslik %}Mesaj geçmişi{% endblock %}
+{% block icerik %}
+<section class="kart orta">
+  <p class="soluk"><a href="{{ url_for('konular.konu', konu_id=mesaj.konu_id, _anchor='m' ~ mesaj.id) }}">← Konuya dön</a></p>
+  <h1>#{{ mesaj.id }} numaralı mesajın geçmişi</h1>
+  <div class="surum guncel">
+    <p class="soluk kucuk">Güncel hali ({{ mesaj.duzenleme|tarih }})</p>
+    <div class="icerik">{{ mesaj.icerik|bicimle }}</div>
+  </div>
+  {% for s in surumler|reverse %}
+    <div class="surum">
+      <p class="soluk kucuk">{{ s.tarih|tarih }} tarihine kadarki hali</p>
+      <div class="icerik">{{ s.icerik|bicimle }}</div>
+    </div>
+  {% endfor %}
+</section>
+{% endblock %}

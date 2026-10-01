@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import csrf, kisi, teklif_durumu, esik, sonuc_tablosu %}
+{% block baslik %}{{ baslik }}{% endblock %}
+{% block icerik %}
+{% set fikir_oylamasi = t.tip == 'KARAR' %}
+<section class="kart orta">
+  {% if konu %}<p class="soluk"><a href="{{ url_for('konular.konu', konu_id=konu.id) }}">← {{ konu.baslik }}</a></p>
+  {% elif t.tip == 'YONETMELIK' %}<p class="soluk"><a href="{{ url_for('genel.yonetmelik_sayfasi') }}">← Yönetmelik</a></p>{% endif %}
+  <h1>{{ baslik }}</h1>
+  <p>{{ teklif_durumu(t.durum) }} {% if t.esik in ayarlar.ESIKLER %}{{ esik(t.esik) }}{% endif %}
+    <span class="soluk kucuk">{% if acan %}Açan: {{ kisi(acan.takma_ad, acan.yz_mi) }} · {% endif %}{{ t.baslangic|tarih }} ·
+      {% if t.durum == 'ACIK' %}bitiş {{ t.bitis|tarih }} ({{ t.bitis|kalan }}){% else %}kapanış {{ t.kapanis|tarih }}{% endif %}</span></p>
+  {% if t.gerekce %}<p><strong>Gerekçe:</strong> {{ t.gerekce|bicimle }}</p>{% endif %}
+
+  {% if fikir_oylamasi and tur_bilgisi %}
+    <div class="kutucuk">
+      <p><strong>{{ tur_bilgisi.no }}. tur kuralı:</strong>
+        {% if tur_bilgisi.son %}Son tur. En yüksek oranı alan fikir kabul edilir ve konu kapanır.
+        {% else %}Tur bitince oranı {{ tur_bilgisi.eleme }} altında kalan fikirler elenir. Geriye tek fikir kalırsa o kabul edilir.{% endif %}
+        Herhangi bir fikir {{ tur_bilgisi.ezici }} ya da daha fazla alırsa hemen kabul edilir.</p>
+      <p class="soluk kucuk">Bir fikrin oranı iki ayrı hesaplanır (ağırlıklı oylarda ve kişi sayısında); küçük olan geçerlidir. Çekimser oylar toplamda sayılır.</p>
+    </div>
+  {% elif t.tip == 'MESAJ_SILME' and hedef_mesajlar %}
+    {% if hedef_mesajlar|length > 1 %}<p><strong>Tartışmanın bir kısmı:</strong> {{ hedef_mesajlar|length }} mesaj tek oylamada.</p>{% endif %}
+    {% for hm in hedef_mesajlar %}
+    <div class="mesaj tip-{{ hm.tip|lower }}">
+      <img class="avatar mesaj-avatar" src="{{ avatar(hm.takma_ad, hm.yz_mi) }}" alt="">
+      <div class="mesaj-govde">
+        <header>{{ kisi(hm.takma_ad, hm.yz_mi, resim=False) }} <span class="rozet mtip">{{ ayarlar.MESAJ_TIPLERI[hm.tip] }}</span>
+          <span class="soluk kucuk">#{{ hm.id }} · {{ hm.olusturma|tarih }}</span></header>
+        {% if hm.gizli %}<p class="iz">{{ ikon('oy') }} {{ hm.gizlenme_notu }}</p>{% else %}<div class="icerik">{{ hm.icerik|bicimle }}</div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    <p class="soluk kucuk">Kabul edilirse mesajlar silinmez, gizlenir: yerinde iz kalır, özetleri kayıt defterinde durur.</p>
+  {% elif t.tip == 'UZMANLIK' and aday %}
+    <p>{{ kisi(aday.k.takma_ad, aday.k.yz_mi) }} için <strong>{{ veri.kategori_id|kategori }}</strong> alanında uzmanlık isteniyor.
+      Kabul edilirse {{ parametre('UZMAN_SURE_GUN') }} gün boyunca bu alandaki fikir oylamalarında oyu {{ parametre('UZMAN_AGIRLIK') }} sayılır.</p>
+    <ul class="kontrol-listesi">
+      <li class="{{ 'tamam' if aday.sart.mesaj >= aday.sart.gereken_mesaj else 'eksik' }}">Ön şart: bu alanda {{ aday.sart.mesaj }} mesaj (en az {{ aday.sart.gereken_mesaj }})</li>
+      <li class="{{ 'tamam' if aday.sart.konu >= aday.sart.gereken_konu else 'eksik' }}">Ön şart: bu alanda {{ aday.sart.konu }} farklı konu (en az {{ aday.sart.gereken_konu }})</li>
+      <li class="{{ 'tamam' if aday.kontenjan.yer_var else 'eksik' }}">Kontenjan: {{ aday.kontenjan.alan }} alanında {{ aday.kontenjan.dolu }}/{{ aday.kontenjan.toplam }} uzman</li>
+    </ul>
+    <p class="soluk kucuk">Bu oylamaya yalnızca {{ aday.kontenjan.alan }} alanındaki konulara yazmış üyeler katılır. Herkesin oyu 1 sayılır; aday oy kullanamaz.</p>
+  {% elif t.tip == 'YONETMELIK' %}
+    <div class="kutucuk"><p><strong>Önerilen değişiklik:</strong> {{ veri.aciklama }}</p>
+      {% if veri.tur == 'BEYAN' %}<p><em>{{ veri.baslik }}:</em> {{ veri.metin }}</p>{% endif %}
+      {% if veri.korunan %}<p class="uyari hata">Bu değişiklik korunan bir temel hak maddesine dokunuyor; {{ ayarlar.ESIKLER[t.esik].ad|lower }} gerekir.</p>{% endif %}
+      <p class="soluk kucuk">Yönetmelik oylamasında herkesin oyu 1 sayılır.</p></div>
+  {% elif t.tip == 'KATEGORI' and kategori_onerisi %}
+    <div class="kutucuk"><p><strong>Önerilen kategori:</strong> {{ kategori_onerisi.yol }}
+      <span class="soluk kucuk">({{ 'alt kategori' if kategori_onerisi.ust else 'yeni ana kategori' }})</span></p>
+      {% if kategori_onerisi.kavramlar %}<p class="kucuk">Kavramlar: {{ kategori_onerisi.kavramlar|join(', ') }}</p>{% endif %}
+      {% if kategori_onerisi.eklenen %}<p>{{ ikon('tik') }} Kategori eklendi: <a href="{{ url_for('konular.ana_sayfa', kategori=kategori_onerisi.eklenen.id) }}">konularına git →</a></p>{% endif %}
+      <p class="soluk kucuk">Kabul edilirse kategori hemen eklenir ve herkes o kategoride konu açabilir. Bu oylamada herkesin oyu 1 sayılır.
+        <a href="{{ url_for('konular.kategori_sayfasi') }}">Bütün kategoriler →</a></p></div>
+  {% elif t.tip == 'KONU_SILME' and konu %}
+    <p>Oylanan: <strong>“{{ konu.baslik }}”</strong> konusunun (ve alt konularının) kaldırılması. Kabul edilirse konu gizlenir, yerinde iz kalır.</p>
+  {% endif %}
+</section>
+
+<section class="kart orta" id="oy">
+{% if t.durum == 'ACIK' %}
+  <h2>Oy ver</h2>
+  <p class="soluk">{{ oy_sayisi }} kişi oy verdi · {{ hak_sahibi }} hak sahibi. Ara sonuçlar oylama bitene kadar gizlidir.</p>
+
+  {% if makbuz %}
+    <div class="uyari basari makbuz">{{ ikon('makbuz') }} <strong>Oy makbuzun:</strong> <code id="makbuz">{{ makbuz.kod }}</code>
+      <button type="button" class="dugme ince kucuk-dugme" data-kopyala="#makbuz">Kopyala</button><br>
+      <small>Oyun kayıt defterine, seçimini açık etmeyen bir özet olarak yazıldı. Bu kodla <a href="{{ url_for('genel.defter_sayfasi', _anchor='makbuz') }}">kayıt defteri sayfasında</a>
+        oyunun kaydedildiğini ve neye oy verdiğini yalnızca sen doğrulayabilirsin. Kod bir daha gösterilmez; bir yere not al.</small></div>
+  {% endif %}
+
+  {% if durum.devir and not durum.oy %}
+    <div class="uyari bilgi">Oy hakkın @{{ durum.devir.takma_ad }} kişisine devredilmiş ({{ durum.devir.kapsam|lower }}). Kendin oy verirsen bu oylama için devir geçersiz olur.</div>
+  {% endif %}
+
+  {% if durum.verebilir %}
+    <form method="post" action="{{ url_for('oylamalar.oy_ver', teklif_id=t.id) }}" class="form oy-formu">
+      {{ csrf() }}
+      {% set mevcut = durum.oy.secim if durum.oy else None %}
+      {% if fikir_oylamasi %}
+        {% for s in secenekler %}
+          <label class="secenek"><input type="radio" name="secim" value="{{ s.id }}" required {{ 'checked' if mevcut == s.id|string }}>
+            <span>{{ s.metin }}{% if s.mesaj_id %} <a class="soluk kucuk" href="{{ url_for('konular.konu', konu_id=t.konu_id, _anchor='m' ~ s.mesaj_id) }}">(tartışmasını gör)</a>{% endif %}</span></label>
+        {% else %}<p class="soluk">Henüz fikir yazılmadı. Konu sayfasından bir fikir ekleyebilirsin.</p>{% endfor %}
+        <label class="secenek"><input type="radio" name="secim" value="CEKIMSER" required {{ 'checked' if mevcut == 'CEKIMSER' }}>
+          <span><strong>Çekimser</strong> <small class="soluk">Hiçbir fikri desteklemiyorum. Toplamda sayılır, fikirlerin oranını düşürür.</small></span></label>
+      {% else %}
+        {% for s in ['EVET', 'HAYIR', 'CEKIMSER'] %}
+          <label class="secenek"><input type="radio" name="secim" value="{{ s }}" required {{ 'checked' if mevcut == s }}> <span>{{ ayarlar.SECIM_ADLARI[s] }}</span></label>
+        {% endfor %}
+      {% endif %}
+      <p>Oyun <strong>{{ durum.agirlik }}</strong> sayılacak <span class="soluk">({{ durum.aciklama }})</span>.</p>
+      <label>Gerekçe {% if durum.agirlik > 1 %}<strong>(zorunlu, çünkü uzman oyları herkese açıktır)</strong>{% else %}<small>(isteğe bağlı; oyun gizli kalır)</small>{% endif %}
+        <textarea name="gerekce" rows="3" {{ 'required minlength=10' if durum.agirlik > 1 }}>{{ durum.oy.gerekce if durum.oy and durum.oy.gerekce else '' }}</textarea></label>
+      <div><button class="dugme">{{ 'Oyumu güncelle' if durum.oy else 'Oyumu ver' }}</button></div>
+      {% if durum.oy %}<p class="soluk kucuk">Oyun kayıtlı ({{ durum.oy.zaman|tarih }}). Oylama bitene kadar değiştirebilirsin; değiştirirsen yeni makbuz alırsın.</p>{% endif %}
+    </form>
+  {% elif kullanici %}
+    <p class="kilit">{{ ikon('kilit') }} {{ durum.aciklama or 'Bu oylamada oy hakkın yok.' }}</p>
+  {% else %}
+    <p><a href="{{ url_for('hesap.giris', sonra=request.path) }}">Oy vermek için giriş yap.</a></p>
+  {% endif %}
+
+{% elif sonuc %}
+  <h2>Sonuç</h2>
+  {% if fikir_oylamasi %}
+    {% if tur_sonucu %}
+      <p class="uyari {{ 'basari' if tur_sonucu.karar == 'KABUL' else ('hata' if tur_sonucu.karar == 'SONUCSUZ' else 'bilgi') }}">
+        {% if tur_sonucu.karar == 'KABUL' %}{{ ikon('tik') }} Bir fikir kabul edildi: {{ tur_sonucu.aciklama }}.
+        {% elif tur_sonucu.karar == 'DEVAM' %}{{ ikon('ileri') }} {{ tur_sonucu.aciklama|capitalize }}; kalanlar sonraki tura geçti.
+        {% else %}{{ ikon('uyari') }} Konu sonuçsuz kapandı: {{ tur_sonucu.aciklama }}.{% endif %}</p>
+      {{ sonuc_tablosu(sonuc, sonuc.onde if tur_sonucu.karar == 'KABUL' else None, fikir=True, kalanlar=tur_sonucu.kalanlar) }}
+    {% else %}
+      {{ sonuc_tablosu(sonuc, None, fikir=True) }}
+    {% endif %}
+  {% else %}
+    {{ sonuc_tablosu(sonuc, 'EVET' if t.durum == 'KABUL' else None) }}
+  {% endif %}
+{% else %}
+  <p class="soluk">Bu oylama iptal edildi.</p>
+{% endif %}
+</section>
+{% endblock %}

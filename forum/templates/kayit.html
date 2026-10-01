@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import csrf, konum_secici, giris_kabugu %}
+{% block baslik %}Üye ol{% endblock %}
+{% block icerik %}
+{% call giris_kabugu('Agora\'ya katıl', 'Üye olunca konu açabilir, fikir yazabilir, tartışmalara yazabilir ve oy verebilirsin.') %}
+  <h1>Üye ol</h1>
+  <p class="soluk">Forumda sadece <strong>takma adın</strong> görünür. Adın, adresin ve doğum tarihin gizli kalır;
+    yalnızca konuların katılım kurallarını (ör. “yalnızca İstanbul sakinleri”, “18+”) kontrol etmek için kullanılır.</p>
+  <form method="post" class="form">
+    {{ csrf() }}
+    <label>Ad soyad <small>(gizli)</small><input name="ad_soyad" value="{{ form.ad_soyad or '' }}" required autocomplete="name"></label>
+    <label>Takma ad <small>(herkese görünür)</small><input name="takma_ad" value="{{ form.takma_ad or '' }}" required pattern="[A-Za-z0-9_.çğıöşüÇĞİÖŞÜ]{3,30}" autocomplete="username"></label>
+    <div class="iki-sutun">
+      <label>Şifre <input type="password" name="sifre" minlength="{{ ayarlar.SIFRE_MIN }}" required autocomplete="new-password"></label>
+      <label>Şifre (tekrar) <input type="password" name="sifre_tekrar" minlength="{{ ayarlar.SIFRE_MIN }}" required autocomplete="new-password"></label>
+    </div>
+    <p class="soluk kucuk">En az {{ ayarlar.SIFRE_MIN }} karakter; en az bir harf ve bir rakam.</p>
+    <label>Doğum tarihi <small>(gizli)</small><input type="date" name="dogum_tarihi" value="{{ form.dogum_tarihi or '' }}" required></label>
+    <fieldset>
+      <legend>Adres <small>(gizli, sadece il/ilçe)</small></legend>
+      {{ konum_secici(iller, ilceler, form.il_id, form.ilce_id) }}
+      <p class="soluk kucuk">Açık adres istemiyoruz; katılım kuralları için il ve ilçe yeterli.</p>
+    </fieldset>
+    <button class="dugme">Kayıt ol</button>
+  </form>
+  <p class="soluk">Zaten üye misin? <a href="{{ url_for('hesap.giris') }}">Giriş yap</a></p>
+{% endcall %}
+{% endblock %}

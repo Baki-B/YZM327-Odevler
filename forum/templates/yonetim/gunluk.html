@@ -1,0 +1,25 @@
+{% extends "yonetim/_kabuk.html" %}
+{% from "_makrolar.html" import kisi, sayfa_gezgini %}
+{% block baslik %}Günlük · Yönetim{% endblock %}
+{% block panel %}
+<div class="sayfa-bas"><div><h1>Günlük</h1><p class="soluk kucuk">{{ sayfalama.toplam }} kayıt</p></div></div>
+<form class="arac-cubugu" method="get">
+  <select name="eylem" aria-label="Olay türü">
+    <option value="">Bütün olaylar</option>
+    <option value="YONETIM" {{ 'selected' if eylem == 'YONETIM' }}>Yalnızca yönetim işlemleri</option>
+    {% for e in eylemler %}<option value="{{ e }}" {{ 'selected' if eylem == e }}>{{ eylem_adlari.get(e, e) }}</option>{% endfor %}
+  </select>
+  <input name="kim" value="{{ kim }}" placeholder="Takma ad" aria-label="Takma ad">
+  <button class="dugme kucuk-dugme">Süz</button>
+</form>
+<section class="kart sifir-dolgu">
+  <div class="tablo-kap"><table class="liste yonetim-tablosu">
+    <thead><tr><th>Zaman</th><th>Kim</th><th>Tür</th><th>Olay</th></tr></thead>
+    {% for o in kayitlar %}
+      <tr><td class="soluk kucuk">{{ o.zaman|tarih }}</td><td>{{ kisi(o.takma_ad, o.yz_mi, resim=False) }}</td>
+        <td><span class="rozet">{{ eylem_adlari.get(o.eylem, o.eylem) }}</span></td><td>{{ o.detay }}</td></tr>
+    {% else %}<tr><td colspan="4" class="bos-durum">Kayıt yok.</td></tr>{% endfor %}
+  </table></div>
+</section>
+{{ sayfa_gezgini(sayfalama, 'yonetim.gunluk_sayfasi', request.args.to_dict()) }}
+{% endblock %}

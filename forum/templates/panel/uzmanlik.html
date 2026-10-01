@@ -1,0 +1,47 @@
+{% extends "panel/_kabuk.html" %}
+{% from "_makrolar.html" import csrf %}
+{% block baslik %}Uzmanlık{% endblock %}
+{% block panel %}
+<section class="kart">
+  <h1>Uzmanlık</h1>
+  <p class="soluk">Uzmanın, kendi alanındaki fikir oylamalarında oyu {{ parametre('UZMAN_AGIRLIK') }} sayılır; oyu açıktır ve gerekçe ister.
+    Uzmanlık {{ parametre('UZMAN_SURE_GUN') }} gün sürer. Yöneticiler uzman atayamaz; uzmanlık yalnızca oylamayla verilir.</p>
+  {% for u in uzmanliklar %}
+    <p class="is-satiri"><span>{{ u.kategori_id|kategori }}<br><span class="soluk kucuk">{{ u.baslangic|gun }} – {{ u.bitis|gun }}</span></span>
+      <span class="rozet {{ 'durum-karara_baglandi' if u.id in aktif_uzmanliklar }}">{{ 'Aktif' if u.id in aktif_uzmanliklar else 'Sona erdi' }}</span></p>
+  {% else %}<p class="soluk">Uzmanlığın yok.</p>{% endfor %}
+</section>
+
+<section class="kart">
+  <h2>Başvuru</h2>
+  <ol class="adim-listesi">
+    <li><strong>Ön şart:</strong> o alanda en az {{ parametre('UZMAN_MIN_MESAJ') }} mesaj yazmış ve en az {{ parametre('UZMAN_MIN_KONU') }} farklı konuya katılmış olmak.</li>
+    <li><strong>Kontenjan:</strong> bir ana kategoride en fazla {{ parametre('UZMAN_KONTENJAN') }} uzman olabilir.</li>
+    <li><strong>Oylama:</strong> o alandaki konulara yazmış üyeler oylar; kabul için {{ parametre('ESIK_UZMANLIK') }} gerekir. Herkesin oyu 1 sayılır.</li>
+  </ol>
+  {% if basvuru %}
+    <p>Süren bir başvurun var. <a href="{{ url_for('oylamalar.teklif', teklif_id=basvuru.id) }}">Oylamayı gör →</a></p>
+  {% else %}
+    <form method="get" class="satir-form">
+      <label for="alan">Alan</label>
+      <select name="alan" id="alan">{% for id, ad in kategoriler %}<option value="{{ id }}" {{ 'selected' if id == secili }}>{{ ad }}</option>{% endfor %}</select>
+      <button class="dugme ince kucuk-dugme">Şartlara bak</button>
+    </form>
+    {% if sart %}
+      <ul class="kontrol-listesi">
+        <li class="{{ 'tamam' if sart.mesaj >= sart.gereken_mesaj else 'eksik' }}">Bu alanda {{ sart.mesaj }} mesajın var (en az {{ sart.gereken_mesaj }} gerekir)</li>
+        <li class="{{ 'tamam' if sart.konu >= sart.gereken_konu else 'eksik' }}">Bu alanda {{ sart.konu }} farklı konuya katıldın (en az {{ sart.gereken_konu }} gerekir)</li>
+        <li class="{{ 'tamam' if kontenjan.yer_var else 'eksik' }}">{{ kontenjan.alan }} alanında {{ kontenjan.dolu }}/{{ kontenjan.toplam }} uzman var{{ '' if kontenjan.yer_var else '; kontenjan dolu' }}</li>
+      </ul>
+      {% if sart.tamam and kontenjan.yer_var %}
+        <form method="post" action="{{ url_for('profil.uzmanlik_basvurusu') }}" class="form">{{ csrf() }}
+          <input type="hidden" name="kategori_id" value="{{ secili }}">
+          <label>Gerekçe <textarea name="gerekce" rows="3" minlength="20" required placeholder="Eğitimin, deneyimin, bu alandaki katkın…"></textarea></label>
+          <div><button class="dugme">Başvur ve oylamaya sun</button></div></form>
+      {% else %}
+        <p class="soluk">Şartlar sağlanınca başvuru formu burada açılır.</p>
+      {% endif %}
+    {% endif %}
+  {% endif %}
+</section>
+{% endblock %}

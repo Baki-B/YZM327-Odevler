@@ -1,0 +1,58 @@
+{% extends "yonetim/_kabuk.html" %}
+{% from "_makrolar.html" import csrf, kisi %}
+{% block baslik %}Şikayetler · Yönetim{% endblock %}
+{% block panel %}
+<div class="sayfa-bas">
+  <div><h1>Şikayetler</h1><p class="soluk kucuk">Üyelerin bildirdiği mesajlar ve konular. Aynı içerik hakkındaki şikayetler birlikte görünür.</p></div>
+</div>
+<nav class="cipler" aria-label="Şikayet durumu">
+  <a class="cip {{ 'secili' if not kapali }}" href="{{ url_for('yonetim.sikayet_listesi') }}">Bekleyenler{% if acik_sikayet %} · {{ acik_sikayet }}{% endif %}</a>
+  <a class="cip {{ 'secili' if kapali }}" href="{{ url_for('yonetim.sikayet_listesi', durum='kapali') }}">Sonuçlananlar</a>
+</nav>
+
+{% for gr in gruplar %}
+  <section class="kart sikayet-karti">
+    <div class="baslik-satiri">
+      <h2>{% if gr.mesaj %}{{ ikon('sohbet') }} #{{ gr.mesaj.id }} numaralı mesaj{% else %}{{ ikon('belge') }} Konu{% endif %}
+        <span class="rozet {{ 'durum-oylama' if gr.durum == 'OYLAMADA' else ('durum-sonucsuz' if gr.durum == 'YERSIZ' else 'durum-tartisma') }}">{{ durumlar[gr.durum] }}</span></h2>
+      <span class="soluk kucuk">{{ gr.sikayetler|length }} şikayet</span>
+    </div>
+    <p class="kucuk"><a href="{{ url_for('konular.konu', konu_id=gr.konu.id, _anchor=('m' ~ gr.mesaj.id) if gr.mesaj else None) }}">{{ gr.konu.baslik }}</a></p>
+    {% if gr.mesaj %}
+      <blockquote class="alinti">
+        <p class="kucuk soluk">{{ kisi(gr.mesaj.takma_ad, resim=False) }} · {{ gr.mesaj.olusturma|tarih }}{% if gr.mesaj.gizli %} · <strong>gizlendi</strong>{% endif %}</p>
+        <div class="icerik">{{ gr.mesaj.icerik|truncate(400) }}</div>
+      </blockquote>
+    {% endif %}
+    <ul class="olay-listesi">
+      {% for s in gr.sikayetler %}
+        <li><strong>{{ s.neden }}</strong> · {{ kisi(s.sikayetci, resim=False) }} <span class="soluk kucuk">{{ s.olusturma|once }}</span>
+          {% if s.aciklama %}<br><span class="kucuk">{{ s.aciklama }}</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+
+    {% if gr.durum == 'ACIK' %}
+      <div class="sikayet-eylem">
+        <form method="post" action="{{ url_for('yonetim.sikayet_oylama', sikayet_id=gr.ilk_id) }}">{{ csrf() }}
+          {% if gr.suren_oylama %}
+            <button class="dugme kucuk-dugme">Süren oylamaya bağla (#{{ gr.suren_oylama }})</button>
+          {% else %}
+            <button class="dugme kucuk-dugme" data-onay="{{ 'Mesaj için gizleme oylaması açılsın mı?' if gr.mesaj else 'Konu için kaldırma oylaması açılsın mı?' }}">
+              {{ ikon('oy') }} {{ 'Gizleme oylaması aç' if gr.mesaj else 'Kaldırma oylaması aç' }}</button>
+          {% endif %}
+        </form>
+        <details class="satir-ici"><summary class="dugme ince kucuk-dugme">Yersiz bul</summary>
+          <form method="post" action="{{ url_for('yonetim.sikayet_yersiz', sikayet_id=gr.ilk_id) }}" class="form yanit">{{ csrf() }}
+            <input name="not" required minlength="5" maxlength="300" placeholder="Şikayet edene gösterilecek not (ör. Eleştiri hakaret sayılmaz.)" aria-label="Not">
+            <div><button class="dugme ince kucuk-dugme">Kapat</button></div></form></details>
+      </div>
+      <p class="soluk kucuk">Yönetici içeriği kendisi gizleyemez ya da kaldıramaz; kararı oylama verir.</p>
+    {% else %}
+      <p class="soluk kucuk">{{ gr.kapanis|tarih }} · {{ kisi(gr.yonetici, resim=False) }}:
+        {% if gr.durum == 'OYLAMADA' %}<a href="{{ url_for('oylamalar.teklif', teklif_id=gr.teklif_id) }}">#{{ gr.teklif_id }} numaralı oylama</a>{% else %}{{ gr.sonuc_notu }}{% endif %}</p>
+    {% endif %}
+  </section>
+{% else %}
+  <p class="kart bos-durum">{{ 'Sonuçlanan şikayet yok.' if kapali else 'Bekleyen şikayet yok.' }}</p>
+{% endfor %}
+{% endblock %}

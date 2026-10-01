@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import csrf %}
+{% block baslik %}Mesajı düzenle{% endblock %}
+{% block icerik %}
+<section class="kart orta">
+  <p class="soluk"><a href="{{ url_for('konular.konu', konu_id=mesaj.konu_id, _anchor='m' ~ mesaj.id) }}">← Konuya dön</a></p>
+  <h1>Mesajı düzenle</h1>
+  <div class="uyari bilgi">Eski hâli silinmez: mesajın yanındaki “düzenlendi” bağlantısından herkes önceki sürümleri görebilir.</div>
+  <form method="post" class="form">
+    {{ csrf() }}
+    <textarea name="icerik" rows="6" required>{{ mesaj.icerik }}</textarea>
+    <button class="dugme">Kaydet</button>
+  </form>
+</section>
+{% endblock %}

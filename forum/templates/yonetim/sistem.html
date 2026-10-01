@@ -1,0 +1,74 @@
+{% extends "yonetim/_kabuk.html" %}
+{% from "_makrolar.html" import csrf %}
+{% block baslik %}Sistem · Yönetim{% endblock %}
+{% block panel %}
+<h1>Sistem</h1>
+
+<section class="kart" id="ayarlar">
+  <h2>{{ ikon('ayar') }} Site ayarları</h2>
+  <form method="post" action="{{ url_for('yonetim.ayar') }}" class="form">{{ csrf() }}
+    <label>Duyuru <small>Boş değilse her sayfanın üstünde görünür. En fazla 300 karakter.</small>
+      <textarea name="duyuru" rows="2" maxlength="300" placeholder="ör. Cuma 22.00'de bakım yapılacak.">{{ duyuru }}</textarea></label>
+    <fieldset><legend>Yeni üyelik</legend>
+      <label class="secenek"><input type="radio" name="kayit_acik" value="1" {{ 'checked' if kayit_acik }}> <span><strong>Açık</strong><br><small>Herkes üye olabilir.</small></span></label>
+      <label class="secenek"><input type="radio" name="kayit_acik" value="0" {{ 'checked' if not kayit_acik }}> <span><strong>Kapalı</strong><br><small>Üye ol sayfası yeni kayıt almaz; mevcut üyeler girebilir.</small></span></label>
+    </fieldset>
+    <div><button class="dugme">Kaydet</button></div>
+  </form>
+</section>
+
+<div class="iki-sutun">
+  <section class="kart" id="yz">
+    <h2>{{ ikon('robot') }} Yapay zeka</h2>
+    <p class="soluk kucuk">Yapay zeka hesapları yalnızca tartışmaları ve tur sonuçlarını kısaca özetler; oy kullanamaz.
+      Uzman olabilmeleri için üyelerle aynı ön şartları sağlamaları ve oylanmaları gerekir.</p>
+    {% for y in yz_hesaplari %}
+      <p class="is-satiri"><a class="kisi" href="{{ url_for('yonetim.uye', kullanici_id=y.id) }}"><img class="avatar" src="{{ avatar(y.takma_ad, 1) }}" alt="">@{{ y.takma_ad }}</a>
+        <span class="soluk kucuk">açılış {{ y.olusturma|gun }}</span></p>
+    {% endfor %}
+    {% if yz_hesaplari|length < ayarlar.MAX_YZ_HESABI %}
+      <form method="post" action="{{ url_for('yonetim.yz_ekle') }}" class="satir-form">{{ csrf() }}
+        <input name="takma_ad" required placeholder="Takma ad" aria-label="Yapay zeka takma adı"><button class="dugme ince">Hesap aç</button></form>
+    {% endif %}
+    <p class="soluk kucuk">En fazla {{ ayarlar.MAX_YZ_HESABI }} yapay zeka hesabı açılabilir.</p>
+  </section>
+
+  <section class="kart" id="yedek">
+    <h2>{{ ikon('indir') }} Yedek</h2>
+    <p class="soluk">Veritabanının o anki kopyasını indirir. Kişisel bilgiler de içinde olduğu için dosyayı güvenli bir yerde sakla.</p>
+    <a class="dugme ince" href="{{ url_for('yonetim.yedek') }}">{{ ikon('indir') }} Yedek indir</a>
+    <p class="soluk kucuk">Kayıt defterinin kopyaları sunucudaki <code>instance/defter</code> klasöründedir.</p>
+  </section>
+</div>
+
+<section class="kart" id="defter">
+  <h2>{{ ikon('zincir') }} Kayıt defteri</h2>
+  <p class="{{ 'uyari basari' if defter_durumu.saglikli else 'uyari hata' }}">
+    {% if defter_durumu.saglikli %}{{ ikon('tik') }} Bütün düğümler aynı zincirde ({{ defter_durumu.uzunluk }} blok).
+    {% else %}{{ ikon('uyari') }} Uyumsuz düğüm var; aşağıdan onarabilirsin.{% endif %}</p>
+  <div class="dugumler">
+    {% for d in defter_durumu.dugumler %}
+      <div class="kart dugum durum-{{ d.durum|lower }}">
+        <h3>{{ ikon('sunucu') }} Düğüm {{ d.ad }}</h3>
+        <p><span class="rozet dugum-{{ d.durum|lower }}">{{ {'UYUMLU': 'Uyumlu', 'BOZUK': 'Bozuk zincir', 'AYRISMIS': 'Ayrışmış', 'AZINLIKTA': 'Uzlaşma yok'}[d.durum] }}</span>
+          <span class="soluk kucuk">{{ d.uzunluk }} blok</span></p>
+        <div class="eylem-satiri">
+          <form method="post" action="{{ url_for('yonetim.defter_deneme', ad=d.ad, islem='boz') }}">{{ csrf() }}
+            <button class="dugme ince tehlike kucuk-dugme" data-onay="Deneme: {{ d.ad }} düğümündeki bir blok bozulsun mu?">Bozmayı dene</button></form>
+          {% if d.durum != 'UYUMLU' %}<form method="post" action="{{ url_for('yonetim.defter_deneme', ad=d.ad, islem='onar') }}">{{ csrf() }}
+            <button class="dugme kucuk-dugme">Onar</button></form>{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  <p class="soluk kucuk">“Bozmayı dene”, sunumda sahteciliğin nasıl yakalandığını göstermek içindir: bir düğümdeki bloğu değiştirir, kayıt defteri sayfası bunu hemen gösterir, “Onar” çoğunluğun kopyasını geri yazar.</p>
+  {% if tutarlilik %}
+    <h3>Veritabanı ile karşılaştırma</h3>
+    {% if tutarlilik.sorunlar %}
+      <ul>{% for s in tutarlilik.sorunlar %}<li>{{ s }}</li>{% endfor %}</ul>
+    {% else %}<p class="uyari basari">{{ ikon('tik') }} {{ tutarlilik.mesaj }} mesaj, {{ tutarlilik.oylama }} oylama ve {{ tutarlilik.sonuc }} sonuç defterle uyuşuyor.</p>{% endif %}
+  {% else %}
+    <a class="dugme ince kucuk-dugme" href="{{ url_for('yonetim.sistem', denetle=1, _anchor='defter') }}">Veritabanıyla karşılaştır</a>
+  {% endif %}
+</section>
+{% endblock %}

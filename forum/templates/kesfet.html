@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import kisi, kategori_cipi, trend_listesi, kelime_bulutu, nabiz_satiri, yakinda_listesi, konu_sekmeleri %}
+{% block baslik %}Keşfet{% endblock %}
+{% block icerik %}
+{{ konu_sekmeleri('konular.kesfet') }}
+<div class="sayfa-bas">
+  <div><h1>{{ ikon('pusula') }} Keşfet</h1>
+    <p class="soluk kucuk">Forumda şu an neler konuşuluyor? Hepsi son etkinlikten hesaplanır; oylamaları etkilemez.</p></div>
+</div>
+
+{% set s = g_.son24 %}
+<div class="stat-izgara besli">
+  <div class="stat"><span>Son 24 saatte mesaj</span><strong>{{ s.mesaj }}</strong><small>{{ s.uye }} kişi yazdı</small></div>
+  <div class="stat"><span>Yeni fikir</span><strong>{{ s.fikir }}</strong></div>
+  <div class="stat"><span>Verilen oy</span><strong>{{ s.oy }}</strong></div>
+  <div class="stat"><span>Yeni konu</span><strong>{{ s.konu }}</strong></div>
+  <a class="stat" href="{{ url_for('oylamalar.gundem') }}"><span>Süren oylama</span><strong>{{ g_.acik_oylama }}</strong><small>gündeme git →</small></a>
+</div>
+
+<div class="kesfet-izgara">
+  <section class="kart genis">
+    <h2>{{ ikon('ates') }} Trend konular</h2>
+    {{ trend_listesi(g_.trend, g_.trend_saat, uzun=True) }}
+  </section>
+  <section class="kart">
+    <h2>{{ ikon('etiket') }} Öne çıkan kelimeler</h2>
+    {{ kelime_bulutu(g_.kelimeler) }}
+    <p class="soluk kucuk">Son 7 günde en çok konuda geçen kelimeler. Tıklayınca arar.</p>
+  </section>
+  <section class="kart">
+    <h2>{{ ikon('kum_saati') }} Yakında bitenler</h2>
+    {{ yakinda_listesi(g_.yakinda) }}
+  </section>
+</div>
+
+<section class="kart">
+  <div class="baslik-satiri"><h2>{{ ikon('nabiz') }} Kategorilerin nabzı</h2>
+    <a class="kucuk" href="{{ url_for('konular.kategori_sayfasi') }}">Tüm kategoriler →</a></div>
+  <p class="soluk kucuk">Her ana kategoride bu hafta yazılan mesajlar, son 7 günün çizgisi ve geçen haftaya göre değişim.</p>
+  <div class="nabiz-izgara">
+    {% for n in g_.nabiz %}
+      <div class="nabiz-kutu">
+        {{ nabiz_satiri(n) }}
+        <span class="soluk kucuk">{{ n.acik }} açık konu · geçen hafta {{ n.gecen }} mesaj</span>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="iki-sutun">
+  <section class="kart">
+    <h2>{{ ikon('karar') }} Son kararlar</h2>
+    {% for k in g_.kararlar %}
+      <p class="karar-satiri"><a href="{{ url_for('konular.konu', konu_id=k.konu_id, _anchor='karar') }}"><strong>“{{ k.metin }}”</strong></a><br>
+        <span class="soluk kucuk">{{ k.baslik }} · {{ k.olusturma|once }}</span></p>
+    {% else %}<p class="soluk">Henüz karar yok.</p>{% endfor %}
+    <a class="kucuk" href="{{ url_for('oylamalar.kararlar_arsivi') }}">Karar arşivi →</a>
+  </section>
+  <section class="kart">
+    <h2>{{ ikon('kisiler') }} Haftanın en etkin üyeleri</h2>
+    <ol class="uye-sirasi">
+      {% for u in g_.uyeler if u.mesaj or u.oy %}
+        <li>{{ kisi(u.takma_ad) }} <span class="soluk kucuk">{{ u.mesaj }} mesaj{% if u.fikir %} · {{ u.fikir }} fikir{% endif %} · {{ u.oy }} oy</span></li>
+      {% else %}<li class="soluk">Bu hafta henüz etkinlik yok.</li>{% endfor %}
+    </ol>
+  </section>
+</div>
+
+<section class="kart">
+  <div class="baslik-satiri"><h2>{{ ikon('zincir') }} Canlı akış</h2><a class="kucuk" href="{{ url_for('genel.gunluk_sayfasi') }}">Şeffaflık günlüğü →</a></div>
+  <ul class="olay-listesi">
+    {% for o in g_.akis %}
+      <li><span class="soluk kucuk">{{ o.zaman|once }}</span> {{ kisi(o.takma_ad, o.yz_mi, resim=False) }} · {{ o.detay }}</li>
+    {% else %}<li class="soluk">Henüz olay yok.</li>{% endfor %}
+  </ul>
+</section>
+
+<a class="gundem-seridi tanitim-seridi" href="{{ url_for('konular.kategori_sayfasi', _anchor='oner') }}">
+  <span>{{ ikon('izgara') }} Aklında forumda olmayan bir alan mı var? Yeni kategori öner; bütün üyeler oylar.</span><strong>Kategoriler →</strong>
+</a>
+{% endblock %}

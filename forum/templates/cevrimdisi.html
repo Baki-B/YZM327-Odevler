@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block baslik %}Çevrimdışı{% endblock %}
+{% block icerik %}
+<section class="kart dar ortala">
+  <h1>{{ ikon('baglanti_yok') }} Bağlantı yok</h1>
+  <p>Foruma şu an ulaşılamıyor. İnternet bağlantını ya da sunucunun çalıştığını kontrol et. Bağlantı gelince sayfayı yenile.</p>
+  <p class="soluk kucuk">Çevrimdışıyken oy ve mesaj gönderilemez.</p>
+</section>
+{% endblock %}

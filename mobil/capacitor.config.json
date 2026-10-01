@@ -1,0 +1,21 @@
+{
+  "appId": "com.agora.forum",
+  "appName": "Agora",
+  "webDir": "www",
+  "appendUserAgent": "AgoraMobil",
+  "backgroundColor": "#ebe7df",
+  "server": {
+    "url": "http://10.0.2.2:5000",
+    "cleartext": true,
+    "errorPath": "hata.html"
+  },
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
+}

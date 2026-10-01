@@ -1,0 +1,29 @@
+{% extends "panel/_kabuk.html" %}
+{% from "_makrolar.html" import csrf, sayfa_gezgini %}
+{% block baslik %}Bildirimler{% endblock %}
+{% block panel %}
+<section class="kart anlik-kutusu" data-anlik data-csrf="{{ csrf_token() }}">
+  <div>
+    <h2>{{ ikon('telefon') }} Telefona anlık bildirim</h2>
+    <p class="soluk kucuk">Aşağıdaki bildirimlerin, site kapalıyken de bu cihaza gelsin. Her cihaz için ayrı açılır.</p>
+    <p class="anlik-durum kucuk">Kontrol ediliyor…</p>
+  </div>
+  <div class="eylem-satiri">
+    <button type="button" class="dugme kucuk-dugme gizle" data-anlik-ac>{{ ikon('zil') }} Bu cihazda aç</button>
+    <button type="button" class="dugme ince kucuk-dugme gizle" data-anlik-kapat>Kapat</button>
+  </div>
+</section>
+<section class="kart">
+  <div class="baslik-satiri">
+    <h1>{{ ikon('zil') }} Bildirimler</h1>
+    {% if okunmamis %}<form method="post" action="{{ url_for('profil.hepsi_okundu') }}">{{ csrf() }}<button class="dugme ince kucuk-dugme">Hepsini okundu yap</button></form>{% endif %}
+  </div>
+  <ul class="bildirim-listesi">
+    {% for b in satirlar %}
+      <li class="{{ 'okunmamis' if not b.okundu }}"><a href="{{ url_for('profil.bildirim_ac', bildirim_id=b.id) }}">{{ b.metin }}</a>
+        <span class="soluk kucuk">{{ b.olusturma|tarih }}</span></li>
+    {% else %}<li class="soluk">Henüz bildirimin yok.</li>{% endfor %}
+  </ul>
+  {{ sayfa_gezgini(sayfalama, 'profil.bildirim_listesi', request.args.to_dict()) }}
+</section>
+{% endblock %}

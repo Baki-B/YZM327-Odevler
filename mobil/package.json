@@ -1,0 +1,21 @@
+{
+  "name": "agora-mobil",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Agora forumunun Android ve iOS uygulaması: web sitesini yerel bir kabukta açar.",
+  "scripts": {
+    "adres": "node adres.js",
+    "esitle": "cap sync",
+    "android": "cap open android",
+    "apk": "cd android && gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/push-notifications": "^8.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2"
+  }
+}

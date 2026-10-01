@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import csrf, kisi, konu_durumu, kategori_cipi, teklif_durumu, rol, asamalar, denetim_raporu, sonuc_tablosu %}
+{% block baslik %}{{ konu.baslik }}{% endblock %}
+{% block icerik %}
+
+{# Bir mesaj ya da fikir; yanıtları altında iç içe gösterilir #}
+{% macro mesaj(m, derinlik) %}
+<article class="mesaj tip-{{ m.tip|lower }} {{ 'gizli' if m.gizli }} {{ 'elenen' if m.fikir_durumu == 'ELENDI' }}" id="m{{ m.id }}">
+  {% if m.tip == 'SISTEM' %}<span class="avatar mesaj-avatar sistem-avatar" aria-hidden="true">{{ ikon('sistem') }}</span>
+  {% else %}<img class="avatar mesaj-avatar" src="{{ avatar(m.takma_ad, m.yz_mi) }}" alt="">{% endif %}
+  <div class="mesaj-govde">
+    <header>
+      {{ kisi(m.takma_ad, m.yz_mi, resim=False) }}
+      {% if m.tip != 'SISTEM' %}<span class="rozet mtip">{{ ayarlar.MESAJ_TIPLERI[m.tip] }}</span>{% endif %}
+      {% if m.fikir_durumu == 'KAZANDI' %}<span class="rozet teklif-kabul">Kabul edildi</span>
+      {% elif m.fikir_durumu == 'ELENDI' %}<span class="rozet teklif-ret">Elendi</span>{% endif %}
+      <a class="soluk kucuk" href="#m{{ m.id }}" title="{{ m.olusturma|tarih }}">#{{ m.id }} · {{ m.olusturma|once }}</a>
+      {% if m.surum_sayisi and not m.gizli %}<a class="soluk kucuk" href="{{ url_for('konular.mesaj_gecmisi', mesaj_id=m.id) }}">{{ ikon('kalem') }} düzenlendi, eski hâlini gör</a>{% endif %}
+      {% if katilimci and not m.gizli and m.tip != 'SISTEM' and not m.silme_teklifi %}
+        <label class="toplu-etiket" title="Toplu gizleme için seç"><input type="checkbox" class="toplu-sec" name="mesaj" value="{{ m.id }}" form="toplu-gizle" aria-label="#{{ m.id }} numaralı mesajı seç"></label>
+      {% endif %}
+    </header>
+    {% if m.gizli %}
+      <p class="iz">{{ ikon('oy') }} {{ m.gizlenme_notu }}</p>
+    {% elif m.silme_teklifi %}
+      <details class="katlanmis">
+        <summary>Bu mesaj için gizleme oylaması sürüyor; oylama bitene kadar katlandı ·
+          <a href="{{ url_for('oylamalar.teklif', teklif_id=m.silme_teklifi) }}">oylamaya git</a></summary>
+        <div class="icerik">{{ m.icerik|bicimle }}</div>
+      </details>
+    {% else %}
+      <div class="icerik">{{ m.icerik|bicimle }}</div>
+    {% endif %}
+
+    {% if not m.gizli and m.tip != 'SISTEM' %}
+    <footer class="mesaj-eylem">
+      {% if katilimci and aktif %}
+        <details class="satir-ici"><summary class="bag">{{ ikon('yanit') }} Yanıtla</summary>
+          <form method="post" action="{{ url_for('konular.mesaj_yaz', konu_id=konu.id) }}" class="form yanit">{{ csrf() }}
+            <input type="hidden" name="ust_mesaj_id" value="{{ m.id }}">
+            <select name="tip" aria-label="Mesaj türü">
+              {% for t in ayarlar.KULLANICI_MESAJ_TIPLERI %}<option value="{{ t }}">{{ ayarlar.MESAJ_TIPLERI[t] }}</option>{% endfor %}
+            </select>
+            <textarea name="icerik" rows="3" required placeholder="{{ 'Bu fikri destekleyen ya da ona karşı çıkan argümanını yaz…' if m.tip == 'FIKIR' else 'Yanıtın…' }}"></textarea>
+            <button class="dugme kucuk-dugme">Gönder</button>
+          </form>
+        </details>
+      {% endif %}
+
+      {% if kullanici and m.yazar_id == kullanici.id and aktif and m.tip != 'YZ' and (m.tip != 'FIKIR' or konu.durum == 'TARTISMA') %}
+        <a class="bag" href="{{ url_for('konular.mesaj_duzenle', mesaj_id=m.id) }}">{{ ikon('kalem') }} Düzenle</a>
+      {% endif %}
+
+      {% if katilimci and not m.silme_teklifi %}
+        <details class="satir-ici"><summary class="bag tehlike">{{ ikon('yasak') }} Gizlenmesini öner</summary>
+          <form method="post" action="{{ url_for('konular.mesaj_gizle', mesaj_id=m.id) }}" class="form yanit">{{ csrf() }}
+            <p class="soluk kucuk">Mesaj silinmez; oylama kabul ederse gizlenir. Kabul için {{ parametre('ESIK_MESAJ_SILME') }} gerekir.</p>
+            <select name="neden" required aria-label="Neden">{% for n in ayarlar.SILME_NEDENLERI %}<option>{{ n }}</option>{% endfor %}</select>
+            <input name="aciklama" placeholder="Kısa açıklama (isteğe bağlı)">
+            <button class="dugme ince kucuk-dugme tehlike">Oylamaya çıkar</button>
+          </form>
+        </details>
+      {% endif %}
+
+      {% if kullanici and m.yazar_id != kullanici.id and not kullanici.yz_mi %}
+        <details class="satir-ici"><summary class="bag">{{ ikon('bayrak') }} Şikayet et</summary>
+          <form method="post" action="{{ url_for('konular.mesaj_sikayet', mesaj_id=m.id) }}" class="form yanit">{{ csrf() }}
+            <p class="soluk kucuk">En az {{ parametre('SIKAYET_TABANI') }} farklı üye şikayet edince yöneticilere ulaşır.</p>
+            <select name="neden" required aria-label="Neden">{% for n in ayarlar.SILME_NEDENLERI %}<option>{{ n }}</option>{% endfor %}</select>
+            <input name="aciklama" maxlength="500" placeholder="Kısa açıklama (isteğe bağlı)" aria-label="Açıklama">
+            <div><button class="dugme ince kucuk-dugme">Gönder</button></div>
+          </form>
+        </details>
+      {% endif %}
+    </footer>
+    {% endif %}
+
+    {% if m.cocuklar %}
+      <div class="yanitlar {{ 'duz' if derinlik >= 3 }}">{% for c in m.cocuklar %}{{ mesaj(c, derinlik + 1) }}{% endfor %}</div>
+    {% endif %}
+  </div>
+</article>
+{% endmacro %}
+
+<nav class="yol" aria-label="Konum">
+  <a href="{{ url_for('konular.ana_sayfa') }}">Konular</a>
+  {% for z in zincir %} › {% if loop.last %}<span>{{ z.baslik }}</span>{% else %}<a href="{{ url_for('konular.konu', konu_id=z.id) }}">{{ z.baslik }}</a>{% endif %}{% endfor %}
+</nav>
+
+<div class="iki-panel">
+<div class="ana">
+  <section class="kart konu-bas">
+    <div class="konu-etiketler">
+      {{ kategori_cipi(konu.kategori_id) }}
+      {{ konu_durumu(konu.durum) }}
+      <span class="kural {{ 'kisitli' if kural != 'Herkese açık' }}">{% if kural != 'Herkese açık' %}{{ ikon('konum') }}{% endif %}{{ kural }}</span>
+    </div>
+    <h1>{{ konu.baslik }}</h1>
+    <div class="yazar-satiri">
+      <img class="avatar" src="{{ avatar(sahip.takma_ad) }}" alt="">
+      {{ kisi(sahip.takma_ad, resim=False) }} <span class="soluk kucuk">açtı · {{ konu.olusturma|once }}
+      {% if surum_sayisi %} · <a href="{{ url_for('konular.konu_gecmisi', konu_id=konu.id) }}">{{ ikon('kalem') }} düzenlendi, eski hâlini gör</a>{% endif %}</span>
+    </div>
+    {% if itiraz_edilen %}
+      <p class="uyari">{{ ikon('yanit') }} Bu konu, <a href="{{ url_for('konular.konu', konu_id=itiraz_edilen.id) }}">“{{ itiraz_edilen.baslik }}”</a> konusunun sonucuna itiraz olarak açıldı.</p>
+    {% endif %}
+    <div class="icerik aciklama">{{ konu.aciklama|bicimle }}</div>
+    {{ asamalar(konu) }}
+
+    {% if konu.durum == 'TARTISMA' %}
+      <div class="uyari bilgi">{{ ikon('sohbet') }} <strong>Tartışma sürüyor.</strong> Fikir oylaması {{ konu.tartisma_bitis|kalan|replace(' kaldı', '') }} sonra
+        ({{ konu.tartisma_bitis|tarih }}) başlar. Her katılımcı bir fikir yazabilir.</div>
+    {% elif konu.durum == 'OYLAMA' and tur %}
+      <div class="uyari bilgi tur-seridi">
+        <span>{{ ikon('oy') }} <strong>{{ tur.tur_no }}. tur oylaması sürüyor</strong> · {{ tur.bitis|kalan }}.
+          {% if tur_durumu.oy %}Oy verdin; tur bitene kadar değiştirebilirsin.
+          {% elif tur_durumu.verebilir %}Henüz oy vermedin.{% endif %}
+          Tartışma devam ediyor{% if konu.tur == 1 %}; tur bitene kadar yeni fikir yazılabilir{% endif %}.</span>
+        <a class="dugme kucuk-dugme" href="{{ url_for('oylamalar.teklif', teklif_id=tur.id) }}">{{ 'Oyumu gör' if tur_durumu.oy else 'Oy ver' }}</a>
+      </div>
+    {% elif konu.durum == 'SONUCSUZ' %}
+      <div class="uyari hata">{{ ikon('uyari') }} Bu konu sonuçsuz kapandı. İsteyen aynı dert için yeni bir konu açabilir.
+        {% if kullanici %}<a href="{{ url_for('konular.konu_yeni', itiraz=konu.id) }}">Yeniden tartışmaya aç →</a>{% endif %}</div>
+    {% endif %}
+  </section>
+
+  {% if karar %}
+  <section class="kart karar-kutusu durum-kesin" id="karar">
+    <h2>{{ ikon('karar') }} Karar</h2>
+    <p class="karar-metni">“{{ karar.metin }}”</p>
+    <p class="soluk kucuk">{{ karar.olusturma|tarih }} · <a href="{{ url_for('oylamalar.teklif', teklif_id=karar.teklif_id) }}">son turun sonuçları</a></p>
+    {% if karar_sonucu %}<details><summary>Sayım</summary>{{ sonuc_tablosu(karar_sonucu, karar.kazanan_secenek_id|string, fikir=True) }}</details>{% endif %}
+    <div class="itiraz-kutusu">
+      <p><strong>Karara katılmıyor musun?</strong> Yeni bir itiraz konusu açıp konuyu yeniden tartışmaya açabilirsin.</p>
+      {% if kullanici %}<a class="dugme ince" href="{{ url_for('konular.konu_yeni', itiraz=konu.id) }}">{{ ikon('yanit') }} İtiraz konusu aç</a>
+      {% else %}<a href="{{ url_for('hesap.giris', sonra=request.path) }}">İtiraz için giriş yap</a>{% endif %}
+    </div>
+  </section>
+  {% endif %}
+  {% if itirazlar %}
+    <section class="kart">
+      <h3>Bu konunun sonucuna açılan itirazlar</h3>
+      {% for i in itirazlar %}<p><a href="{{ url_for('konular.konu', konu_id=i.id) }}">{{ i.baslik }}</a> {{ konu_durumu(i.durum) }}</p>{% endfor %}
+    </section>
+  {% endif %}
+
+  {% if denetim and (denetim.uyarilar or denetim.engel) %}
+  <details class="kart">
+    <summary><strong>Yönetmelik denetimi</strong> <span class="soluk">· puan %{{ denetim.puan }}</span></summary>
+    {{ denetim_raporu(denetim) }}
+  </details>
+  {% endif %}
+
+  <section class="mesajlar" id="fikirler">
+    <div class="baslik-satiri"><h2>Fikirler <span class="soluk kucuk">({{ fikirler|length }})</span></h2>
+      <span class="soluk kucuk">Oylamada bunlar yarışır. Her katılımcı bir fikir yazabilir.</span></div>
+    {% if fikir_yazilabilir %}
+      <form method="post" action="{{ url_for('konular.fikir_yaz', konu_id=konu.id) }}" class="kart form fikir-formu">{{ csrf() }}
+        <label>Senin fikrin <small>Bu konuda ne yapılmalı? Tek bir fikir yazabilirsin (10–600 karakter).</small>
+          <textarea name="icerik" rows="3" required minlength="10" maxlength="600" placeholder="ör. Yemekhanede haftada bir gün etsiz menü olsun."></textarea></label>
+        <div><button class="dugme">{{ ikon('arti') }} Fikrimi ekle</button></div>
+      </form>
+    {% elif benim_fikrim %}
+      <p class="soluk kucuk">Bu konuda bir fikrin var (<a href="#m{{ benim_fikrim.id }}">#{{ benim_fikrim.id }}</a>){% if konu.durum == 'TARTISMA' %}; oylama başlayana kadar düzenleyebilirsin{% endif %}.</p>
+    {% endif %}
+    {% for f in fikirler %}{{ mesaj(f, 0) }}{% else %}<p class="bos-durum">Henüz fikir yazılmadı.</p>{% endfor %}
+  </section>
+
+  <section class="mesajlar" id="mesajlar">
+    <div class="baslik-satiri"><h2>Tartışma</h2>
+      {% if katilimci and (mesajlar or fikirler) %}<span class="soluk kucuk">Tartışmanın bir kısmını gizlemek için mesajların yanındaki kutuları işaretle.</span>{% endif %}</div>
+    {% for m in mesajlar %}{{ mesaj(m, 0) }}{% endfor %}
+  </section>
+
+  {% if katilimci %}
+  <form method="post" action="{{ url_for('konular.toplu_gizle', konu_id=konu.id) }}" id="toplu-gizle" class="toplu-cubuk">{{ csrf() }}
+    <strong><span data-secili-sayi>0</span> mesaj seçildi</strong>
+    <select name="neden" required aria-label="Gizleme nedeni">{% for n in ayarlar.SILME_NEDENLERI %}<option>{{ n }}</option>{% endfor %}</select>
+    <input name="aciklama" placeholder="Açıklama (isteğe bağlı)" aria-label="Açıklama">
+    <button class="dugme kucuk-dugme tehlike">Toplu gizleme oylamasına çıkar</button>
+    <button type="button" class="dugme ince kucuk-dugme" data-secimi-temizle>Vazgeç</button>
+  </form>
+  {% endif %}
+
+  <section class="kart" id="yeni-mesaj">
+  {% if katilimci and aktif %}
+    <h3>Mesaj yaz</h3>
+    <form method="post" action="{{ url_for('konular.mesaj_yaz', konu_id=konu.id) }}" class="form">{{ csrf() }}
+      <select name="tip" aria-label="Mesaj türü">
+        {% for t in ayarlar.KULLANICI_MESAJ_TIPLERI %}<option value="{{ t }}">{{ ayarlar.MESAJ_TIPLERI[t] }}</option>{% endfor %}
+      </select>
+      <textarea name="icerik" rows="4" required placeholder="Argümanını, sorunu ya da kaynağını yaz… (@takma_ad ile birinden bahsedebilir, **kalın** yazabilirsin)"></textarea>
+      <p class="soluk kucuk">Bir fikre yanıt vermek için o fikrin altındaki “Yanıtla”yı kullan. Hakaret ve kişisel veri içeren mesajlar gönderilemez.</p>
+      <div><button class="dugme">Gönder</button></div>
+    </form>
+  {% elif not aktif %}
+    <p class="kilit">{{ ikon('kilit') }} Bu konu kapandı; mesaj yazılamaz.</p>
+  {% elif not kullanici %}
+    <p class="kilit">Mesaj yazmak ve oy vermek için <a href="{{ url_for('hesap.giris', sonra=request.path) }}">giriş yap</a> ya da <a href="{{ url_for('hesap.kayit') }}">üye ol</a>.</p>
+  {% else %}
+    <p class="kilit">{{ ikon('kilit') }} Bu konuda <strong>gözlemcisin</strong>: okuyabilirsin ama yazamaz ve oy veremezsin.</p>
+    <ul class="kontrol-listesi">{% for gecti, metin in uygunluk.satirlar %}<li class="{{ 'tamam' if gecti else 'eksik' }}">{{ metin }}</li>{% endfor %}</ul>
+  {% endif %}
+  </section>
+</div>
+
+<aside class="yan">
+  <section class="kart">
+    <h3>Senin durumun</h3>
+    {% if kullanici %}
+      <p>{{ rol(uygunluk) }} <span class="soluk">Uygunluk: {{ uygunluk.puan|yuzde }}</span></p>
+      <ul class="kontrol-listesi">{% for gecti, metin in uygunluk.satirlar %}<li class="{{ 'tamam' if gecti else 'eksik' }}">{{ metin }}</li>{% endfor %}</ul>
+      {% if agirlik[0] %}<p>Bu konuda oyun <strong>{{ agirlik[0] }}</strong> sayılır <span class="soluk">({{ agirlik[1] }})</span>.</p>{% endif %}
+      {% if benim_devrim %}<p class="soluk kucuk">Oy hakkın burada @{{ benim_devrim.takma_ad }} kişisine devredilmiş ({{ benim_devrim.kapsam|lower }}). Kendin oy verirsen o oylama için devir geçersiz olur.</p>{% endif %}
+    {% else %}
+      <p><a href="{{ url_for('hesap.giris', sonra=request.path) }}">Giriş yap</a> ya da <a href="{{ url_for('hesap.kayit') }}">üye ol</a>.</p>
+    {% endif %}
+    <p class="soluk kucuk agirliklar">Oy ağırlıkları: üye <strong>1</strong> · uzman ({{ konu.kategori_id|kategori }}) <strong>{{ konu.bilirkisi_agirlik }}</strong>.</p>
+  </section>
+
+  {% if kullanici %}
+  <section class="kart eylemler">
+    <h3>İşlemler</h3>
+    {% if sahibi and konu.durum == 'TARTISMA' %}
+      <a class="dugme ince tam" href="{{ url_for('konular.konu_duzenle', konu_id=konu.id) }}">{{ ikon('kalem') }} Konuyu düzenle</a>
+    {% endif %}
+    {% if katilimci and aktif %}
+      <a class="dugme ince tam" href="{{ url_for('konular.konu_yeni', ust=konu.id) }}">↳ Alt konu aç</a>
+      {% if yz_var %}
+      <form method="post" action="{{ url_for('konular.ozet_iste', konu_id=konu.id) }}">{{ csrf() }}
+        <button class="dugme ince tam">{{ ikon('robot') }} Tartışmanın özetini iste</button></form>
+      {% endif %}
+    {% endif %}
+    {% if katilimci %}
+      <details><summary class="dugme ince tehlike tam">{{ ikon('yasak') }} Konunun kaldırılmasını öner</summary>
+        <form method="post" action="{{ url_for('konular.kaldir', konu_id=konu.id) }}" class="form">{{ csrf() }}
+          <p class="soluk kucuk">Konu yalnızca oylamayla, {{ parametre('ESIK_KONU_SILME') }} ile kaldırılabilir.</p>
+          <textarea name="gerekce" rows="2" minlength="10" required placeholder="Neden kaldırılmalı?"></textarea>
+          <button class="dugme ince tehlike">Oylamaya çıkar</button></form></details>
+    {% endif %}
+    {% if not sahibi and not kullanici.yz_mi %}
+      <details><summary class="dugme ince tam">{{ ikon('bayrak') }} Konuyu şikayet et</summary>
+        <form method="post" action="{{ url_for('konular.konu_sikayet', konu_id=konu.id) }}" class="form">{{ csrf() }}
+          <p class="soluk kucuk">En az {{ parametre('SIKAYET_TABANI') }} farklı üye şikayet edince yöneticilere ulaşır.</p>
+          <select name="neden" required aria-label="Neden">{% for n in ayarlar.SILME_NEDENLERI %}<option>{{ n }}</option>{% endfor %}</select>
+          <textarea name="aciklama" rows="2" maxlength="500" placeholder="Kısa açıklama (isteğe bağlı)" aria-label="Açıklama"></textarea>
+          <button class="dugme ince">Gönder</button></form></details>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <section class="kart">
+    <h3>Bu konuda</h3>
+    <h4>Oylamalar</h4>
+    {% if tur %}<p><a href="{{ url_for('oylamalar.teklif', teklif_id=tur.id) }}">{{ basliklar[tur.id] }}</a><br>{{ teklif_durumu(tur.durum) }} <span class="soluk kucuk">{{ tur.bitis|kalan }}</span></p>{% endif %}
+    {% for t in diger_acik %}
+      <p><a href="{{ url_for('oylamalar.teklif', teklif_id=t.id) }}">{{ basliklar[t.id] }}</a><br>{{ teklif_durumu(t.durum) }} <span class="soluk kucuk">{{ t.bitis|kalan }}</span></p>
+    {% endfor %}
+    {% for t in kapali_teklifler %}
+      <p class="soluk"><a href="{{ url_for('oylamalar.teklif', teklif_id=t.id) }}">{{ basliklar[t.id] }}</a><br>{{ teklif_durumu(t.durum) }}</p>
+    {% endfor %}
+    {% if not tur and not diger_acik and not kapali_teklifler %}<p class="soluk">Henüz oylama yok.</p>{% endif %}
+    <h4>Alt konular</h4>
+    {% for a in alt_konular %}
+      <p><a href="{{ url_for('konular.konu', konu_id=a.id) }}">{{ a.baslik }}</a><br>{{ konu_durumu(a.durum) }} <span class="soluk kucuk">{{ ikon('sohbet') }} {{ a.mesaj_sayisi }}</span></p>
+    {% else %}<p class="soluk">Alt konu yok.</p>{% endfor %}
+  </section>
+</aside>
+</div>
+{% endblock %}

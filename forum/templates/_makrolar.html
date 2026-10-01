@@ -1,0 +1,209 @@
+{% macro csrf() %}<input type="hidden" name="csrf" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro kisi(takma_ad, yz_mi=0, resim=True) -%}
+  {%- if takma_ad -%}
+    <a class="kisi" href="{{ url_for('profil.kullanici', takma_ad=takma_ad) }}">{% if resim %}<img class="avatar" src="{{ avatar(takma_ad, yz_mi) }}" alt="">{% endif %}@{{ takma_ad }}</a>{% if yz_mi %} <span class="rozet yz">YZ</span>{% endif %}
+  {%- else -%}<span class="kisi sistem">{{ ikon('sistem') }} Sistem</span>{%- endif -%}
+{%- endmacro %}
+
+{# Giriş katmanı: giriş, üye ol ve şifre sıfırlama sayfalarının solundaki tanıtım paneli #}
+{% macro giris_kabugu(baslik, metin) %}
+<div class="giris-kabugu">
+  <aside class="gk-tanitim">
+    <img src="{{ url_for('static', filename='tapinak.svg') }}" alt="" width="220" height="165">
+    <h2>{{ baslik }}</h2>
+    <p>{{ metin }}</p>
+    <ul class="ilkeler">
+      <li>{{ ikon('sohbet') }} Mesajlar silinmez</li>
+      <li>{{ ikon('kalkan') }} Herkes bir fikir yazar, fikirler turlarla elenir</li>
+      <li>{{ ikon('makbuz') }} Oyunu makbuzla doğrulayabilirsin</li>
+    </ul>
+  </aside>
+  <section class="kart gk-form">{{ caller() }}</section>
+</div>
+{% endmacro %}
+
+{% macro kategori_cipi(kategori_id) -%}
+  <a class="kategori-cipi" href="{{ url_for('konular.ana_sayfa', kategori=kategori_id) }}"><span class="kat-nokta" style="background: {{ kategori_id|kategori_rengi }}"></span>{{ kategori_id|kategori }}</a>
+{%- endmacro %}
+
+{% macro konu_durumu(durum) -%}
+  <span class="rozet durum-{{ durum|lower }}">{{ ayarlar.KONU_DURUMLARI[durum] }}</span>
+{%- endmacro %}
+
+{% macro teklif_durumu(durum) -%}
+  <span class="rozet teklif-{{ durum|lower }}">{{ ayarlar.TEKLIF_DURUMLARI[durum] }}</span>
+{%- endmacro %}
+
+{% macro esik(kod) -%}<span class="rozet esik" title="{{ ayarlar.ESIKLER[kod].kisa }}">{{ ayarlar.ESIKLER[kod].ad }}</span>{%- endmacro %}
+
+{% macro rol(u) -%}
+  <span class="rozet {{ 'katilimci' if u.katilimci else 'gozlemci' }}">{{ u.rol }}</span>
+{%- endmacro %}
+
+{# Konunun yolculuğu: tartışma, en fazla 5 tur, karar. sira: 0 tartışma, 1-5 tur, 6 karar #}
+{% macro _sira(konu) -%}
+  {{- 0 if konu.durum == 'TARTISMA' else (6 if konu.durum == 'KARARA_BAGLANDI' else (konu.tur or 0)) -}}
+{%- endmacro %}
+
+{% macro asamalar(konu) %}
+  {% set sira = _sira(konu)|int %}
+  {% set sonucsuz = konu.durum == 'SONUCSUZ' %}
+  <ol class="asamalar" aria-label="Konunun aşamaları">
+    {% for ad, alt in [('Tartışma', parametre('SURE_TARTISMA_SAAT') ~ ' saat'), ('1. tur', parametre('ELEME_TUR1') ~ ' altı elenir'),
+                       ('2. tur', parametre('ELEME_TUR2') ~ ' altı elenir'), ('3. tur', parametre('ELEME_TUR3') ~ ' altı elenir'),
+                       ('4. tur', parametre('ELEME_TUR4') ~ ' altı elenir'), ('5. tur', 'en çok oy alan'), ('Karar', '')] %}
+      <li class="{{ 'bitti' if loop.index0 < sira else ('simdi' if loop.index0 == sira else '') }} {{ 'kirmizi' if loop.index0 == sira and sonucsuz }}">
+        <span class="nokta"></span>
+        <span class="ad">{{ 'Sonuçsuz' if loop.index0 == sira and sonucsuz else ad }}</span>
+        {% if alt %}<small>{{ alt }}</small>{% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+{% endmacro %}
+
+{# Konu listesindeki küçük gösterge: 7 adımdan kaçıncısında olduğu #}
+{% macro asama_noktalari(konu) -%}
+  {% set sira = _sira(konu)|int %}
+  {% set sonucsuz = konu.durum == 'SONUCSUZ' %}
+  {% set ad = ayarlar.KONU_DURUMLARI[konu.durum] ~ (' (' ~ konu.tur ~ '. tur)' if konu.durum == 'OYLAMA' else '') %}
+  <span class="asama-noktalari" role="img" aria-label="{{ ad }}" title="{{ ad }}">
+    {%- for i in range(7) %}<span class="{{ 'dolu' if i < sira or (i == sira and not sonucsuz) }}{{ ' olumsuz' if i == sira and sonucsuz }}"></span>{% endfor -%}
+  </span>
+{%- endmacro %}
+
+{% macro denetim_raporu(rapor) %}
+<div class="denetim">
+  <div class="denetim-ust"><strong>Yönetmelik denetimi</strong> <span class="puan">%{{ rapor.puan }}</span>
+    {% if rapor.engel %}<span class="rozet teklif-ret">Engel var</span>{% elif rapor.uyarilar %}<span class="rozet teklif-acik">{{ rapor.uyarilar|length }} uyarı</span>{% else %}<span class="rozet teklif-kabul">Temiz</span>{% endif %}</div>
+  <ul class="kontrol-listesi">
+    {% for b in rapor.bulgular if b.ciddiyet != 'KAPALI' %}
+      <li class="{{ 'tamam' if b.gecti else ('eksik' if b.ciddiyet == 'ENGEL' else 'uyari-madde') }}"><strong>{{ b.kod }} {{ b.baslik }}:</strong> {{ b.mesaj }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endmacro %}
+
+{# Sayım sonucu. fikir=True: fikir oylaması turu (kalanlar: sonraki tura kalan ya da kazanan fikirlerin anahtarları).
+   Oran = ağırlıklı pay ile kişi payının küçüğü; çekimserler toplamda sayılır. #}
+{% macro sonuc_tablosu(s, kazanan=None, fikir=False, kalanlar=None) %}
+{% set satirlar = s.secenekler + ([s.cekimser] if fikir and s.cekimser else []) %}
+<div class="tablo-kap"><table class="sonuc">
+  <thead><tr><th>{{ 'Fikir' if fikir else 'Seçenek' }}</th><th>Oran</th><th>Ağırlıklı oy</th><th>Kişi</th>{% if fikir and kalanlar is not none %}<th></th>{% endif %}</tr></thead>
+  <tbody>
+  {% for x in satirlar %}
+    {% set oran_a = (x.agirlik / s.toplam_agirlik) if s.toplam_agirlik else 0 %}
+    {% set oran_k = (x.kisi / s.toplam_kisi) if s.toplam_kisi else 0 %}
+    {% set oran = [oran_a, oran_k]|min %}
+    {% set cekimser = x.anahtar == 'CEKIMSER' %}
+    <tr class="{{ 'kazanan' if kazanan and x.anahtar == kazanan }}">
+      <td>{{ x.metin }}</td>
+      <td>{% if not cekimser %}<div class="cubuk"><span style="width: {{ (oran * 100)|round(1) }}%"></span></div><strong>{{ oran|yuzde }}</strong>{% else %}<span class="soluk">—</span>{% endif %}</td>
+      <td>{{ x.agirlik }} <small>({{ oran_a|yuzde }})</small></td>
+      <td>{{ x.kisi }} <small>({{ oran_k|yuzde }})</small></td>
+      {% if fikir and kalanlar is not none %}<td class="kucuk">{% if cekimser %}{% elif x.anahtar in kalanlar %}<span class="rozet teklif-kabul">{{ 'Kazandı' if kazanan else 'Kaldı' }}</span>{% else %}<span class="rozet teklif-ret">Elendi</span>{% endif %}</td>{% endif %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<ul class="kontrol-listesi">
+  <li class="{{ 'tamam' if s.yeter else 'eksik' }}">Yeter sayı: {{ s.katilan }} kişi katıldı, en az {{ s.gerekli }} gerekiyordu ({{ s.hak_sahibi }} hak sahibi)</li>
+  {% if not fikir and s.esik in ayarlar.ESIKLER %}
+    <li class="{{ 'tamam' if s.agirlik_ok else 'eksik' }}">Ağırlıklı oylarda Evet: {{ s.agirlik_oran|yuzde }} (gereken: {{ ayarlar.ESIKLER[s.esik].kisa }})</li>
+    <li class="{{ 'tamam' if s.kisi_ok else 'eksik' }}">Kişi sayısında Evet: {{ s.kisi_oran|yuzde }} (gereken: {{ ayarlar.ESIKLER[s.esik].kisa }})</li>
+  {% endif %}
+  {% if s.devredilen %}<li class="bilgi">{{ s.devredilen }} oy devir yoluyla kullanıldı.</li>{% endif %}
+  {% for neden, n in s.dusen.items() %}
+    <li class="bilgi">{{ n }} devredilen oy sayılmadı: {{ {'DONGU': 'devir zinciri döngüye giriyor', 'HAK_YOK': 'devralan kişinin oy hakkı yok', 'TAVAN': 'devralan kişi devir tavanına ulaştı'}[neden] }}</li>
+  {% endfor %}
+</ul>
+<p class="soluk kucuk">Oran, ağırlıklı oylardaki pay ile kişi sayısındaki payın küçüğüdür. Çekimser oylar toplamda sayılır.</p>
+{% if s.acik_oylar %}
+<h4>Uzman oyları <small class="soluk">gerekçeleriyle birlikte açıktır</small></h4>
+<ul class="acik-oylar">
+  {% for o in s.acik_oylar %}
+  <li>{{ kisi(o.takma_ad, o.yz_mi) }} <span class="rozet agirlik">{{ o.agirlik }} oy · {{ o.aciklama }}</span> → <strong>{{ o.secim_metni }}</strong>
+      {% if o.gerekce %}<div class="gerekce">{{ o.gerekce }}</div>{% endif %}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endmacro %}
+
+{# İl → ilçe seçici. ilceler: {il_id: [{id, ad}]} #}
+{% macro konum_secici(iller, ilceler, secili_il=None, secili_ilce=None, zorunlu=True) %}
+<div class="iki-sutun konum-secici" data-ilceler='{{ ilceler|tojson }}' data-secili-ilce="{{ secili_ilce or '' }}">
+  <label>İl
+    <select name="il_id" class="il-sec" {{ 'required' if zorunlu }}>
+      <option value="">İl seç</option>
+      {% for il in iller %}<option value="{{ il.id }}" {{ 'selected' if secili_il|string == il.id|string }}>{{ il.ad }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>İlçe <select name="ilce_id" class="ilce-sec"><option value="">—</option></select></label>
+</div>
+{% endmacro %}
+
+{# args: mevcut sorgu parametreleri (request.args.to_dict()); makrolar request'i göremediği için dışarıdan gelir #}
+{% macro sayfa_gezgini(s, endpoint, args) %}
+{% if s.sayfa_sayisi > 1 %}
+<nav class="sayfalama" aria-label="Sayfalar">
+  {% if s.sayfa > 1 %}{% set _ = args.update({'sayfa': s.sayfa - 1}) %}<a class="dugme ince" href="{{ url_for(endpoint, **args) }}">← Önceki</a>{% endif %}
+  <span>Sayfa {{ s.sayfa }} / {{ s.sayfa_sayisi }} <small class="soluk">({{ s.toplam }} kayıt)</small></span>
+  {% if s.sayfa < s.sayfa_sayisi %}{% set _ = args.update({'sayfa': s.sayfa + 1}) %}<a class="dugme ince" href="{{ url_for(endpoint, **args) }}">Sonraki →</a>{% endif %}
+</nav>
+{% endif %}
+{% endmacro %}
+
+{# ---------- Gündem ve trendler (konular sayfasının yan sütunu ve Keşfet) ---------- #}
+{% macro trend_listesi(trend, saat, uzun=False) %}
+<ol class="trend-listesi">
+  {% for t in trend %}
+  <li>
+    <span class="trend-sira">{{ loop.index }}</span>
+    <div class="trend-govde">
+      <a href="{{ url_for('konular.konu', konu_id=t.id) }}">{{ t.baslik }}</a>
+      <div class="trend-meta">{% if uzun %}{{ kategori_cipi(t.kategori_id) }} {% endif %}
+        <span>{{ t.mesaj }} mesaj{% if t.fikir %} · {{ t.fikir }} fikir{% endif %}{% if t.oy %} · {{ t.oy }} oy{% endif %}{% if uzun and t.kisi %} · {{ t.kisi }} kişi{% endif %}</span></div>
+      <span class="trend-cubuk" aria-hidden="true"><i style="width: {{ t.yuzde }}%"></i></span>
+    </div>
+  </li>
+  {% else %}<li class="soluk kucuk">Henüz etkinlik yok.</li>{% endfor %}
+</ol>
+<p class="soluk kucuk">{{ 'Son 24 saat' if saat == 24 else ('Son 3 gün' if saat == 72 else 'Son 2 hafta') }}: mesaj, fikir ve oy sayısına göre.</p>
+{% endmacro %}
+
+{% macro kelime_bulutu(kelimeler) %}
+<div class="kelime-bulutu">
+  {% for k in kelimeler %}<a class="kelime b{{ k.boyut }}" href="{{ url_for('genel.ara', q=k.kelime) }}" title="{{ k.konu }} konuda, {{ k.adet }} kez">#{{ k.kelime }}</a>
+  {% else %}<span class="soluk kucuk">Bu hafta öne çıkan kelime yok.</span>{% endfor %}
+</div>
+{% endmacro %}
+
+{% macro nabiz_satiri(n) %}
+<a class="nabiz-satiri" href="{{ url_for('konular.ana_sayfa', kategori=n.id) }}">
+  <span class="kat-nokta" style="background: {{ n.renk }}"></span>
+  <span class="nabiz-ad">{{ n.ad }}</span>
+  <svg class="kivilcim" viewBox="0 0 60 24" aria-hidden="true"><polyline points="{{ n.cizgi }}"/></svg>
+  <span class="nabiz-sayi">{{ n.bu }}
+    {% if n.degisim is not none and n.degisim > 0 %}<small class="artis">{{ ikon('trend') }}%{{ n.degisim }}</small>
+    {% elif n.degisim is not none and n.degisim < 0 %}<small class="azalis">{{ ikon('dusus') }}%{{ -n.degisim }}</small>
+    {% elif n.yeni %}<small class="artis">yeni</small>{% endif %}</span>
+</a>
+{% endmacro %}
+
+{% macro yakinda_listesi(liste) %}
+<ul class="yakinda-listesi">
+  {% for y in liste %}
+    <li>{{ ikon('oy' if y.tur == 'OYLAMA' else 'sohbet') }}
+      <span><a href="{{ y.baglanti }}">{{ y.baslik }}</a><br>
+        <small class="soluk">{{ 'Oylama bitiyor' if y.tur == 'OYLAMA' else 'Oylamaya geçiyor' }} · {{ y.bitis|kalan }}</small></span></li>
+  {% else %}<li class="soluk kucuk">Yakında biten bir şey yok.</li>{% endfor %}
+</ul>
+{% endmacro %}
+
+{% macro konu_sekmeleri(secili) %}
+<nav class="alt-sekmeler sol" aria-label="Konular bölümü">
+  {% for e, ad, ik in [('konular.ana_sayfa', 'Akış', 'sohbet'), ('konular.kesfet', 'Keşfet', 'pusula'), ('konular.kategori_sayfasi', 'Kategoriler', 'izgara')] %}
+    <a class="{{ 'secili' if secili == e }}" {{ 'aria-current=page' if secili == e }} href="{{ url_for(e) }}">{{ ikon(ik) }} {{ ad }}</a>
+  {% endfor %}
+</nav>
+{% endmacro %}

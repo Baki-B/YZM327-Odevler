@@ -1,0 +1,22 @@
+{% extends "panel/_kabuk.html" %}
+{% from "_makrolar.html" import csrf %}
+{% block baslik %}Güvenlik{% endblock %}
+{% block panel %}
+<section class="kart">
+  <h1>Güvenlik</h1>
+  <h2>Şifre değiştir</h2>
+  <form method="post" action="{{ url_for('profil.sifre') }}" class="form dar-form">{{ csrf() }}
+    <label>Mevcut şifre <input type="password" name="eski" required autocomplete="current-password"></label>
+    <label>Yeni şifre <small>En az {{ ayarlar.SIFRE_MIN }} karakter; harf ve rakam içermeli.</small>
+      <input type="password" name="yeni" minlength="{{ ayarlar.SIFRE_MIN }}" required autocomplete="new-password"></label>
+    <label>Yeni şifre (tekrar) <input type="password" name="yeni_tekrar" minlength="{{ ayarlar.SIFRE_MIN }}" required autocomplete="new-password"></label>
+    <div><button class="dugme ince">Şifreyi değiştir</button></div></form>
+</section>
+<section class="kart">
+  <h2>Kurtarma kodu</h2>
+  <p class="soluk">Şifreni unutursan kurtarma koduyla yeni şifre belirlersin. Kodu kaybettiysen yenisini üret; eski kod geçersiz olur.</p>
+  <form method="post" action="{{ url_for('profil.kurtarma') }}" class="form dar-form">{{ csrf() }}
+    <label>Şifren <input type="password" name="sifre" required autocomplete="current-password"></label>
+    <div><button class="dugme ince">Yeni kod üret</button></div></form>
+</section>
+{% endblock %}

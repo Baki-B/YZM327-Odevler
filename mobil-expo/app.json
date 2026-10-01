@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Agora",
+    "slug": "agora",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#ebe7df",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.agora.forum",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
+    },
+    "android": {
+      "package": "com.agora.forum",
+      "adaptiveIcon": {
+        "backgroundColor": "#4A6642",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import konu_durumu %}
+{% block baslik %}Arama{% endblock %}
+{% block icerik %}
+<section class="kart orta">
+  <h1>Ara</h1>
+  <form method="get" class="form satir-form" role="search">
+    <input type="search" name="q" value="{{ q }}" placeholder="Konu, fikir, argüman…" autofocus aria-label="Arama">
+    <button class="dugme">Ara</button>
+  </form>
+  <p class="soluk kucuk">Türkçe karakterleri yazmasan da bulur (“ogrenci” yazınca “öğrenci” de çıkar). Gizlenmiş mesajlar aramada görünmez.</p>
+  {% if q %}
+    <h2>{{ sonuclar|length }} sonuç</h2>
+    {% for s in sonuclar %}
+      <article class="arama-sonucu">
+        <p><span class="rozet">{{ s.tur }}</span> <a href="{{ s.baglanti }}"><strong>{{ s.konu.baslik }}</strong></a> {{ konu_durumu(s.konu.durum) }}
+          {% if s.yazar %}<span class="soluk kucuk">@{{ s.yazar }}</span>{% endif %}</p>
+        <p class="soluk">{{ s.alinti }}</p>
+      </article>
+    {% else %}<p class="bos-durum">Sonuç bulunamadı.</p>{% endfor %}
+  {% endif %}
+</section>
+{% endblock %}

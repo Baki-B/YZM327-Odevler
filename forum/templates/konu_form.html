@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import csrf %}
+{% block baslik %}{{ 'İtiraz konusu aç' if itiraz else ('Alt konu aç' if ust else 'Yeni konu aç') }}{% endblock %}
+{% block icerik %}
+<section class="kart orta">
+  {% if itiraz %}
+    <p class="soluk"><a href="{{ url_for('konular.konu', konu_id=itiraz.id) }}">← {{ itiraz.baslik }}</a></p>
+    <h1>İtiraz konusu aç</h1>
+    <div class="uyari bilgi">Kapanmış bir konunun sonucuna katılmıyorsan yeni bir konu açıp yeniden tartışmaya açabilirsin.
+      İtiraz konusu da aynı yoldan geçer: tartışma, sonra fikir oylaması.</div>
+  {% elif ust %}
+    <p class="soluk"><a href="{{ url_for('konular.konu', konu_id=ust.id) }}">← {{ ust.baslik }}</a></p>
+    <h1>Alt konu aç</h1>
+    <div class="uyari bilgi">Üst konunun katılım kuralı (<strong>{{ ust_kural }}</strong>) alt konuya da uygulanır;
+      alt konu bu kuralı yalnızca daraltabilir.</div>
+  {% else %}
+    <h1>Yeni konu aç</h1>
+  {% endif %}
+  <ol class="adim-listesi">
+    <li><strong>Tartışma</strong> ({{ parametre('SURE_TARTISMA_SAAT') }} saat): Konu hemen açılır. Herkes yazar; her katılımcı bir fikir verebilir.</li>
+    <li><strong>Fikir oylaması</strong>: 1. tur {{ parametre('SURE_TUR1_SAAT') }} saat, sonraki turlar {{ parametre('SURE_TUR_SAAT') }} saat. Az oy alan fikirler tur tur elenir.</li>
+    <li><strong>Karar</strong>: Kalan ya da {{ parametre('ESIK_EZICI') }} oy alan fikir kabul edilir ve konu kapanır.</li>
+  </ol>
+
+  <form method="post" class="form" data-denetim {% if ust %}data-ust="{{ ust.id }}"{% endif %}>
+    {{ csrf() }}
+    {% if ust %}<input type="hidden" name="ust" value="{{ ust.id }}">{% endif %}
+    {% if itiraz %}<input type="hidden" name="itiraz" value="{{ itiraz.id }}">{% endif %}
+    <label>Başlık <input name="baslik" value="{{ form.baslik or '' }}" required minlength="5" maxlength="150"></label>
+    <label>Açıklama <textarea name="aciklama" rows="6" required minlength="10">{{ form.aciklama or '' }}</textarea>
+      <small>Derdini anlat: fikir, öneri ya da şikayet olabilir (en az 40 karakter önerilir).</small></label>
+    <label>Kategori (alan)
+      <select name="kategori_id" required>
+        <option value="">— seç —</option>
+        {% for id, ad in kategoriler %}<option value="{{ id }}" {{ 'selected' if form.kategori_id|string == id|string }}>{{ ad }}</option>{% endfor %}
+      </select>
+      <small>Bu alanın uzmanlarının oyu {{ parametre('UZMAN_AGIRLIK') }} sayılır.</small>
+    </label>
+
+    <fieldset>
+      <legend>Katılım kuralı <small>(boş bırakılırsa herkese açık)</small></legend>
+      <label>Konum: sadece şurada oturanlar katılabilir
+        <select name="konum_id">
+          <option value="">Herkes (konum kısıtı yok)</option>
+          {% for bolge, iller in konum_agaci %}
+            <optgroup label="{{ bolge.ad }} Bölgesi">
+              <option value="{{ bolge.id }}" {{ 'selected' if form.konum_id|string == bolge.id|string }}>{{ bolge.ad }} Bölgesi (tamamı)</option>
+              {% for il, ilceler in iller %}
+                <option value="{{ il.id }}" {{ 'selected' if form.konum_id|string == il.id|string }}>{{ il.ad }}</option>
+                {% for ilce in ilceler %}<option value="{{ ilce.id }}" {{ 'selected' if form.konum_id|string == ilce.id|string }}>&nbsp;&nbsp;&nbsp;{{ il.ad }} › {{ ilce.ad }}</option>{% endfor %}
+              {% endfor %}
+            </optgroup>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="iki-sutun">
+        <label>En küçük yaş <input type="number" name="min_yas" min="0" max="120" value="{{ form.min_yas if form.min_yas is not none else '' }}"></label>
+        <label>En büyük yaş <input type="number" name="max_yas" min="0" max="120" value="{{ form.max_yas if form.max_yas is not none else '' }}"></label>
+      </div>
+      <p class="soluk kucuk">Kurala uymayan üyeler konuyu okuyabilir ama yazamaz ve oy veremez.</p>
+    </fieldset>
+
+    <div class="eylem-satiri">
+      <button type="button" class="dugme ince" data-denetle>{{ ikon('ara') }} Yönetmelik denetimini önizle</button>
+      <button class="dugme">Konuyu aç</button>
+    </div>
+    <div class="denetim-onizleme" aria-live="polite"></div>
+  </form>
+</section>
+{% endblock %}

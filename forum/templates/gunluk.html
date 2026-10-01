@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import kisi, sayfa_gezgini %}
+{% block baslik %}Şeffaflık günlüğü{% endblock %}
+{% block icerik %}
+<section class="kart">
+  <h1>Şeffaflık günlüğü</h1>
+  <p class="soluk">Forumdaki olayların okunabilir listesi. Değiştirilemez kaydı <a href="{{ url_for('genel.defter_sayfasi') }}">kayıt defterinde</a>.
+    Burada yalnızca takma adlar görünür.</p>
+  <div class="tablo-kap"><table class="liste">
+    <thead><tr><th>Zaman</th><th>Kim</th><th>Olay</th></tr></thead>
+    {% for kayit in kayitlar %}
+      <tr><td class="soluk kucuk">{{ kayit.zaman|tarih }}</td><td>{{ kisi(kayit.takma_ad, kayit.yz_mi) }}</td><td>{{ kayit.detay }}</td></tr>
+    {% endfor %}
+  </table></div>
+  {{ sayfa_gezgini(sayfalama, 'genel.gunluk_sayfasi', request.args.to_dict()) }}
+</section>
+{% endblock %}

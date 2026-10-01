@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="{{ ayarlar.TAS_BEYAZI[50] }}" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#22211e" media="(prefers-color-scheme: dark)">
+  <script src="{{ url_for('static', filename='tema.js') }}"></script>
+  <meta name="description" content="{{ ayarlar.SITE_ADI }}: konuların tartışılıp oylamayla karara bağlandığı forum.">
+  <title>{% block baslik %}{{ ayarlar.SITE_ADI }}{% endblock %} · {{ ayarlar.SITE_ADI }}</title>
+  <link rel="manifest" href="{{ url_for('genel.manifest') }}">
+  <link rel="icon" href="{{ url_for('static', filename='ikon.svg') }}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='ikon-192.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  {% block ek_bas %}{% endblock %}
+</head>
+<body class="{{ 'mobil-uygulama' if mobil_uygulama }}">
+{#- Üç ana bölüm: Konular, Oylamalar, Meclis. Oylamalar ve Meclis'in sayfaları alt sekmelerde toplanır. -#}
+{% set ep = request.endpoint or '' %}
+{% set oylama_sayfalari = [('oylamalar.gundem', 'Gündem'), ('oylamalar.kararlar_arsivi', 'Kararlar')] %}
+{% set meclis_sayfalari = [('genel.hakkinda', 'Nasıl işler?'), ('genel.yonetmelik_sayfasi', 'Yönetmelik'),
+                           ('genel.defter_sayfasi', 'Kayıt defteri'), ('genel.graf_sayfasi', 'Üye ağı'),
+                           ('genel.gunluk_sayfasi', 'Şeffaflık günlüğü'), ('genel.api_belgeleri', 'API')] %}
+{% set bolum = 'oylamalar' if ep.startswith('oylamalar.') else
+               ('meclis' if ep in meclis_sayfalari|map('first')|list else
+               ('yonetim' if ep.startswith('yonetim.') else
+               ('panel' if ep.startswith('profil.') and ep not in ('profil.kullanici', 'profil.takip_et') else
+               ('konular' if (ep.startswith('konular.') and not (ep == 'konular.acilis' and not kullanici)) or ep == 'genel.ara'
+               else '')))) %}
+<a class="atla" href="#icerik">İçeriğe geç</a>
+<header class="ust">
+  <div class="ust-ic">
+    <a class="marka" href="{{ url_for('konular.acilis') }}" aria-label="{{ ayarlar.SITE_ADI }} ana sayfa">
+      <img class="logo" src="{{ url_for('static', filename='ikon.svg') }}" alt="">
+      <span>{{ ayarlar.SITE_ADI }}</span>
+    </a>
+    <nav class="ana-nav" aria-label="Ana bölümler">
+      <a class="{{ 'secili' if bolum == 'konular' }}" {{ 'aria-current=page' if bolum == 'konular' }} href="{{ url_for('konular.ana_sayfa') }}">Konular</a>
+      <a class="{{ 'secili' if bolum == 'oylamalar' }}" {{ 'aria-current=page' if bolum == 'oylamalar' }} href="{{ url_for('oylamalar.gundem') }}">Oylamalar{% if bekleyen_oy %}<span class="sayac" title="Oyunu bekleyen oylama">{{ bekleyen_oy }}</span>{% endif %}</a>
+      <a class="{{ 'secili' if bolum == 'meclis' }}" {{ 'aria-current=page' if bolum == 'meclis' }} href="{{ url_for('genel.hakkinda') }}">Meclis</a>
+    </nav>
+    <div class="hesap">
+      <form class="arama-kutusu" action="{{ url_for('genel.ara') }}" method="get" role="search">
+        {{ ikon('ara') }}
+        <input type="search" name="q" placeholder="Ara…" aria-label="Konularda ve mesajlarda ara"
+               value="{{ request.args.get('q', '') if ep == 'genel.ara' else '' }}">
+      </form>
+      <a class="ikon-dugme arama-bag" href="{{ url_for('genel.ara') }}" aria-label="Ara">{{ ikon('ara') }}</a>
+      {% if kullanici %}
+        <a class="ikon-dugme" href="{{ url_for('profil.bildirim_listesi') }}" aria-label="Bildirimler">{{ ikon('zil') }}{% if okunmamis %}<span class="sayac">{{ okunmamis }}</span>{% endif %}</a>
+        <a class="dugme kucuk-dugme yeni-konu" href="{{ url_for('konular.konu_yeni') }}">{{ ikon('arti') }}<span>Yeni konu</span></a>
+        <details class="hesap-menu">
+          <summary aria-label="Hesap menüsü"><img class="avatar" src="{{ avatar(kullanici.takma_ad) }}" alt=""></summary>
+          <div class="acilir">
+            <p class="menu-kim">@{{ kullanici.takma_ad }}</p>
+            <a href="{{ url_for('profil.profil') }}">{{ ikon('pano') }} Panelim</a>
+            <a href="{{ url_for('profil.bildirim_listesi') }}">{{ ikon('zil') }} Bildirimler{% if okunmamis %} ({{ okunmamis }}){% endif %}</a>
+            <a href="{{ url_for('profil.kullanici', takma_ad=kullanici.takma_ad) }}">{{ ikon('kisiler') }} Herkese açık profilim</a>
+            {% if kullanici.yonetici_mi %}<a href="{{ url_for('yonetim.pano') }}">{{ ikon('kalkan') }} Yönetim paneli</a>{% endif %}
+            <p class="menu-alt-baslik">Görünüm</p>
+            <div class="tema-secici" role="group" aria-label="Görünüm">
+              <button type="button" data-tema-sec="otomatik">Otomatik</button>
+              <button type="button" data-tema-sec="acik">{{ ikon('gunes') }} Açık</button>
+              <button type="button" data-tema-sec="koyu">{{ ikon('ay') }} Koyu</button>
+            </div>
+            <form method="post" action="{{ url_for('hesap.cikis') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button>Çıkış yap</button></form>
+          </div>
+        </details>
+      {% else %}
+        <a class="dugme ince kucuk-dugme" href="{{ url_for('hesap.giris') }}">Giriş</a>
+        <a class="dugme kucuk-dugme" href="{{ url_for('hesap.kayit') }}">Üye ol</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<main class="icerik-alani" id="icerik">
+  {% set alt_sekmeler = oylama_sayfalari if bolum == 'oylamalar' and ep in oylama_sayfalari|map('first')|list
+                        else (meclis_sayfalari if bolum == 'meclis' else []) %}
+  {% if alt_sekmeler %}
+  <nav class="alt-sekmeler" aria-label="{{ 'Oylamalar' if bolum == 'oylamalar' else 'Meclis' }} bölümü">
+    {% for e, ad in alt_sekmeler %}<a class="{{ 'secili' if ep == e }}" {{ 'aria-current=page' if ep == e }} href="{{ url_for(e) }}">{{ ad }}</a>{% endfor %}
+  </nav>
+  {% endif %}
+  {% if site_duyurusu %}<div class="uyari duyuru" role="note">{{ ikon('bilgi') }}<span>{{ site_duyurusu }}</span></div>{% endif %}
+  {% if askida and bolum != 'panel' %}<div class="uyari hata" role="note">{{ ikon('duraklat') }}<span>Hesabın {{ kullanici.askida_bitis|tarih }} tarihine kadar askıda: okuyabilirsin ama yazamaz ve oy veremezsin.</span></div>{% endif %}
+  {% with mesajlar = get_flashed_messages(with_categories=true) %}
+    {% for tur, m in mesajlar %}<div class="uyari {{ tur }}" role="status">{{ ikon({'basari': 'tik', 'hata': 'uyari'}.get(tur, 'bilgi')) }}<span>{{ m }}</span></div>{% endfor %}
+  {% endwith %}
+  {% block icerik %}{% endblock %}
+</main>
+
+{#- Telefonda ve mobil uygulamada alt sekme çubuğu (masaüstünde gizli) -#}
+<nav class="alt-cubuk" aria-label="Hızlı geçiş">
+  <a class="{{ 'secili' if bolum == 'konular' }}" href="{{ url_for('konular.ana_sayfa') }}">{{ ikon('sohbet') }}<span>Konular</span></a>
+  <a class="{{ 'secili' if bolum == 'oylamalar' }}" href="{{ url_for('oylamalar.gundem') }}">{{ ikon('oy') }}<span>Oylamalar</span>{% if bekleyen_oy %}<b class="sayac">{{ bekleyen_oy }}</b>{% endif %}</a>
+  {% if kullanici %}
+    <a class="ac-yeni" href="{{ url_for('konular.konu_yeni') }}" aria-label="Yeni konu">{{ ikon('arti') }}</a>
+  {% endif %}
+  <a class="{{ 'secili' if bolum == 'meclis' }}" href="{{ url_for('genel.hakkinda') }}">{{ ikon('meclis') }}<span>Meclis</span></a>
+  {% if kullanici %}
+    <a class="{{ 'secili' if bolum in ('panel', 'yonetim') }}" href="{{ url_for('profil.profil') }}"><img class="avatar" src="{{ avatar(kullanici.takma_ad) }}" alt=""><span>Panelim</span></a>
+  {% else %}
+    <a href="{{ url_for('hesap.giris') }}">{{ ikon('kilit') }}<span>Giriş</span></a>
+  {% endif %}
+</nav>
+{% block ek_son %}{% endblock %}
+</body>
+</html>

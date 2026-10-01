@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block baslik %}Konu geçmişi{% endblock %}
+{% block icerik %}
+<section class="kart orta">
+  <p class="soluk"><a href="{{ url_for('konular.konu', konu_id=konu.id) }}">← {{ konu.baslik }}</a></p>
+  <h1>Konunun eski sürümleri</h1>
+  <p class="soluk">Şu anki hâli konu sayfasındadır. Aşağıda, düzenlenmeden önceki hâlleri yeniden eskiye doğru sıralıdır.</p>
+  {% for s in surumler|reverse %}
+    <div class="surum">
+      <p class="soluk kucuk">{{ s.tarih|tarih }} tarihinde değişti · {{ s.neden }}</p>
+      <h3>{{ s.baslik }}</h3>
+      <div class="icerik">{{ s.aciklama|bicimle }}</div>
+    </div>
+  {% else %}<p>Bu konu hiç düzenlenmedi.</p>{% endfor %}
+</section>
+{% endblock %}

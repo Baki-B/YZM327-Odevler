@@ -1,0 +1,32 @@
+{% extends "yonetim/_kabuk.html" %}
+{% from "_makrolar.html" import csrf, kisi, konum_secici %}
+{% block baslik %}Toplu bildirim · Yönetim{% endblock %}
+{% block panel %}
+<h1>Toplu bildirim</h1>
+<section class="kart">
+  <p class="soluk">Bildirim, seçtiğin üyelerin bildirim listesine düşer. Telefonunda bildirimleri açmış üyelere anlık bildirim olarak da gider.
+    Her gönderim şeffaflık günlüğüne yazılır.</p>
+  <form method="post" class="form hedef-formu">{{ csrf() }}
+    <fieldset><legend>Kime?</legend>
+      {% for d, ad in hedefler.items() %}
+        <label class="secenek"><input type="radio" name="hedef" value="{{ d }}" {{ 'checked' if loop.first }}> <span>{{ ad }}</span></label>
+      {% endfor %}
+    </fieldset>
+    <div class="hedef-KONUM gizle">{{ konum_secici(iller, ilceler, zorunlu=False) }}
+      <p class="soluk kucuk">İlçe seçmezsen ildeki bütün üyelere gider.</p></div>
+    <label class="hedef-UZMAN gizle">Alan <select name="kategori_id">{% for id, ad in kategoriler %}<option value="{{ id }}">{{ ad }}</option>{% endfor %}</select>
+      <small>Ana kategori seçersen alt alanların uzmanları da dahil olur.</small></label>
+    <label>Metin <textarea name="metin" rows="3" minlength="5" maxlength="300" required placeholder="ör. Kampüs ulaşımı konusunda karar oylaması başladı, oyunu kullanmayı unutma."></textarea></label>
+    <label>Bağlantı <small>İsteğe bağlı; bildirime dokununca açılacak sayfa (ör. /konu/3 ya da /gundem).</small>
+      <input name="baglanti" placeholder="/gundem" pattern="/.*" maxlength="200"></label>
+    <div><button class="dugme" data-onay="Bildirim gönderilsin mi?">{{ ikon('zil') }} Gönder</button></div>
+  </form>
+</section>
+<section class="kart">
+  <h2>Son gönderilenler</h2>
+  <ul class="olay-listesi">
+    {% for o in gecmis %}<li><span class="soluk kucuk">{{ o.zaman|tarih }}</span> {{ kisi(o.takma_ad, resim=False) }} · {{ o.detay }}</li>
+    {% else %}<li class="soluk">Henüz toplu bildirim gönderilmedi.</li>{% endfor %}
+  </ul>
+</section>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block baslik %}Kaldırılan konu{% endblock %}
+{% block icerik %}
+<section class="kart dar">
+  <h1>{{ konu.baslik }}</h1>
+  <p class="iz">{{ ikon('oy') }} {{ konu.silinme_notu }}</p>
+  <p class="soluk">Kaldırılan konular silinmez, yerinde bu not kalır. Oylamanın kaydı
+    <a href="{{ url_for('genel.defter_sayfasi') }}">kayıt defterinde</a> ve <a href="{{ url_for('genel.gunluk_sayfasi') }}">şeffaflık günlüğünde</a>.</p>
+  <a class="dugme" href="{{ url_for('konular.ana_sayfa') }}">Konulara dön</a>
+</section>
+{% endblock %}

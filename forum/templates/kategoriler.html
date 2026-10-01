@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import csrf, konu_sekmeleri, teklif_durumu %}
+{% block baslik %}Kategoriler{% endblock %}
+{% macro kategori_karti(s, alt=False) %}
+<article class="kategori-karti {{ 'genel-kart' if s.genel }}" style="--kat-renk: {{ s.renk }}">
+  <div class="kk-bas">
+    <a class="kk-ad" href="{{ url_for('konular.ana_sayfa', kategori=s.id) }}"><span class="kat-nokta buyuk" style="background: {{ s.renk }}"></span>{{ s.yol if alt else s.ad }}</a>
+    {% if s.kaynak == 'TOPLULUK' %}<span class="rozet topluluk" title="Üyelerin oylamasıyla eklendi">{{ ikon('kisiler') }} Topluluk</span>{% endif %}
+  </div>
+  {% if s.genel %}<p class="kucuk">Aklına gelen her şey. Yeni kategori fikirleri de burada tartışılır.</p>{% endif %}
+  <dl class="kk-sayilar">
+    <div><dt>Konu</dt><dd>{{ s.konu }}</dd></div>
+    <div><dt>Açık</dt><dd>{{ s.acik }}</dd></div>
+    <div><dt>Bu hafta</dt><dd>{{ s.hafta }} <small>mesaj</small></dd></div>
+    <div><dt>Uzman</dt><dd>{{ s.uzman }}</dd></div>
+  </dl>
+  {% if not alt and s.altlar %}
+  <div class="kk-altlar">
+    {% for a in s.altlar %}<a class="cip" href="{{ url_for('konular.ana_sayfa', kategori=a.id) }}">{{ a.ad }}{% if a.konu %} <small class="cip-sayi">{{ a.konu }}</small>{% endif %}{% if a.kaynak == 'TOPLULUK' %} {{ ikon('kisiler') }}{% endif %}</a>{% endfor %}
+  </div>
+  {% endif %}
+  <p class="kk-alt soluk kucuk">{% if s.son %}Son etkinlik {{ s.son|once }}{% else %}Henüz konu yok{% endif %}
+    {% if s.kavramlar and s.kaynak == 'TOPLULUK' %} · <span title="Kategori denetiminde kullanılan kavramlar">{{ s.kavramlar[:5]|join(', ') }}</span>{% endif %}</p>
+</article>
+{% endmacro %}
+{% block icerik %}
+{{ konu_sekmeleri('konular.kategori_sayfasi') }}
+<div class="sayfa-bas">
+  <div><h1>{{ ikon('izgara') }} Kategoriler</h1>
+    <p class="soluk kucuk">7 temel alan, Genel ve topluluğun oylayarak eklediği alanlar · toplam {{ toplam }} kategori.
+      Forumu üyeler büyütür: yeni bir alan önermek için <a href="#oner">aşağıdaki formu</a> kullan.</p></div>
+</div>
+
+<form class="kategori-arac" method="get" role="search" data-otomatik-gonder>
+  <label class="arama-alani">{{ ikon('ara') }}<input type="search" name="q" value="{{ q }}" placeholder="Kategori ya da kavram ara (ör. iklim, burs)" aria-label="Kategori ara"></label>
+  <label>Sırala <select name="sirala">{% for k, ad in siralamalar.items() %}<option value="{{ k }}" {{ 'selected' if sirala == k }}>{{ ad }}</option>{% endfor %}</select></label>
+  <input type="hidden" name="suz" value="{{ suz }}">
+  <button class="dugme ince kucuk-dugme">Uygula</button>
+</form>
+<nav class="cipler" aria-label="Kategori süzgeci">
+  {% for k, ad in suzgecler.items() %}<a class="cip {{ 'secili' if suz == k }}" href="{{ url_for('konular.kategori_sayfasi', q=q or None, sirala=sirala, suz=k or None) }}">{{ ad }}</a>{% endfor %}
+</nav>
+
+{% if oneriler %}
+<section class="oneri-seridi" aria-label="Oylamadaki kategori önerileri">
+  <h2 class="kucuk-baslik">{{ ikon('oy') }} Oylamadaki öneriler</h2>
+  <div class="oneri-kartlari">
+    {% for o in oneriler %}
+      <a class="oneri-karti" href="{{ url_for('oylamalar.teklif', teklif_id=o.t.id) }}">
+        <strong>{{ o.baslik.split(': ', 1)[-1] }}</strong>
+        <span class="soluk kucuk">{{ 'Alt kategori' if o.veri.ust_id else 'Ana kategori' }} · {{ o.oy }} oy · {{ o.t.bitis|kalan }}</span>
+        <span class="oneri-git">Oy ver →</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<div class="kategori-izgara">
+  {% for s in satirlar %}{{ kategori_karti(s, alt=duz) }}
+  {% else %}<p class="bos-durum">“{{ q }}” ile eşleşen kategori yok. İstersen <a href="#oner">yeni bir kategori öner</a>.</p>{% endfor %}
+</div>
+
+<div class="iki-sutun">
+  <section class="kart" id="oner">
+    <h2>{{ ikon('arti') }} Yeni kategori öner</h2>
+    {% if kullanici and not kullanici.yz_mi %}
+      <p class="soluk kucuk">Öneri bütün üyelerin oyuna sunulur ({{ parametre('SURE_USUL_SAAT') }} saat, herkesin oyu 1).
+        Kabul için {{ parametre('ESIK_KATEGORI') }} gerekir; kabul edilirse kategori hemen eklenir. Önce <a href="{{ url_for('konular.ana_sayfa', kategori=(satirlar|selectattr('genel')|map(attribute='id')|first)) }}">Genel</a> kategoride tartışmak iyi bir fikir.</p>
+      <form method="post" action="{{ url_for('konular.kategori_oner') }}" class="form">{{ csrf() }}
+        <label>Ad <input name="ad" required minlength="2" maxlength="40" placeholder="ör. Spor ve Oyun" value="{{ form.ad or '' }}"></label>
+        <label>Nereye?
+          <select name="ust_id">
+            <option value="">Yeni ana kategori</option>
+            {% for id, ad in ana_kategoriler %}<option value="{{ id }}">{{ ad }} altına alt kategori</option>{% endfor %}
+          </select></label>
+        <label>Kavramlar <small>(isteğe bağlı, virgülle) Bu alandaki konularda geçen kelimeler; kategori denetimi bunlara bakar.</small>
+          <input name="kavramlar" maxlength="400" placeholder="ör. futbol, turnuva, espor, satranç"></label>
+        <label>Gerekçe <textarea name="gerekce" rows="3" required minlength="20" placeholder="Bu kategoriye neden ihtiyaç var? Hangi konular açılacak?"></textarea></label>
+        <div><button class="dugme">Oylamaya sun</button></div>
+      </form>
+    {% else %}
+      <p class="soluk">Kategori önermek için <a href="{{ url_for('hesap.giris', sonra=request.path) }}">giriş yap</a>.</p>
+    {% endif %}
+  </section>
+  <section class="kart">
+    <h2>{{ ikon('karar') }} Sonuçlanan öneriler</h2>
+    <ul class="duz-liste">
+      {% for o in sonuclananlar %}<li><a href="{{ url_for('oylamalar.teklif', teklif_id=o.t.id) }}">{{ o.baslik.split(': ', 1)[-1] }}</a> {{ teklif_durumu(o.t.durum) }} <span class="soluk kucuk">{{ o.t.kapanis|once }}</span></li>
+      {% else %}<li class="soluk">Henüz sonuçlanan öneri yok.</li>{% endfor %}
+    </ul>
+    <p class="soluk kucuk">Kabul edilen kategoriler <span class="rozet topluluk">{{ ikon('kisiler') }} Topluluk</span> rozetiyle görünür.
+      Yöneticiler kategori adını ve rengini düzenleyebilir ama kategori silinemez; eski konular ona bağlıdır.</p>
+  </section>
+</div>
+{% endblock %}

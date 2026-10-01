@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{#- Panelim: üyenin kendi hesabı. Solda bölüm menüsü (telefonda üstte kaydırılabilir şerit), sağda sayfa. -#}
+{% block icerik %}
+{% set menu = [('profil.profil', 'Özet', 'pano'), ('profil.bildirim_listesi', 'Bildirimler', 'zil'),
+               ('profil.hesap', 'Hesap bilgileri', 'kisiler'), ('profil.devir_sayfasi', 'Oy devri', 'oy'),
+               ('profil.uzmanlik_sayfasi', 'Uzmanlık', 'makbuz'), ('profil.guvenlik_sayfasi', 'Güvenlik', 'kilit'),
+               ('profil.uygulama', 'Uygulama ve API', 'telefon')] %}
+{% set ep = request.endpoint %}
+<div class="panel-kabugu">
+  <nav class="panel-menu" aria-label="Panelim">
+    <a class="pm-kim" href="{{ url_for('profil.kullanici', takma_ad=kullanici.takma_ad) }}">
+      <img class="avatar" src="{{ avatar(kullanici.takma_ad) }}" alt=""><span>@{{ kullanici.takma_ad }}<small>Herkese açık profilim</small></span></a>
+    {% for e, ad, ik in menu %}
+      <a class="{{ 'secili' if ep == e }}" {{ 'aria-current=page' if ep == e }} href="{{ url_for(e) }}">{{ ikon(ik) }}<span>{{ ad }}</span>
+        {% if e == 'profil.bildirim_listesi' and okunmamis %}<span class="sayac">{{ okunmamis }}</span>{% endif %}</a>
+    {% endfor %}
+    {% if kullanici.yonetici_mi %}
+      <a class="pm-yonetim" href="{{ url_for('yonetim.pano') }}">{{ ikon('kalkan') }}<span>Yönetim paneli</span></a>
+    {% endif %}
+  </nav>
+  <div class="panel-icerik">{% block panel %}{% endblock %}</div>
+</div>
+{% endblock %}

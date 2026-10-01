@@ -1,0 +1,69 @@
+{% extends "panel/_kabuk.html" %}
+{% from "_makrolar.html" import konu_durumu %}
+{% block baslik %}Panelim{% endblock %}
+{% block panel %}
+<section class="kart profil-bas">
+  <img class="avatar buyuk-avatar" src="{{ avatar(ben.takma_ad) }}" alt="">
+  <div>
+    <h1>Merhaba, @{{ ben.takma_ad }} {% if ben.yonetici_mi %}<span class="rozet durum-karara_baglandi">Yönetici</span>{% endif %}</h1>
+    <p class="soluk">Üyeliğin {{ ben.olusturma|gun }} tarihinden beri · {{ takipci }} takipçi · {{ takip }} takip</p>
+  </div>
+</section>
+
+{% if askida %}
+  <p class="uyari hata">{{ ikon('duraklat') }} Hesabın {{ ben.askida_bitis|tarih }} tarihine kadar askıda. Bu sürede okuyabilirsin ama yazamaz ve oy veremezsin.
+    Neden: {{ ben.askida_neden }}</p>
+{% endif %}
+
+<div class="stat-izgara dortlu">
+  <a class="stat" href="{{ url_for('oylamalar.gundem') }}"><span>Oyunu bekleyen</span><strong>{{ bekleyen|length }}</strong><small>oylama</small></a>
+  <div class="stat"><span>Mesaj</span><strong>{{ sayilar.mesaj }}</strong><small>{{ sayilar.fikir }} fikir</small></div>
+  <div class="stat"><span>Verdiğin oy</span><strong>{{ sayilar.oy }}</strong><small>makbuzla doğrulanabilir</small></div>
+  <a class="stat" href="{{ url_for('profil.bildirim_listesi') }}"><span>Okunmamış</span><strong>{{ okunmamis }}</strong><small>bildirim</small></a>
+</div>
+
+<div class="pano-izgara">
+  <section class="kart">
+    <h2>{{ ikon('oy') }} Oyunu bekleyenler</h2>
+    {% for x in bekleyen %}
+      <p class="is-satiri"><a href="{{ url_for('oylamalar.teklif', teklif_id=x.teklif.id) }}">{{ x.baslik }}</a>
+        <span class="soluk kucuk">{{ x.teklif.bitis|kalan }}</span></p>
+    {% else %}<p class="soluk">Oyunu bekleyen oylama yok.</p>{% endfor %}
+    {% if oy_verdigim %}
+      <h3>Oy verdiklerin (sürüyor)</h3>
+      {% for x in oy_verdigim %}
+        <p class="is-satiri"><a href="{{ url_for('oylamalar.teklif', teklif_id=x.teklif.id) }}">{{ x.baslik }}</a>
+          <span class="soluk kucuk">{{ x.teklif.bitis|kalan }}</span></p>
+      {% endfor %}
+    {% endif %}
+  </section>
+  <section class="kart">
+    <h2>{{ ikon('belge') }} Açtığın konular</h2>
+    {% for k in konularim %}
+      <p class="is-satiri"><a href="{{ url_for('konular.konu', konu_id=k.id) }}">{{ k.baslik }}</a> {{ konu_durumu(k.durum) }}</p>
+    {% else %}<p class="soluk">Henüz konu açmadın. <a href="{{ url_for('konular.konu_yeni') }}">Konu aç →</a></p>{% endfor %}
+  </section>
+</div>
+
+<section class="kart">
+  <h2>{{ ikon('sohbet') }} Son mesajların</h2>
+  <ul class="olay-listesi">
+    {% for m in mesajlarim %}
+      <li><a href="{{ url_for('konular.konu', konu_id=m.konu_id, _anchor='m' ~ m.id) }}">{{ m.baslik }}</a>
+        <span class="soluk kucuk">· {{ m.olusturma|once }}{% if m.gizli %} · gizlendi{% endif %}</span><br>
+        <span class="kucuk">{{ m.icerik|truncate(140) }}</span></li>
+    {% else %}<li class="soluk">Henüz mesaj yazmadın.</li>{% endfor %}
+  </ul>
+</section>
+{% if sikayetlerim %}
+<section class="kart">
+  <h2>{{ ikon('bayrak') }} Şikayetlerin</h2>
+  {% for s in sikayetlerim %}
+    <p class="is-satiri"><span><a href="{{ url_for('konular.konu', konu_id=s.konu_id, _anchor=('m' ~ s.hedef_id) if s.tur == 'MESAJ' else None) }}">{{ '#' ~ s.hedef_id ~ ' numaralı mesaj' if s.tur == 'MESAJ' else s.baslik }}</a>
+      <span class="soluk kucuk">· {{ s.neden }} · {{ s.olusturma|once }}{% if s.sonuc_notu and s.durum == 'YERSIZ' %} · {{ s.sonuc_notu }}{% endif %}</span></span>
+      {% if s.durum == 'OYLAMADA' %}<a class="rozet durum-oylama" href="{{ url_for('oylamalar.teklif', teklif_id=s.teklif_id) }}">{{ sikayet_durumlari[s.durum] }}</a>
+      {% else %}<span class="rozet {{ 'durum-sonucsuz' if s.durum == 'YERSIZ' else 'durum-tartisma' }}">{{ sikayet_durumlari[s.durum] }}</span>{% endif %}</p>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}

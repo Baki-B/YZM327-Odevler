@@ -1,0 +1,34 @@
+{% extends "yonetim/_kabuk.html" %}
+{% from "_makrolar.html" import sayfa_gezgini %}
+{% block baslik %}Üyeler · Yönetim{% endblock %}
+{% block panel %}
+<div class="sayfa-bas">
+  <div><h1>Üyeler</h1><p class="soluk kucuk">{{ sayfalama.toplam }} kişi</p></div>
+</div>
+<form class="arac-cubugu" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="Takma ad ya da ad soyad" aria-label="Üye ara">
+  <select name="filtre" aria-label="Süz">{% for d, ad in filtreler.items() %}<option value="{{ d }}" {{ 'selected' if filtre == d }}>{{ ad }}</option>{% endfor %}</select>
+  <button class="dugme kucuk-dugme">Ara</button>
+</form>
+<section class="kart sifir-dolgu">
+  <div class="tablo-kap"><table class="liste yonetim-tablosu">
+    <thead><tr><th>Üye</th><th>Rol</th><th class="genis">Konum</th><th class="genis">Mesaj</th><th class="genis">Oy</th><th class="genis">Son giriş</th><th></th></tr></thead>
+    {% for k in satirlar %}
+      <tr>
+        <td><a class="kisi" href="{{ url_for('yonetim.uye', kullanici_id=k.id) }}"><img class="avatar" src="{{ avatar(k.takma_ad, k.yz_mi) }}" alt="">@{{ k.takma_ad }}</a>
+          {% if k.ad_soyad %}<br><span class="soluk kucuk">{{ k.ad_soyad }}</span>{% endif %}</td>
+        <td>{% if k.yonetici_mi %}<span class="rozet durum-karara_baglandi">Yönetici</span>{% endif %}
+            {% if k.yz_mi %}<span class="rozet yz">Yapay zeka</span>{% endif %}
+            {% if k.uzmanlik %}<span class="rozet agirlik">Uzman</span>{% endif %}
+            {% if k.askida_bitis and k.askida_bitis > simdi %}<span class="rozet durum-sonucsuz">Askıda</span>{% endif %}
+            {% if not (k.yonetici_mi or k.yz_mi or k.uzmanlik) %}<span class="soluk kucuk">Üye</span>{% endif %}</td>
+        <td class="kucuk genis">{{ k.konum_id|konum }}</td>
+        <td class="genis">{{ k.mesaj_sayisi }}</td><td class="genis">{{ k.oy_sayisi }}</td>
+        <td class="kucuk soluk genis">{{ k.son_giris|once if k.son_giris else '—' }}</td>
+        <td><a class="dugme ince kucuk-dugme" href="{{ url_for('yonetim.uye', kullanici_id=k.id) }}">Yönet</a></td>
+      </tr>
+    {% else %}<tr><td colspan="7" class="bos-durum">Aramana uyan üye yok.</td></tr>{% endfor %}
+  </table></div>
+</section>
+{{ sayfa_gezgini(sayfalama, 'yonetim.uyeler', request.args.to_dict()) }}
+{% endblock %}

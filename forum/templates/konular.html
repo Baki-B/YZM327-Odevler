@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import konu_durumu, kategori_cipi, asama_noktalari, sayfa_gezgini, trend_listesi, kelime_bulutu, nabiz_satiri, yakinda_listesi, konu_sekmeleri %}
+{% block baslik %}{{ kategori|kategori if kategori else 'Konular' }}{% endblock %}
+{% block icerik %}
+{% if not kullanici %}
+<a class="gundem-seridi tanitim-seridi" href="{{ url_for('konular.acilis') }}">
+  <span>{{ ikon('meclis') }} Forumda yeni misin? Konuların nasıl karara dönüştüğü tanıtım sayfasında.</span><strong>Tanıtıma git →</strong>
+</a>
+{% endif %}
+
+{#- Vitrin: şu an gündemde olan, süresi dolmak üzere olan ve son karara bağlanan -#}
+{% if sayfalama.sayfa == 1 and not kategori and filtre == 'tumu' %}
+<div class="vitrin">
+  {% set t = yan.trend[0] if yan.trend else None %}
+  {% if t %}
+  <a class="vitrin-karti vurgu" href="{{ url_for('konular.konu', konu_id=t.id) }}">
+    <span class="vk-ust">{{ ikon('ates') }} Şu an gündemde</span>
+    <strong>{{ t.baslik }}</strong>
+    <span class="vk-alt">{{ t.mesaj }} mesaj · {{ t.kisi }} kişi {{ 'son 24 saatte' if yan.trend_saat == 24 else 'son günlerde' }}</span>
+  </a>
+  {% endif %}
+  {% set y = (yan.yakinda|rejectattr('baglanti', 'equalto', '/konu/' ~ t.id)|first) if t else (yan.yakinda|first) %}
+  {% if y %}
+  <a class="vitrin-karti" href="{{ y.baglanti }}">
+    <span class="vk-ust">{{ ikon('kum_saati') }} {{ 'Oylama bitiyor' if y.tur == 'OYLAMA' else 'Oylamaya geçiyor' }}</span>
+    <strong>{{ y.baslik }}</strong>
+    <span class="vk-alt">{{ y.bitis|kalan }}</span>
+  </a>
+  {% endif %}
+  {% if son_karar %}
+  <a class="vitrin-karti" href="{{ url_for('konular.konu', konu_id=son_karar.konu_id, _anchor='karar') }}">
+    <span class="vk-ust">{{ ikon('karar') }} Son karar</span>
+    <strong>“{{ son_karar.metin }}”</strong>
+    <span class="vk-alt">{{ son_karar.baslik }}</span>
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
+{{ konu_sekmeleri('konular.ana_sayfa') }}
+
+<div class="iki-panel">
+<div class="ana">
+{% set filtre_adi = dict(filtreler).get(filtre, 'Tümü') %}
+<div class="sayfa-bas">
+  <div>
+    <h1>{% if kategori %}<span class="kat-nokta buyuk" style="background: {{ kategori|kategori_rengi }}"></span>{{ kategori|kategori }}{% else %}Konular{% endif %}</h1>
+    <p class="soluk kucuk">{{ sayfalama.toplam }} konu · son etkinliğe göre</p>
+  </div>
+  <details class="acilir-filtre">
+    <summary class="cip">{{ ikon('ayar') }} {{ filtre_adi }} ▾</summary>
+    <div class="acilir">
+      {% for deger, ad in filtreler %}
+        {% if deger not in ('katilabildiklerim', 'gozlemci') or kullanici %}
+        <a class="{{ 'secili' if filtre == deger }}" href="{{ url_for('konular.ana_sayfa', filtre=deger, kategori=kategori) }}">{{ ad }}</a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </details>
+</div>
+
+<nav class="cipler" aria-label="Kategoriler">
+  <a class="cip {{ 'secili' if not kategori }}" href="{{ url_for('konular.ana_sayfa', filtre=filtre) }}">Tümü</a>
+  {% for kat in yan_kategoriler %}
+    <a class="cip {{ 'secili' if kok_kategori == kat.id }}" href="{{ url_for('konular.ana_sayfa', kategori=kat.id, filtre=filtre) }}">
+      <span class="kat-nokta" style="background: {{ kat.renk }}"></span>{{ kat.ad }}{% if kat.sayi %} <small class="cip-sayi">{{ kat.sayi }}</small>{% endif %}</a>
+  {% endfor %}
+  <a class="cip ince-cip" href="{{ url_for('konular.kategori_sayfasi') }}">{{ ikon('izgara') }} Tüm kategoriler</a>
+</nav>
+{% if alt_kategoriler %}
+<nav class="cipler alt-cipler" aria-label="Alt kategoriler">
+  {% for id, yol in alt_kategoriler %}<a class="cip" href="{{ url_for('konular.ana_sayfa', kategori=id, filtre=filtre) }}">{{ yol.split(' › ')[-1] }}</a>{% endfor %}
+</nav>
+{% endif %}
+{% if kategori and (kategori|kategori) == ayarlar.GENEL_KATEGORI %}
+<div class="uyari bilgi">{{ ikon('bilgi') }} <span><strong>Genel</strong> her konuya açık. Yeni bir kategoriye ihtiyaç mı var?
+  Burada tartış, sonra <a href="{{ url_for('konular.kategori_sayfasi', _anchor='oner') }}">Kategoriler sayfasından öner</a>; bütün üyeler oylar.</span></div>
+{% endif %}
+
+{% if bekleyen_oy or istatistik.oylama %}
+<a class="gundem-seridi" href="{{ url_for('oylamalar.gundem') }}">
+  <span>{{ ikon('oy') }} {% if bekleyen_oy %}{{ bekleyen_oy }} oylama oyunu bekliyor{% else %}{{ istatistik.oylama }} oylama sürüyor{% endif %}</span>
+  <strong>{{ 'Oy ver' if bekleyen_oy else 'Gündeme git' }} →</strong>
+</a>
+{% endif %}
+
+<div class="konu-akisi">
+  {% for s in satirlar %}{% set k = s.konu %}
+    <article class="konu-karti {{ 'soluk-kart' if k.durum == 'SONUCSUZ' }}">
+      <div class="kk-ana">
+        <a class="konu-baslik" href="{{ url_for('konular.konu', konu_id=k.id) }}">{{ k.baslik }}</a>
+        <div class="konu-etiketler">
+          {{ kategori_cipi(k.kategori_id) }}
+          {{ konu_durumu(k.durum) }}{% if k.durum == 'OYLAMA' %}<span class="rozet oylama-var">{{ ikon('oy') }} {{ k.tur }}. tur</span>{% endif %}
+          {% if k.id in gundemdekiler %}<span class="rozet gundemde">{{ ikon('ates') }} Gündemde</span>{% endif %}
+          {% if k.itiraz_id %}<span class="rozet">{{ ikon('yanit') }} İtiraz</span>{% endif %}
+          {% if s.kural != 'Herkese açık' %}<span class="kural kisitli" title="Katılım kuralı">{{ ikon('konum') }}{{ s.kural }}</span>{% endif %}
+          {% if kullanici and not s.uygunluk.katilimci %}<span class="rozet gozlemci" title="Katılım kuralını sağlamıyorsun">Gözlemci</span>{% endif %}
+          <span class="soluk kucuk">{{ k.mesaj_sayisi }} yanıt · {{ k.fikir_sayisi }} fikir{% if k.alt_sayisi %} · {{ k.alt_sayisi }} alt konu{% endif %} ·
+            <span title="{{ k.son_etkinlik|tarih }}">{{ k.son_etkinlik|once }}</span></span>
+        </div>
+      </div>
+      {{ asama_noktalari(k) }}
+    </article>
+  {% else %}
+    <p class="bos-durum">Bu filtreye uyan konu yok.{% if kullanici %} <a href="{{ url_for('konular.konu_yeni') }}">İlk konuyu sen aç →</a>{% endif %}</p>
+  {% endfor %}
+</div>
+{{ sayfa_gezgini(sayfalama, 'konular.ana_sayfa', request.args.to_dict()) }}
+</div>
+
+<aside class="yan gundem-yan" aria-label="Gündem">
+  <section class="kart">
+    <h3>{{ ikon('ates') }} Trend konular</h3>
+    {{ trend_listesi(yan.trend, yan.trend_saat) }}
+  </section>
+  <section class="kart">
+    <h3>{{ ikon('etiket') }} Öne çıkan kelimeler</h3>
+    {{ kelime_bulutu(yan.kelimeler) }}
+  </section>
+  <section class="kart">
+    <h3>{{ ikon('kum_saati') }} Yakında bitenler</h3>
+    {{ yakinda_listesi(yan.yakinda) }}
+  </section>
+  <section class="kart">
+    <h3>{{ ikon('nabiz') }} Kategorilerin nabzı <small class="soluk">bu hafta</small></h3>
+    {% for n in yan.nabiz %}{{ nabiz_satiri(n) }}{% endfor %}
+    <a class="kucuk" href="{{ url_for('konular.kesfet') }}">Hepsini Keşfet'te gör →</a>
+  </section>
+</aside>
+</div>
+{% endblock %}

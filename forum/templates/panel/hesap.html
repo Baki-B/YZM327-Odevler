@@ -1,0 +1,25 @@
+{% extends "panel/_kabuk.html" %}
+{% from "_makrolar.html" import csrf, konum_secici %}
+{% block baslik %}Hesap bilgileri{% endblock %}
+{% block panel %}
+<section class="kart">
+  <h1>Hesap bilgileri</h1>
+  <p class="soluk">Bu bilgiler forumda görünmez; yalnızca konuların katılım kuralını (il, ilçe, yaş) kontrol etmek için kullanılır.</p>
+  <div class="tablo-kap"><table class="bilgi">
+    <tr><th>Takma ad</th><td>@{{ ben.takma_ad }}</td></tr>
+    <tr><th>Ad soyad</th><td>{{ ben.ad_soyad }}</td></tr>
+    <tr><th>Doğum tarihi</th><td>{{ ben.dogum_tarihi }}{% if yas is not none %} ({{ yas }} yaş){% endif %}</td></tr>
+    <tr><th>Adres</th><td>{{ ben.konum_id|konum }}
+      {% if ben.bekleyen_konum_id %}<br><span class="rozet teklif-acik">Bekleyen: {{ ben.bekleyen_konum_id|konum }} → {{ ben.konum_gecerlilik|gun }}</span>
+        <form method="post" action="{{ url_for('profil.adres_iptal') }}" class="satir-ici">{{ csrf() }}<button class="bag">iptal et</button></form>{% endif %}</td></tr>
+    <tr><th>Üyelik</th><td>{{ ben.olusturma|gun }}</td></tr>
+  </table></div>
+  <p class="soluk kucuk">Ad soyad ve doğum tarihi değiştirilemez. Bir yanlışlık varsa bir yöneticiye yaz.</p>
+</section>
+<section class="kart">
+  <h2>{{ ikon('konum') }} Adres değiştir</h2>
+  <p class="soluk kucuk">Yeni adres {{ parametre('ADRES_BEKLEME_GUN') }} gün sonra geçerli olur. Bu bekleme, oylama sırasında adres değiştirilerek başka bir yerin konusuna oy verilmesini önler.</p>
+  <form method="post" action="{{ url_for('profil.adres') }}" class="form">{{ csrf() }}
+    {{ konum_secici(iller, ilceler) }}<div><button class="dugme ince">Adres değişikliği bildir</button></div></form>
+</section>
+{% endblock %}

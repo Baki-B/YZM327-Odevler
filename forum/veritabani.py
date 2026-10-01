@@ -1,0 +1,127 @@
+"""Veritabanı bağlantısı.
+
+Bağlantı nesnesi iki iş daha yapar:
+  * Ontoloji tablolarını (konum, kategori) önbellekte tutar.
+  * Dağıtık deftere yazılacak kayıtları biriktirir ve SADECE işlem (transaction) başarıyla
+    kaydedildiğinde (commit) düğümlere yazar. Geri alınan (rollback) işlemler deftere girmez.
+"""
+import logging
+import os
+import sqlite3
+from datetime import timedelta
+from pathlib import Path
+
+from . import zaman
+
+SEMA = Path(__file__).with_name("schema.sql")
+SURUM = 2
+log = logging.getLogger(__name__)
+
+
+class Baglanti(sqlite3.Connection):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.onbellek = {}
+        self.defter_kuyrugu = []
+        self.defter_klasoru = None
+        self.yol = None
+        self.commit_sonrasi = []      # işlem kaydedilince çalışacak işler (ör. arka plan YZ görevleri)
+        self.anlik_kuyrugu = None     # işlem kaydedilince gönderilecek anlık bildirimler (anlik.py)
+
+    def commit(self):
+        super().commit()
+        if self.defter_kuyrugu and self.defter_klasoru:
+            from . import defter
+            kuyruk, self.defter_kuyrugu = self.defter_kuyrugu, []
+            defter.dugumlere_yaz(self.defter_klasoru, kuyruk)
+        isler, self.commit_sonrasi = self.commit_sonrasi, []
+        for is_ in isler:
+            is_()
+
+    def rollback(self):
+        super().rollback()
+        self.defter_kuyrugu = []
+        self.commit_sonrasi = []
+        self.anlik_kuyrugu = None
+
+
+def defter_klasoru(yol):
+    return os.path.join(os.path.dirname(os.path.abspath(yol)), "defter")
+
+
+def baglan(yol):
+    db = sqlite3.connect(yol, factory=Baglanti, timeout=10)
+    db.row_factory = sqlite3.Row
+    db.execute("PRAGMA foreign_keys = ON")
+    db.execute("PRAGMA busy_timeout = 10000")
+    db.defter_klasoru = defter_klasoru(yol)
+    db.yol = yol
+    return db
+
+
+def hazirla(yol):
+    """Şemayı kurar. Eski sürüm bir veritabanı varsa yedekleyip yenisini oluşturur."""
+    if os.path.exists(yol):
+        db = sqlite3.connect(yol)
+        surum = db.execute("PRAGMA user_version").fetchone()[0]
+        db.close()
+        if surum != SURUM:
+            yedek = f"{yol}.eski-{zaman.simdi():%Y%m%d%H%M%S}"
+            os.replace(yol, yedek)
+            log.warning("Eski sürüm veritabanı %s olarak yedeklendi, yenisi oluşturuluyor.", yedek)
+    db = baglan(yol)
+    db.execute("PRAGMA journal_mode = WAL")
+    db.executescript(SEMA.read_text(encoding="utf-8"))
+    _sutunlari_esitle(db)
+    return db
+
+
+# Sürüm 2 içinde sonradan eklenen / kaldırılan sütunlar. Kurulu veritabanı silinmeden yerinde güncellenir.
+EK_SUTUNLAR = [("kullanicilar", "askida_bitis", "TEXT"), ("kullanicilar", "askida_neden", "TEXT"),
+               ("kategoriler", "renk", "TEXT"), ("konular", "itiraz_id", "INTEGER"),
+               ("konular", "tur", "INTEGER NOT NULL DEFAULT 0"), ("konular", "tartisma_bitis", "TEXT"),
+               ("kategoriler", "kaynak", "TEXT NOT NULL DEFAULT 'SISTEM'"), ("kategoriler", "kavramlar", "TEXT"),
+               ("kategoriler", "olusturma", "TEXT")]
+KALKAN_SUTUNLAR = [("parametreler", "abd")]
+
+
+def _sutunlari_esitle(db):
+    def sutunlar(tablo):
+        return {r[1] for r in db.execute(f"PRAGMA table_info({tablo})")}
+    for tablo, sutun, tur in EK_SUTUNLAR:
+        if sutun not in sutunlar(tablo):
+            db.execute(f"ALTER TABLE {tablo} ADD COLUMN {sutun} {tur}")
+    for tablo, sutun in KALKAN_SUTUNLAR:
+        if sutun in sutunlar(tablo):
+            db.execute(f"ALTER TABLE {tablo} DROP COLUMN {sutun}")
+    _yeni_akisa_gecir(db)
+    db.commit()
+
+
+def _yeni_akisa_gecir(db):
+    """Eski akıştan (komisyon → genel kurul → karar → erteleme) kalan kayıtları yeni akışa uyarlar. Bir kez çalışır;
+    üyelere, mesajlara ve geçmiş oylamalara dokunmaz.
+      * Süren eski oylamalar iptal edilir; açık konular tartışmaya döner ve süreleri baştan başlar.
+      * Geçici kararlar kesinleşir; reddedilen ve uzlaşılamayan konular "sonuçsuz" olur.
+      * Mesaj gizleme ve konu kaldırma eşiği dörtte üçe çıkar."""
+    eski = "'KOMISYON', 'GENEL_KURUL', 'REDDEDILDI', 'KARAR_GECICI', 'KAPANIS', 'UZLASMA_YOK'"
+    bilirkisi = db.execute("SELECT COUNT(*) FROM teklifler WHERE tip = 'BILIRKISI'").fetchone()[0]
+    if not bilirkisi and not db.execute(f"SELECT COUNT(*) FROM konular WHERE durum IN ({eski})").fetchone()[0] \
+            and not db.execute("SELECT COUNT(*) FROM konular WHERE durum IN ('TARTISMA', 'OYLAMA') "
+                               "AND tartisma_bitis IS NULL").fetchone()[0]:
+        return
+    simdi = zaman.simdi()
+    an, bitis = zaman.metin(simdi), zaman.metin(simdi + timedelta(hours=24))
+    db.execute("UPDATE teklifler SET tip = 'UZMANLIK' WHERE tip = 'BILIRKISI'")
+    db.execute("UPDATE teklifler SET durum = 'IPTAL', kapanis = ? WHERE durum = 'ACIK' AND (tip IN "
+               "('KONU_KABUL', 'KAPANIS', 'KONU_DUZENLEME') OR (tip = 'KARAR' AND konu_id IN "
+               "(SELECT id FROM konular WHERE tartisma_bitis IS NULL)))", (an,))
+    db.execute("UPDATE kararlar SET durum = 'KESIN', kesinlesme = COALESCE(kesinlesme, ?) WHERE durum = 'GECICI'", (an,))
+    db.execute("UPDATE konular SET durum = 'KARARA_BAGLANDI' WHERE durum IN ('KARAR_GECICI', 'KAPANIS')")
+    db.execute("UPDATE konular SET durum = 'SONUCSUZ' WHERE durum = 'REDDEDILDI'")
+    db.execute("UPDATE konular SET durum = 'TARTISMA', tur = 0, tartisma_bitis = ? WHERE durum IN "
+               "('KOMISYON', 'GENEL_KURUL', 'UZLASMA_YOK') OR (durum IN ('TARTISMA', 'OYLAMA') AND tartisma_bitis IS NULL)",
+               (bitis,))
+    # Gizleme ve kaldırma artık dörtte üç ister (eski kurulumlarda üçte iki kalmış olabilir).
+    db.execute("UPDATE parametreler SET deger = 'DORTTE_UC' WHERE kod IN ('ESIK_MESAJ_SILME', 'ESIK_KONU_SILME')")
+    log.warning("Veritabanı yeni konu akışına uyarlandı.")

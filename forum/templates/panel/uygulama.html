@@ -1,0 +1,36 @@
+{% extends "panel/_kabuk.html" %}
+{% from "_makrolar.html" import csrf %}
+{% block baslik %}Uygulama ve API{% endblock %}
+{% block panel %}
+<section class="kart">
+  <h1>{{ ikon('telefon') }} Mobil uygulama</h1>
+  {% if mobil_uygulama %}
+    <p class="uyari basari">{{ ikon('tik') }} Şu an {{ ayarlar.SITE_ADI }} uygulamasındasın. Web sitesiyle aynı hesabı ve aynı içeriği kullanır.</p>
+    <p><a class="dugme ince kucuk-dugme" href="/uygulama/adres">{{ ikon('sunucu') }} Sunucu adresini değiştir</a></p>
+  {% else %}
+    <p>Telefonda üç yoldan kullanabilirsin; hepsi web sitesiyle aynı hesabı ve aynı içeriği kullanır.</p>
+    <ul>
+      <li><strong>Expo Go ile:</strong> telefona Expo Go'yu kur, bilgisayarda <code>mobil-expo</code> klasöründe <code>npx expo start</code> çalıştır ve ekrandaki QR kodu okut. Adımlar <code>mobil-expo/BENIOKU.md</code> dosyasında.</li>
+      <li><strong>Android uygulaması:</strong> proje klasöründeki <code>mobil</code> klasöründen APK olarak derlenir. Adımlar <code>mobil/BENIOKU.md</code> dosyasında.</li>
+      <li><strong>Ana ekrana ekle:</strong> telefonun tarayıcısında siteyi açıp menüden “Ana ekrana ekle”yi seç. iPhone'da Safari'nin paylaş menüsündedir.</li>
+    </ul>
+    <p><button type="button" class="dugme ince gizle" data-uygulama-kur>{{ ikon('indir') }} Bu cihaza kur</button></p>
+  {% endif %}
+</section>
+<section class="kart" id="api">
+  <h2>{{ ikon('anahtar') }} API anahtarları</h2>
+  <p class="soluk">Forumu kendi programından kullanmak için anahtar oluştur (<a href="{{ url_for('genel.api_belgeleri') }}">API belgeleri</a>).
+    Bir cihazın erişimini kesmek için o cihazın anahtarını sil.</p>
+  {% if yeni_anahtar %}
+    <div class="uyari basari">Yeni anahtarın (bir daha gösterilmez): <code id="anahtar">{{ yeni_anahtar }}</code>
+      <button type="button" class="dugme ince kucuk-dugme" data-kopyala="#anahtar">Kopyala</button></div>
+  {% endif %}
+  {% for a in api_anahtarlari %}
+    <p class="is-satiri"><span>{{ ikon('anahtar') }} {{ a.ad }} <span class="soluk kucuk">oluşturma {{ a.olusturma|gun }}{% if a.son_kullanim %} · son kullanım {{ a.son_kullanim|tarih }}{% endif %}</span></span>
+      <form method="post" action="{{ url_for('profil.api_anahtari_sil', anahtar_id=a.id) }}" class="satir-ici">{{ csrf() }}<button class="bag tehlike">sil</button></form></p>
+  {% else %}<p class="soluk">Anahtarın yok.</p>{% endfor %}
+  <form method="post" action="{{ url_for('profil.api_anahtari') }}" class="satir-form">{{ csrf() }}
+    <input name="ad" placeholder="Anahtar adı (ör. Telefonum)" maxlength="40" aria-label="Anahtar adı"><button class="dugme ince">Anahtar oluştur</button>
+  </form>
+</section>
+{% endblock %}

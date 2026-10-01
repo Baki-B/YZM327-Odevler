@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import sayfa_gezgini, kategori_cipi, konu_durumu %}
+{% block baslik %}Kararlar{% endblock %}
+{% block icerik %}
+<section class="kart">
+  <h1>Kararlar</h1>
+  <p class="soluk">Fikir oylamasını kazanan fikirler. Bir karara katılmayan her üye, konu sayfasından itiraz konusu açabilir.</p>
+</section>
+{% for kr in liste %}
+  <section class="kart karar-kutusu durum-kesin">
+    <p class="soluk kucuk">{{ kr.olusturma|tarih }} · <a href="{{ url_for('konular.konu', konu_id=kr.konu_no) }}">{{ kr.baslik }}</a> · {{ kategori_cipi(kr.kategori_id) }}</p>
+    <p class="karar-metni">“{{ kr.metin }}”</p>
+    {% if kr.sonuc_json %}
+      <p class="soluk kucuk">{{ kr.tur_no }}. turda · oran {{ [kr.sonuc_json.agirlik_oran, kr.sonuc_json.kisi_oran]|min|yuzde }} ·
+        katılım {{ kr.sonuc_json.katilan }}/{{ kr.sonuc_json.hak_sahibi }} ·
+        <a href="{{ url_for('oylamalar.teklif', teklif_id=kr.teklif_id) }}">sayımı gör</a></p>
+    {% endif %}
+    {% for i in itirazlar[kr.konu_no] %}
+      <p class="kucuk">{{ ikon('yanit') }} İtiraz: <a href="{{ url_for('konular.konu', konu_id=i.id) }}">{{ i.baslik }}</a> {{ konu_durumu(i.durum) }}</p>
+    {% endfor %}
+  </section>
+{% else %}
+  <p class="bos-durum">Henüz karar yok.</p>
+{% endfor %}
+{{ sayfa_gezgini(sayfalama, 'oylamalar.kararlar_arsivi', request.args.to_dict()) }}
+{% endblock %}

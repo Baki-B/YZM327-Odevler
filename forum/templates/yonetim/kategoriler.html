@@ -1,0 +1,44 @@
+{% extends "yonetim/_kabuk.html" %}
+{% from "_makrolar.html" import csrf %}
+{% block baslik %}Kategoriler · Yönetim{% endblock %}
+{% macro renk_secici(secili) -%}
+  <select name="renk" aria-label="Renk">{% for r, ad in renkler %}<option value="{{ r }}" {{ 'selected' if (secili or '') == r }}>{{ ad }}</option>{% endfor %}</select>
+{%- endmacro %}
+{% block panel %}
+<h1>Kategoriler</h1>
+<p class="soluk">Konular bu ağaca göre sınıflanır; yönetmeliğin kategori denetimi de buna bakar. Kategori silinemez, çünkü eski konular ona bağlıdır; adını değiştirebilirsin.</p>
+
+<div class="kategori-listesi">
+{% for kok in agac %}
+  <section class="kart">
+    <form method="post" action="{{ url_for('yonetim.kategori_duzenle', kategori_id=kok.id) }}" class="satir-form kok-satiri">{{ csrf() }}
+      <span class="kat-nokta buyuk" style="background: {{ kok.renk_goster }}"></span>
+      <input name="ad" value="{{ kok.ad }}" required maxlength="40" aria-label="Kategori adı">
+      {{ renk_secici(kok.renk) }}
+      <button class="dugme ince kucuk-dugme">Kaydet</button>
+      <span class="soluk kucuk">{{ kok.sayi }} konu</span>
+    </form>
+    <ul class="alt-kategoriler">
+      {% for a in kok.altlar %}
+        <li><form method="post" action="{{ url_for('yonetim.kategori_duzenle', kategori_id=a.id) }}" class="satir-form">{{ csrf() }}
+          <input name="ad" value="{{ a.ad }}" required maxlength="40" aria-label="Alt kategori adı">
+          <button class="bag">Kaydet</button><span class="soluk kucuk">{{ a.sayi }} konu</span></form></li>
+      {% endfor %}
+      <li><form method="post" action="{{ url_for('yonetim.kategori_ekle') }}" class="satir-form">{{ csrf() }}
+        <input type="hidden" name="ust_id" value="{{ kok.id }}">
+        <input name="ad" required maxlength="40" placeholder="Yeni alt kategori" aria-label="Yeni alt kategori">
+        <button class="dugme ince kucuk-dugme">{{ ikon('arti') }} Ekle</button></form></li>
+    </ul>
+  </section>
+{% endfor %}
+</div>
+
+<section class="kart">
+  <h2>Ana kategori ekle</h2>
+  <form method="post" action="{{ url_for('yonetim.kategori_ekle') }}" class="satir-form">{{ csrf() }}
+    <input name="ad" required maxlength="40" placeholder="Kategori adı" aria-label="Kategori adı">
+    {{ renk_secici('') }}
+    <button class="dugme kucuk-dugme">{{ ikon('arti') }} Ekle</button>
+  </form>
+</section>
+{% endblock %}

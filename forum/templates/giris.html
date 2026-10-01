@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import csrf, giris_kabugu %}
+{% block baslik %}Giriş{% endblock %}
+{% block icerik %}
+{% call giris_kabugu('Tekrar hoş geldin', 'Giriş yapınca oyunu bekleyen oylamaları ve bildirimlerini görürsün.') %}
+  <h1>Giriş yap</h1>
+  <form method="post" class="form">
+    {{ csrf() }}
+    <input type="hidden" name="sonra" value="{{ sonra or '' }}">
+    <label>Takma ad <input name="takma_ad" value="{{ takma_ad }}" required autofocus autocomplete="username"></label>
+    <label>Şifre <input type="password" name="sifre" required autocomplete="current-password"></label>
+    <button class="dugme">Giriş yap</button>
+  </form>
+  <p class="soluk">Hesabın yok mu? <a href="{{ url_for('hesap.kayit') }}">Üye ol</a> ·
+    <a href="{{ url_for('hesap.sifremi_unuttum') }}">Şifremi unuttum</a></p>
+  <details class="demo">
+    <summary>Demo hesapları (şifre hepsinde: <code>forum1234</code>)</summary>
+    <ul>
+      <li><code>yonetici</code>: yönetici (İstanbul › Şişli)</li>
+      <li><code>ayse</code>, <code>elif</code> (17 yaş): İstanbul › Kadıköy</li>
+      <li><code>mehmet</code>: İstanbul › Beşiktaş · <code>burak</code>: İstanbul › Kartal</li>
+      <li><code>zeynep</code>: Ankara (İstanbul konularında gözlemci)</li>
+      <li><code>can</code>, <code>selin</code>: İzmir</li>
+      <li><code>dr.deniz</code>: <strong>uzman</strong> (Sağlık) · <code>kaan.hoca</code>: <strong>uzman</strong> (Teknoloji › Yazılım)</li>
+    </ul>
+    <p class="soluk"><code>Bilge</code> bir yapay zeka hesabıdır; onunla giriş yapılamaz. 5 hatalı denemeden sonra giriş 10 dakika kilitlenir.</p>
+  </details>
+{% endcall %}
+{% endblock %}

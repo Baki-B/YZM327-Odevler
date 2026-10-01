@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block baslik %}Nasıl işler?{% endblock %}
+{% block icerik %}
+<section class="kart metin">
+  <h1>Nasıl işler?</h1>
+  <p>{{ ayarlar.SITE_ADI }}'da her üye konu açar. Konunun altında herkes tartışır ve isteyen bir fikir yazar.
+    Sonra fikirler oylanır: her turda az oy alanlar elenir, geriye kalan fikir kabul edilir ve konu kapanır.</p>
+
+  <h2>Bir konunun yolculuğu</h2>
+  <ol class="yolculuk">
+    <li><strong>Konu açılır.</strong> Her üye derdini (fikir, öneri, şikayet) yazıp konu açar. Konu hemen açılır; hakaret ya da kişisel veri varsa gönderilemez.</li>
+    <li><strong>Tartışma ({{ parametre('SURE_TARTISMA_SAAT') }} saat).</strong> Üyeler argüman, karşı argüman, soru ve kaynak yazar. Her katılımcı en fazla <strong>bir fikir</strong> verebilir; vermek zorunda değildir.</li>
+    <li><strong>1. tur ({{ parametre('SURE_TUR1_SAAT') }} saat).</strong> Oylama açılır. Bu tur boyunca hâlâ fikir yazılabilir ve tartışma sürer. Tur bitince oranı {{ parametre('ELEME_TUR1') }} altında kalan fikirler elenir.</li>
+    <li><strong>2. tur ({{ parametre('SURE_TUR_SAAT') }} saat).</strong> {{ parametre('ELEME_TUR2') }} altında kalanlar elenir.</li>
+    <li><strong>3. tur ({{ parametre('SURE_TUR_SAAT') }} saat).</strong> {{ parametre('ELEME_TUR3') }} altında kalanlar elenir.</li>
+    <li><strong>4. tur ({{ parametre('SURE_TUR_SAAT') }} saat).</strong> {{ parametre('ELEME_TUR4') }} altında kalanlar elenir.</li>
+    <li><strong>5. tur ({{ parametre('SURE_TUR_SAAT') }} saat).</strong> En çok oy alan fikir kabul edilir ve konu kapanır.</li>
+  </ol>
+  <h3>Kısa yollar</h3>
+  <ul>
+    <li><strong>Ezici üstünlük.</strong> Hangi turda olursa olsun bir fikir {{ parametre('ESIK_EZICI') }} ya da daha fazla alırsa hemen kabul edilir.</li>
+    <li><strong>Tek kalan.</strong> Bir turun sonunda elenmeyen tek bir fikir kalırsa o kabul edilir (ör. yedi fikir %5'in altında, sekizinci %65).</li>
+    <li><strong>Sonuçsuz.</strong> Yeter sayı sağlanmazsa, hiçbir fikir eşiği geçemezse ya da son turda eşitlik olursa konu sonuçsuz kapanır.</li>
+    <li><strong>İtiraz.</strong> Sonuca katılmayanlar yeni bir “itiraz konusu” açar; o da aynı yoldan geçer.</li>
+  </ul>
+
+  <h2>Oylar nasıl sayılır?</h2>
+  <ul>
+    <li><strong>Oran.</strong> Bir fikrin oranı iki ayrı hesaplanır: ağırlıklı oylardaki payı ve oy veren kişi sayısındaki payı. Küçük olan geçerlidir (çift çoğunluk).
+      Böylece birkaç ağır oy kalabalığı, kalabalık da uzmanları tek başına geçemez.</li>
+    <li><strong>Çekimser.</strong> Çekimser oy toplamda sayılır; hiçbir fikre yazılmaz ama bütün fikirlerin oranını düşürür.</li>
+    <li><strong>Oy ağırlığı.</strong> Konunun alanında uzman olan üyenin oyu {{ parametre('UZMAN_AGIRLIK') }}, diğer herkesin oyu 1 sayılır. Uzman oyları gerekçeli ve açıktır.</li>
+    <li><strong>Yeter sayı.</strong> Oy hakkı olanların en az {{ parametre('YETER_SAYI_ORANI') }} kadarı (ve en az {{ parametre('MIN_KATILIM') }} kişi) oy vermelidir.</li>
+    <li><strong>Gizli oy ve makbuz.</strong> Normal oylar gizlidir, ara sonuç gösterilmez. Her oy için bir makbuz verilir; oyunun sayıldığını kayıt defterinden doğrulayabilirsin.</li>
+  </ul>
+
+  <h2>Diğer oylamalar</h2>
+  <div class="tablo-kap"><table class="liste">
+    <thead><tr><th>Oylama</th><th>Eşik</th></tr></thead>
+    {% for kod, t in tipler.items() if t.esik %}<tr><td>{{ t.ad }}</td><td>{{ parametre(t.esik) }}</td></tr>{% endfor %}
+  </table></div>
+  <p class="soluk kucuk">Bu oylamalarda Evet / Hayır / Çekimser seçilir. Kabul için eşiğin hem ağırlıklı oylarda hem kişi sayısında sağlanması gerekir;
+    çekimserler paydada sayılır.</p>
+
+  <h2>Mesajlar</h2>
+  <ul>
+    <li><strong>Silinmez.</strong> Hiç kimse mesaj silemez; yönetici de silemez.</li>
+    <li><strong>Düzenlenebilir.</strong> Yazarı düzenleyebilir; eski hâli saklanır ve herkes “neyden düzenlendiğini” görebilir.</li>
+    <li><strong>Gizleme.</strong> Bir mesaj ancak oylamayla ve {{ parametre('ESIK_MESAJ_SILME') }} ile gizlenir; yerinde iz kalır.</li>
+    <li><strong>Şikayet.</strong> Bir içerik en az {{ parametre('SIKAYET_TABANI') }} farklı üye tarafından şikayet edilmeden yöneticilere ulaşmaz.</li>
+  </ul>
+
+  <h2>Kategoriler</h2>
+  <p>Konular 7 temel alanda (Bilim, Sağlık, Siyaset, Eğitim, Teknoloji, Ekonomi, Kültür ve Sanat) ve her konuya açık <strong>Genel</strong>
+    kategoride açılır. Forum üyelerle büyür: her üye <a href="{{ url_for('konular.kategori_sayfasi', _anchor='oner') }}">yeni bir ana ya da alt
+    kategori önerebilir</a>; öneri bütün üyelerin oyuna sunulur ve {{ parametre('ESIK_KATEGORI') }} ile kabul edilirse kategori eklenir.
+    Fikirleri önce Genel'de tartışmak iyi olur.</p>
+
+  <h2>Gündem ve trendler</h2>
+  <p>Konular bölümündeki <a href="{{ url_for('konular.kesfet') }}">Keşfet</a> sayfası ve konu akışının yan sütunu, şu an en çok konuşulan
+    konuları, öne çıkan kelimeleri, kategorilerin haftalık nabzını ve süresi dolmak üzere olan oylamaları gösterir. Bunlar yalnızca yol
+    gösterir; oylamaları etkilemez.</p>
+
+  <h2>Uzmanlık</h2>
+  <ol>
+    <li><strong>Ön şart.</strong> Aday o alanda en az {{ parametre('UZMAN_MIN_MESAJ') }} mesaj yazmış ve en az {{ parametre('UZMAN_MIN_KONU') }} farklı konuya katılmış olmalıdır.</li>
+    <li><strong>Kontenjan.</strong> Bir ana alanda en fazla {{ parametre('UZMAN_KONTENJAN') }} uzman olabilir. Yer yoksa başvuru açılamaz; böylece küçük bir grup birbirini uzman yapamaz.</li>
+    <li><strong>Oylama.</strong> Başvuruyu yalnızca o alandaki konulara yazmış üyeler oylar. Herkesin oyu 1 sayılır, aday oy kullanamaz; {{ parametre('ESIK_UZMANLIK') }} gerekir.</li>
+  </ol>
+  <p>Uzmanlık {{ parametre('UZMAN_SURE_GUN') }} gün sürer. Yapay zeka hesapları da aynı şartlarla, bir üyenin aday göstermesiyle uzman olabilir.</p>
+
+  <h2>Yönetici ve yapay zeka</h2>
+  <ul>
+    <li><strong>Yönetici</strong> yalnızca siteyi yönetir: üyeleri askıya alır, şikayetleri oylamaya taşır, kategorileri ve duyuruları düzenler.
+      İçerik silemez, uzman atayamaz, oylamaların süresine ve sonucuna dokunamaz. Her işlemi şeffaflık günlüğünde görünür.</li>
+    <li><strong>Yapay zeka (Bilge)</strong> yalnızca kısa özet yazar: tartışmayı ve her turun sonucunu özetler. Oy kullanmaz, kendisine oy devredilemez.</li>
+  </ul>
+
+  <h2 id="gereksinimler">Ödev gereksinimleri</h2>
+  <p class="soluk">Derste istenen özellikler ve sitedeki karşılıkları.</p>
+  <div class="tablo-kap"><table class="liste">
+    <thead><tr><th>Gereksinim</th><th>Sitedeki karşılığı</th></tr></thead>
+    <tr><td>Herkes konu açabilir</td><td>Her üye konu açar; konu hemen tartışmaya açılır.</td></tr>
+    <tr><td>Konu düzenlenebilir</td><td>Sahibi tartışma sürerken düzenler; eski hâli konunun geçmişinde görünür.</td></tr>
+    <tr><td>Konu silinebilir</td><td>Konu {{ parametre('ESIK_KONU_SILME') }} ile kaldırılır, yerinde iz kalır.</td></tr>
+    <tr><td>Çoğunluk kararı</td><td>Konunun sonucu fikir oylamasıyla belirlenir: turlar, eleme, ezici üstünlük.</td></tr>
+    <tr><td>Alt konular</td><td>Her konunun altına alt konu açılabilir; üst konunun katılım kuralını yalnızca daraltabilir.</td></tr>
+    <tr><td>Tartışma fikir birliğiyle biter</td><td>En fazla {{ ayarlar.TUR_SAYISI }} turda tek fikir kalır ve kabul edilir.</td></tr>
+    <tr><td>Giriş: ad soyad, adres, doğum tarihi, şifre, takma ad</td><td>Kayıt ve giriş sayfası; forumda yalnızca takma ad görünür; şifre için kurtarma kodu.</td></tr>
+    <tr><td>Bilgiler katılım kuralı olarak kullanılır</td><td>İl, ilçe ve yaş kuralı; kuralı sağlamayan üye konuyu okur ama yazamaz ve oy veremez.</td></tr>
+    <tr><td>Herkes eşittir</td><td>Kurallar herkese aynı uygulanır; herkes bir fikir yazabilir.</td></tr>
+    <tr><td>Bazıları daha eşittir</td><td>Uzmanın kendi alanındaki oyu {{ parametre('UZMAN_AGIRLIK') }} sayılır.</td></tr>
+    <tr><td>Kurallar ve uygunluk ontolojiyle ölçülür</td><td>Yönetmeliğin denetim maddeleri yeni konuları kategori kavramları, yer adları, benzer konular, hakaret ve kişisel veri açısından denetler.</td></tr>
+    <tr><td>Tartışmalar silinmez</td><td>Mesajlar silinmez; düzenlenen mesajların eski sürümleri saklanır.</td></tr>
+    <tr><td>Tartışmanın bir kısmını silmek oylamayla olur</td><td>Bir ya da birden fazla mesaj tek oylamayla gizlenir ({{ parametre('ESIK_MESAJ_SILME') }}); yerinde iz kalır.</td></tr>
+    <tr><td>Oy hakkı devredilebilir</td><td>Oy devri: tüm forum, kategori ya da tek konu için; zincirleme; tavanı vardır.</td></tr>
+    <tr><td>Bazı üyeler yapay zekadır</td><td>Yapay zeka üye (Bilge) tartışmaları ve tur sonuçlarını özetler.</td></tr>
+    <tr><td>Azınlık korunur</td><td>Herkes fikir yazabilir, çift çoğunluk aranır, sonuca katılmayan itiraz konusu açar, temel haklar {{ parametre('ESIK_TEMEL_HAK') }} ile değişir.</td></tr>
+    <tr><td>Uzmanlar</td><td>Ön şart, kontenjan ve alanın katılımcılarının oyuyla uzmanlık.</td></tr>
+    <tr><td>Uygulama ve web sitesi</td><td>Android uygulaması (web sitesiyle aynı hesap ve içerik), telefona kurulabilen web uygulaması ve <a href="{{ url_for('genel.api_belgeleri') }}">API</a>.</td></tr>
+    <tr><td>Dağıtık defter</td><td>Üç kopyalı hash zinciri, bozulma tespiti ve onarım, oy makbuzu (<a href="{{ url_for('genel.defter_sayfasi') }}">kayıt defteri</a>).</td></tr>
+    <tr><td>Kişiler bir graf üzerinde tutulur</td><td>Oy devri, yanıt, takip ve oy benzerliği ağı (<a href="{{ url_for('genel.graf_sayfasi') }}">üye ağı</a>).</td></tr>
+    <tr><td>Akran öğrenmesi</td><td>Argüman, karşı argüman, soru ve kaynak türünde mesajlar; tartışma özetleri.</td></tr>
+  </table></div>
+</section>
+{% endblock %}

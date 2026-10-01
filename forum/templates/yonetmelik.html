@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "_makrolar.html" import csrf, teklif_durumu %}
+{% block baslik %}Yönetmelik{% endblock %}
+{% block icerik %}
+<section class="kart">
+  <h1>Yönetmelik</h1>
+  <p>Forumun kuralları. Her kural üyelerin oylamasıyla değişebilir; maddelerdeki sayılar aşağıdaki parametrelerden gelir ve
+    parametre değişince maddeler de güncellenir. Temel hak maddeleri ve korunan parametreler ancak {{ parametre('ESIK_TEMEL_HAK') }} ile değişir.</p>
+</section>
+
+{% for tur, ad, liste in gruplar if liste %}
+<section class="kart">
+  <h2>{{ ad }}</h2>
+  {% for m in liste %}
+    <article class="madde" id="{{ m.kod }}">
+      <h3><span class="madde-kodu">{{ m.kod }}</span> {{ m.baslik }}
+        {% if m.korunan %}<span class="rozet korunan">{{ ikon('kalkan') }} Korunan</span>{% endif %}
+        {% if m.ciddiyet %}<span class="rozet ciddiyet-{{ m.ciddiyet|lower }}">{{ ciddiyetler[m.ciddiyet] }}</span>{% endif %}</h3>
+      <p>{{ m.metin_goster }}</p>
+      {% if m.degisme %}<p class="soluk kucuk">Son değişiklik: {{ m.degisme|tarih }}</p>{% endif %}
+    </article>
+  {% endfor %}
+</section>
+{% endfor %}
+
+<section class="kart" id="parametreler">
+  <h2>Parametreler</h2>
+  <div class="tablo-kap"><table class="liste">
+    <thead><tr><th>Parametre</th><th>Değer</th></tr></thead>
+    {% for p in parametreler %}
+      <tr><td>{{ p.aciklama }} <br><code class="kucuk">{{ p.kod }}</code> {% if p.korunan %}<span class="rozet korunan" title="Korunan">{{ ikon('kalkan') }}</span>{% endif %}</td>
+          <td><strong>{{ parametre(p.kod) }}</strong>{% if p.degisme %}<br><small class="soluk">değişti: {{ p.degisme|gun }}</small>{% endif %}</td></tr>
+    {% endfor %}
+  </table></div>
+</section>
+
+<section class="kart" id="degisiklik">
+  <h2>Değişiklik öner</h2>
+  {% if kullanici and not kullanici.yz_mi %}
+  <p class="soluk">Normal maddeler {{ parametre('ESIK_YONETMELIK') }}, korunanlar {{ parametre('ESIK_TEMEL_HAK') }} ister. Yönetmelik oylamasında her oy 1 sayılır; yapay zeka hesapları oy kullanamaz.</p>
+  <div class="uc-sutun">
+    <form method="post" action="{{ url_for('genel.yonetmelik_teklif') }}" class="form kutucuk">{{ csrf() }}
+      <h3>Parametre</h3><input type="hidden" name="tur" value="PARAMETRE">
+      <label>Parametre <select name="kod">{% for p in parametreler %}<option value="{{ p.kod }}">{{ p.aciklama }} ({{ p.deger }})</option>{% endfor %}</select></label>
+      <label>Yeni değer <input name="yeni" required list="esik-kodlari" placeholder="ör. 0.3 · 72 · UCTE_IKI"></label>
+      <datalist id="esik-kodlari">{% for kod, e in ayarlar.ESIKLER.items() %}<option value="{{ kod }}">{{ e.ad }}</option>{% endfor %}</datalist>
+      <small class="soluk">Eşikler: SALT, BESTE_UC, UCTE_IKI, DORTTE_UC · oranlar 0–1 arası.</small>
+      <label>Gerekçe <textarea name="gerekce" rows="3" minlength="20" required></textarea></label>
+      <button class="dugme ince">Oylamaya sun</button>
+    </form>
+    <form method="post" action="{{ url_for('genel.yonetmelik_teklif') }}" class="form kutucuk">{{ csrf() }}
+      <h3>Denetim maddesi</h3><input type="hidden" name="tur" value="DENETIM">
+      <label>Madde <select name="madde">{% for m in denetim_maddeleri %}<option value="{{ m.kod }}">{{ m.kod }} {{ m.baslik }} ({{ ciddiyetler[m.ciddiyet] }})</option>{% endfor %}</select></label>
+      <label>Yeni ciddiyet <select name="ciddiyet">{% for kod, ad in ciddiyetler.items() %}<option value="{{ kod }}">{{ ad }}</option>{% endfor %}</select></label>
+      <label>Gerekçe <textarea name="gerekce" rows="3" minlength="20" required></textarea></label>
+      <button class="dugme ince">Oylamaya sun</button>
+    </form>
+    <form method="post" action="{{ url_for('genel.yonetmelik_teklif') }}" class="form kutucuk">{{ csrf() }}
+      <h3>Yeni beyan maddesi</h3><input type="hidden" name="tur" value="BEYAN">
+      <label>Başlık <input name="baslik" required minlength="5" maxlength="80"></label>
+      <label>Metin <textarea name="metin" rows="3" required minlength="20"></textarea></label>
+      <label>Gerekçe <textarea name="gerekce" rows="2" minlength="20" required></textarea></label>
+      <button class="dugme ince">Oylamaya sun</button>
+    </form>
+  </div>
+  {% else %}<p class="soluk">Değişiklik önermek için üye olarak giriş yap.</p>{% endif %}
+
+  <h3>Yönetmelik oylamaları</h3>
+  <ul class="duz-liste">
+    {% for t in teklifler %}<li><a href="{{ url_for('oylamalar.teklif', teklif_id=t.id) }}">{{ basliklar[t.id] }}</a> {{ teklif_durumu(t.durum) }}</li>
+    {% else %}<li class="soluk">Henüz yok.</li>{% endfor %}
+  </ul>
+</section>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block baslik %}{{ baslik }}{% endblock %}
+{% block icerik %}
+<section class="kart dar ortala">
+  <h1>{{ baslik }}</h1>
+  <p>{{ mesaj }}</p>
+  <p><a class="dugme" href="{{ url_for('konular.ana_sayfa') }}">Konulara dön</a></p>
+</section>
+{% endblock %}

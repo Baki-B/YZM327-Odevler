@@ -1,0 +1,89 @@
+{% extends "yonetim/_kabuk.html" %}
+{% from "_makrolar.html" import csrf, kisi %}
+{% block baslik %}Yönetim paneli{% endblock %}
+{% block panel %}
+{% set s = p.sayilar %}
+<div class="sayfa-bas">
+  <div>
+    <h1>Pano</h1>
+    <p class="soluk kucuk">Yönetici siteyi yönetir; kararları üyeler verir.</p>
+  </div>
+  <a class="dugme ince kucuk-dugme" href="{{ url_for('yonetim.yedek') }}">{{ ikon('indir') }} Yedek indir</a>
+</div>
+
+<div class="stat-izgara">
+  <a class="stat" href="{{ url_for('yonetim.uyeler') }}"><span>Üye</span><strong>{{ s.uye }}</strong><small>bu hafta +{{ s.yeni_uye }}</small></a>
+  <div class="stat"><span>Son 7 günde giren</span><strong>{{ s.aktif_uye }}</strong><small>{{ ((s.aktif_uye / s.uye * 100) if s.uye else 0)|round|int }}% üye</small></div>
+  <a class="stat" href="{{ url_for('yonetim.konu_listesi', durum='TARTISMA') }}"><span>Açık konu</span><strong>{{ s.acik_konu }}</strong><small>{{ s.tartisma }} tartışmada</small></a>
+  <a class="stat" href="{{ url_for('yonetim.oylamalar') }}"><span>Süren oylama</span><strong>{{ s.acik_oylama }}</strong><small>{{ s.karar }} kesin karar</small></a>
+  <div class="stat"><span>Bu hafta mesaj</span><strong>{{ s.mesaj_hafta }}</strong><small>{{ s.oy_hafta }} oy verildi</small></div>
+  <a class="stat" href="{{ url_for('yonetim.uyeler', filtre='yonetici') }}"><span>Yönetici</span><strong>{{ s.yonetici }}</strong><small>{{ s.uzman }} uzman · {{ s.askida }} askıda</small></a>
+</div>
+
+<div class="pano-izgara">
+  <section class="kart">
+    <h2>Son 14 gün</h2>
+    <p class="gosterge kucuk"><span class="renk-kare seri-mesaj"></span> Mesaj <span class="renk-kare seri-oy"></span> Oy</p>
+    {% set gen = 28 %}
+    <svg class="etkinlik-grafigi" viewBox="0 0 {{ p.etkinlik|length * gen }} 130" role="img" aria-label="Son 14 günde günlük mesaj ve oy sayısı">
+      {% for e in p.etkinlik %}
+        {% set x = loop.index0 * gen + 5 %}
+        {% set hm = (e.mesaj / p.tepe * 100)|round(1) %}
+        {% set ho = (e.oy / p.tepe * 100)|round(1) %}
+        <g><title>{{ e.gun.strftime('%d.%m') }}: {{ e.mesaj }} mesaj, {{ e.oy }} oy</title>
+          <rect class="zemin" x="{{ x }}" y="4" width="{{ gen - 10 }}" height="100" rx="4"></rect>
+          <rect class="seri-oy" x="{{ x }}" y="{{ 104 - hm - ho }}" width="{{ gen - 10 }}" height="{{ ho }}" rx="3"></rect>
+          <rect class="seri-mesaj" x="{{ x }}" y="{{ 104 - hm }}" width="{{ gen - 10 }}" height="{{ hm }}" rx="3"></rect>
+          {% if loop.index0 % 2 == 1 or loop.last %}<text x="{{ x + (gen - 10) / 2 }}" y="122">{{ e.gun.strftime('%d.%m') }}</text>{% endif %}
+        </g>
+      {% endfor %}
+    </svg>
+  </section>
+  <section class="kart">
+    <h2>Konuların durumu</h2>
+    <ul class="cubuklar">
+      {% for ad, n in p.durumlar %}
+        <li><span>{{ ad }}</span><span class="cubuk"><i style="width: {{ (n / p.durum_tepe * 100)|round }}%"></i></span><strong>{{ n }}</strong></li>
+      {% else %}<li class="soluk">Henüz konu yok.</li>{% endfor %}
+    </ul>
+  </section>
+</div>
+
+<div class="pano-izgara">
+  <section class="kart">
+    <h2>{{ ikon('kum_saati') }} İlgilenmen gerekenler</h2>
+    {% set d = p.dikkat %}
+    {% if not d.defter.saglikli %}
+      <p class="uyari hata">{{ ikon('uyari') }} Kayıt defterinde uyumsuz düğüm var. <a href="{{ url_for('yonetim.sistem', _anchor='defter') }}">Sistem sayfasında onar →</a></p>
+    {% endif %}
+    {% if d.sikayet %}
+      <p class="uyari">{{ ikon('bayrak') }} {{ d.sikayet }} içerik için bekleyen şikayet var. <a href="{{ url_for('yonetim.sikayet_listesi') }}">Şikayetlere git →</a></p>
+    {% endif %}
+    <h3>24 saat içinde biten oylamalar</h3>
+    {% for t in d.biten_oylamalar %}
+      <p class="is-satiri"><a href="{{ url_for('oylamalar.teklif', teklif_id=t.id) }}">#{{ t.id }} {{ basliklar(t) }}</a>
+        <span class="soluk kucuk">{{ t.bitis|kalan }}</span></p>
+    {% else %}<p class="soluk kucuk">Yok.</p>{% endfor %}
+    <h3>24 saat içinde oylamaya geçecek konular</h3>
+    {% for k in d.biten_tartismalar %}
+      <p class="is-satiri"><a href="{{ url_for('konular.konu', konu_id=k.id) }}">{{ k.baslik }}</a>
+        <span class="soluk kucuk">{{ k.tartisma_bitis|kalan }}</span></p>
+    {% else %}<p class="soluk kucuk">Yok.</p>{% endfor %}
+    <h3>30 gün içinde biten uzmanlıklar</h3>
+    {% for u in d.biten_uzmanlik %}
+      <p class="is-satiri"><a href="{{ url_for('yonetim.uye', kullanici_id=u.kullanici_id) }}">@{{ u.takma_ad }}</a>
+        <span class="soluk kucuk">{{ u.kategori_id|kategori }} · {{ u.bitis|gun }}</span></p>
+    {% else %}<p class="soluk kucuk">Yok.</p>{% endfor %}
+    <p class="soluk kucuk">Bunlar bilgi içindir: süreler kendiliğinden işler, yönetici oylamaya ya da süreye dokunamaz.</p>
+  </section>
+  <section class="kart">
+    <h2>Son yönetim işlemleri</h2>
+    <ul class="olay-listesi">
+      {% for o in p.son_islemler %}
+        <li><span class="soluk kucuk">{{ o.zaman|once }}</span> {{ kisi(o.takma_ad, resim=False) }} · {{ o.detay }}</li>
+      {% else %}<li class="soluk">Henüz yönetim işlemi yok.</li>{% endfor %}
+    </ul>
+    <a class="kucuk" href="{{ url_for('yonetim.gunluk_sayfasi', eylem='YONETIM') }}">Tümü →</a>
+  </section>
+</div>
+{% endblock %}
