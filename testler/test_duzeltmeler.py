@@ -790,3 +790,68 @@ class DenetimKuralIyilestirmeleri(Ortam):
         puan = ontoloji.alan_puanlari(self.db, eslesme)
         self.assertEqual(puan[self.kategori("Eğitim")], (1, 1))
         self.assertEqual(puan[self.kategori("Siyaset")], (1, 1))
+
+
+class SayacliDepo(defter.BellekDugumDeposu):
+    """Casus (spy) depo: bütün zincirin kaç kez okunduğunu sayar."""
+
+    def __init__(self, ad):
+        super().__init__(ad)
+        self.tam_okuma = 0
+
+    def bloklar(self):
+        self.tam_okuma += 1
+        return super().bloklar()
+
+
+class DefterOlceklenmesi(unittest.TestCase):
+    """Doğrulama önbelleği: yazma zinciri baştan okumaz, ama dışarıdan yapılan değişiklik yine yakalanır."""
+
+    def yaz(self, kaynak, n=3):
+        defter.dugumlere_yaz(kaynak, [("MESAJ", '{"i": %d}' % i, "2026-01-02 10:00:00") for i in range(n)])
+
+    def test_yazma_zinciri_yeniden_okumaz(self):
+        depolar = [SayacliDepo(ad) for ad in ayarlar.DEFTER_DUGUMLERI]
+        self.yaz(depolar)                                   # ilk yazma: her düğüm bir kez tam doğrulanır
+        self.assertEqual([d.tam_okuma for d in depolar], [1, 1, 1])
+        for _ in range(5):
+            self.yaz(depolar)
+        defter.durum(depolar)
+        self.assertEqual([d.tam_okuma for d in depolar], [1, 1, 1])
+        self.assertEqual(defter.durum(depolar)["uzunluk"], 1 + 6 * 3)
+        self.assertTrue(all(defter.zinciri_dogrula(d.bloklar())[0] for d in depolar))
+
+    def test_disaridan_kurcalama_onbellege_ragmen_yakalanir(self):
+        import sqlite3
+        with tempfile.TemporaryDirectory() as klasor:
+            self.yaz(klasor)
+            self.assertTrue(defter.durum(klasor)["saglikli"])          # doğrulama önbelleğe alındı
+            c = sqlite3.connect(os.path.join(klasor, "B.db"))           # defter kodunu atlayarak dosyayı değiştir
+            c.execute("UPDATE bloklar SET veri = '{\"i\": 99}' WHERE no = 2")
+            c.commit()
+            c.close()
+            d = defter.durum(klasor)
+            self.assertEqual({x["ad"]: x["durum"] for x in d["dugumler"]}["B"], "BOZUK")
+            self.yaz(klasor)                                            # bozuk düğüme yazılmaz
+            self.assertEqual([x["uzunluk"] for x in defter.durum(klasor)["dugumler"]], [7, 4, 7])
+            defter.onar(klasor, "B")
+            self.assertTrue(defter.durum(klasor)["saglikli"])
+
+    def test_sorgu_islemleri_iki_depoda_ayni(self):
+        """LSP: SQLite deposunun SQL ile yaptığı sorgular, temel sınıfın bütün zincirden hesapladığıyla aynı."""
+        bellek = defter.bellek_depolari()
+        with tempfile.TemporaryDirectory() as klasor:
+            sqlite_ = list(defter._depolar(klasor).values())
+            for kaynak in (bellek, sqlite_):
+                defter.dugumlere_yaz(kaynak, [(t, '{"i": %d}' % i, "2026-01-02 10:00:00")
+                                              for i, t in enumerate(["UYE", "OY", "MESAJ", "OY", "SONUC"] * 3)])
+            b, s = bellek[0], sqlite_[0]
+            self.assertEqual(b.son_blok(), s.son_blok())
+            self.assertEqual(b.blok(4), s.blok(4))
+            self.assertIsNone(s.blok(999))
+            for tur in (None, "OY", "YOK"):
+                for atla in (0, 4):
+                    self.assertEqual(b.sayfa(tur, atla, 5), s.sayfa(tur, atla, 5), (tur, atla))
+            self.assertEqual(b.turdeki(("OY", "SONUC")), s.turdeki(("OY", "SONUC")))
+            for anahtar in ("3", b.blok(7)["hash"][:10], "zzz"):
+                self.assertEqual(b.bul(anahtar), s.bul(anahtar), anahtar)
