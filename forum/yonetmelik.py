@@ -15,9 +15,18 @@ KABA_IFADELER = ["aptal", "salak", "gerizekal", "geri zekal", "cahil", "ahmak", 
                  "haysiyetsiz", "mankafa", "dangalak", "embesil"]
 KISISEL_VERI_DESENLERI = {
     "telefon numarası": re.compile(r"(\+90|0)?\s?5\d{2}[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}"),
-    "T.C. kimlik numarası": re.compile(r"\b[1-9]\d{10}\b"),
     "e-posta adresi": re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"),
 }
+_ON_BIR_HANE = re.compile(r"(?<!\d)[1-9]\d{10}(?!\d)")
+
+
+def tc_kimlik_gecerli_mi(no):
+    """T.C. kimlik numarasının resmi sağlaması: 11 hane, ilk hane 0 değil, 10. ve 11. haneler önceki hanelerden hesaplanır.
+    Yalnızca biçime bakmak, 11 haneli her sipariş ya da fatura numarasını kişisel veri sanıp mesajı engelliyordu."""
+    if len(no) != 11 or not no.isdigit() or no[0] == "0":
+        return False
+    h = [int(c) for c in no]
+    return (sum(h[0:9:2]) * 7 - sum(h[1:8:2])) % 10 == h[9] and sum(h[:10]) % 10 == h[10]
 
 # (kod, tür, başlık, metin şablonu, ciddiyet, korunan). {KOD} yerine parametrenin güncel değeri yazılır.
 MADDELER = [
@@ -187,7 +196,10 @@ def kaba_ifadeler(metin):
 
 
 def kisisel_veriler(metin):
-    return [ad for ad, desen in KISISEL_VERI_DESENLERI.items() if desen.search(metin)]
+    bulunan = [ad for ad, desen in KISISEL_VERI_DESENLERI.items() if desen.search(metin)]
+    if any(tc_kimlik_gecerli_mi(no) for no in _ON_BIR_HANE.findall(metin)):
+        bulunan.insert(1, "T.C. kimlik numarası")
+    return bulunan
 
 
 def _bulgu(db, kod, gecti, mesaj):
@@ -287,6 +299,24 @@ def mesaj_denetle(db, icerik):
 
 # --- Yönetmelik değişikliği ---
 
+def _aralik_dogrula(db, p, yeni):
+    """Sayı ve oran parametreleri: türü, anlamlı aralığı ve parametreler arası tutarlılık."""
+    alt, ust = ayarlar.PARAMETRE_ARALIKLARI[p["kod"]]
+    try:
+        deger_ = float(yeni) if p["tur"] == "oran" else int(yeni)
+    except ValueError:
+        raise KuralHatasi("Oran ondalık sayı olmalı (ör. 0.25)." if p["tur"] == "oran" else "Geçerli bir tam sayı gir.")
+    if not alt <= deger_ <= ust:
+        raise KuralHatasi(f"{p['aciklama']}: değer {deger_metni(p['tur'], alt)} ile {deger_metni(p['tur'], ust)} "
+                          "arasında olmalı.")
+    # Eleme eşiği ezici üstünlükten küçük olmalı; yoksa eleme turundan geçen her fikir zaten kazanmış olurdu.
+    elemeler = [deger(db, k) for k in ayarlar.ELEME_PARAMETRELERI.values() if k != p["kod"]]
+    if p["kod"] in ayarlar.ELEME_PARAMETRELERI.values() and deger_ >= deger(db, "ESIK_EZICI"):
+        raise KuralHatasi("Eleme eşiği ezici üstünlük oranından küçük olmalı.")
+    if p["kod"] == "ESIK_EZICI" and any(e >= deger_ for e in elemeler):
+        raise KuralHatasi("Ezici üstünlük oranı bütün eleme eşiklerinden büyük olmalı.")
+
+
 def degisiklik_dogrula(db, veri):
     """Değişiklik önerisini doğrular; (açıklama, korunan_mu) döndürür."""
     tur = veri.get("tur")
@@ -295,20 +325,11 @@ def degisiklik_dogrula(db, veri):
         if not p:
             raise KuralHatasi("Parametre bulunamadı.")
         yeni = str(veri.get("yeni", "")).strip()
-        if p["tur"] == "esik" and yeni not in ayarlar.ESIKLER:
-            raise KuralHatasi("Geçersiz eşik.")
-        if p["tur"] == "oran":
-            try:
-                if not 0.01 <= float(yeni) <= 1:
-                    raise ValueError
-            except ValueError:
-                raise KuralHatasi("Oran 0.01 ile 1 arasında olmalı (ör. 0.25).")
-        if p["tur"] == "sayi":
-            try:
-                if not 0 <= int(yeni) <= 10000:
-                    raise ValueError
-            except ValueError:
-                raise KuralHatasi("Geçerli bir sayı gir.")
+        if p["tur"] == "esik":
+            if yeni not in ayarlar.ESIKLER:
+                raise KuralHatasi("Geçersiz eşik.")
+        else:
+            _aralik_dogrula(db, p, yeni)
         if yeni == p["deger"]:
             raise KuralHatasi("Yeni değer mevcut değerle aynı.")
         veri["yeni"] = yeni

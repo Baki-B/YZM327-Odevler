@@ -18,6 +18,11 @@
       harita[d.id] = d;
     });
     kenarlar = kenarlar.filter(function (k) { return harita[k.kaynak] && harita[k.hedef]; });
+    // Aynı görüş grubundakiler birbirine çekilir (çizgi çizilmez; ikili oy benzerliği sunucudan hiç gelmez).
+    var grupCiftleri = [];
+    dugumler.forEach(function (a, i) {
+      dugumler.slice(i + 1).forEach(function (b) { if (a.grup && a.grup === b.grup) grupCiftleri.push([a, b]); });
+    });
 
     // Simülasyon
     for (var adim = 0; adim < 350; adim++) {
@@ -31,12 +36,12 @@
           a.dx += kuvvet * ox / m; a.dy += kuvvet * oy / m; b.dx -= kuvvet * ox / m; b.dy -= kuvvet * oy / m;
         }
       }
-      kenarlar.forEach(function (k) {
-        var a = harita[k.kaynak], b = harita[k.hedef];
-        var ox = b.x - a.x, oy = b.y - a.y, m = Math.sqrt(ox * ox + oy * oy) + 0.01;
-        var hedef = k.tur === "BENZERLIK" ? 120 : 190, kuvvet = (m - hedef) * 0.02 * (k.tur === "BENZERLIK" ? 1.5 : 1);
+      function yay(a, b, hedef, carpan) {
+        var ox = b.x - a.x, oy = b.y - a.y, m = Math.sqrt(ox * ox + oy * oy) + 0.01, kuvvet = (m - hedef) * 0.02 * carpan;
         a.dx += kuvvet * ox / m; a.dy += kuvvet * oy / m; b.dx -= kuvvet * ox / m; b.dy -= kuvvet * oy / m;
-      });
+      }
+      kenarlar.forEach(function (k) { yay(harita[k.kaynak], harita[k.hedef], 190, 1); });
+      grupCiftleri.forEach(function (c) { yay(c[0], c[1], 120, 1.5); });
       dugumler.forEach(function (d) {
         var hiz = Math.sqrt(d.dx * d.dx + d.dy * d.dy), sinir = 12 * sicaklik + 0.5;
         if (hiz > sinir) { d.dx *= sinir / hiz; d.dy *= sinir / hiz; }

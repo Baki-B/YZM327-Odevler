@@ -7,8 +7,8 @@ Bütün demo hesaplarının şifresi: forum1234
 """
 from datetime import date, timedelta
 
-from . import (devir, graf, kategoriler, konular, kullanicilar, oylama, sikayetler, uzmanlik, veritabani, yonetmelik,
-               yz, zaman)
+from . import (devir, graf, guvenlik, kategoriler, konular, kullanicilar, oylama, sikayetler, uzmanlik, veritabani,
+               yonetmelik, yz, zaman)
 
 SIFRE = "forum1234"
 
@@ -39,6 +39,16 @@ def gerekirse_yukle(yol):
         yukle(db)
         db.commit()
         return True
+    finally:
+        db.close()
+
+
+def demo_hesabi_var_mi(yol):
+    """Şifresi hâlâ demo şifresi olan bir yönetici hesabı var mı? (ağa açılırken uyarmak için)"""
+    db = veritabani.baglan(yol)
+    try:
+        return any(guvenlik.sifre_dogru_mu(r["sifre_hash"], SIFRE) for r in
+                   db.execute("SELECT sifre_hash FROM kullanicilar WHERE yonetici_mi = 1 AND yz_mi = 0"))
     finally:
         db.close()
 

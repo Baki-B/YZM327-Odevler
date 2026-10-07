@@ -1,5 +1,6 @@
 """Güvenlik: giriş denemesi sınırı, şifre kurtarma kodu, API anahtarları."""
 import hashlib
+import os
 import secrets
 from datetime import timedelta
 
@@ -7,6 +8,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from . import ayarlar, zaman
 from .hatalar import KuralHatasi
+
+# Şifre özeti yöntemi: bağımlılığın dışarıdan verildiği tek nokta. Üretimde Werkzeug'ün scrypt'i kullanılır.
+# Testler bunu hızlı bir yönteme çevirir: her scrypt ~0,1 sn sürdüğü için test paketinin süresinin çoğu buradaydı.
+SIFRE_YONTEMI = os.environ.get("FORUM_SIFRE_YONTEMI", "scrypt")
 
 
 # --- Kaba kuvvet saldırısına karşı giriş sınırı ---
@@ -68,7 +73,7 @@ def sifre_kontrol(sifre, tekrar):
 
 
 def sifre_hash(sifre):
-    return generate_password_hash(sifre)
+    return generate_password_hash(sifre, method=SIFRE_YONTEMI)
 
 
 def sifre_dogru_mu(hash_, sifre):
@@ -83,7 +88,7 @@ def kurtarma_kodu_uret():
 
 
 def kurtarma_hash(kod):
-    return generate_password_hash(kod.strip().upper())
+    return generate_password_hash(kod.strip().upper(), method=SIFRE_YONTEMI)
 
 
 def kurtarma_dogru_mu(hash_, kod):

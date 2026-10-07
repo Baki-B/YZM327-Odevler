@@ -194,17 +194,24 @@ def taahhut(teklif_id, secim, makbuz):
 
 
 def makbuz_dogrula(klasor, teklif_id, makbuz, secenekler):
-    """Makbuz koduyla, oyun deftere hangi seçimle yazıldığını bulur (seçim sadece makbuz sahibince bilinir)."""
+    """Makbuz koduyla, oyun deftere hangi seçimle yazıldığını bulur (seçim sadece makbuz sahibince bilinir).
+    Döner: None ya da (blok, seçim, güncel_mi). Oy sonradan değiştirildiyse eski makbuzun bloğu güncel değildir."""
     olasi = {taahhut(teklif_id, s, makbuz.strip()): s for s in secenekler}
     _, zincir, _ = _uzlasma(klasor)
-    bulunan = None
+    bulunan, son_oy = None, {}
     for b in zincir:
         if b["tur"] != "OY":
             continue
         v = json.loads(b["veri"])
-        if v.get("teklif") == teklif_id and v.get("taahhut") in olasi:
-            bulunan = (b, olasi[v["taahhut"]])
-    return bulunan
+        if v.get("teklif") != teklif_id:
+            continue
+        son_oy[v.get("yurttas")] = b["no"]
+        if v.get("taahhut") in olasi:
+            bulunan = (b, olasi[v["taahhut"]], v.get("yurttas"))
+    if not bulunan:
+        return None
+    blok, secim, yurttas = bulunan
+    return blok, secim, son_oy[yurttas] == blok["no"]
 
 
 # --- Veritabanı ile tutarlılık denetimi ---

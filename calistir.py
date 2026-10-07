@@ -8,6 +8,10 @@ Seçenekler:
   --yonetici AD    takma adı verilen üyeyi yönetici yapar (ilk yöneticiyi atamak için; sonrası yönetim panelinden)
   --demo           sunum kipi: yönetim panelinde "süreyi ilerlet" düğmeleri açılır (24/48 saat beklememek için).
                    Normalde yönetici sürelere ve oylamalara dokunamaz.
+  --demo-verisiz   boş veritabanına demo verisini (ve şifresi herkesçe bilinen demo hesaplarını) yüklemez
+
+Ortam değişkenleri: FORUM_VERITABANI (veritabanı yolu), FORUM_GIZLI_ANAHTAR (oturum anahtarı),
+FORUM_HTTPS=1 (HTTPS arkasında yayınlanıyorsa güvenli çerez), FORUM_ANLIK_ILETISIM (Web Push iletişim adresi).
 """
 import glob
 import os
@@ -19,7 +23,7 @@ import webbrowser
 
 KLASOR = os.path.dirname(os.path.abspath(__file__))
 INSTANCE = os.path.join(KLASOR, "instance")
-VERITABANI = os.path.join(INSTANCE, "forum.db")
+VERITABANI = os.environ.get("FORUM_VERITABANI") or os.path.join(INSTANCE, "forum.db")
 
 
 def _secenek(ad, varsayilan):
@@ -65,27 +69,34 @@ def _yonetici_yap(takma_ad):
 
 
 if "--sifirla" in sys.argv:
-    for yol in glob.glob(VERITABANI + "*"):
+    for yol in glob.glob(VERITABANI + "*"):          # FORUM_VERITABANI verilmişse o dosya ve onun defteri silinir
         os.remove(yol)
-    shutil.rmtree(os.path.join(INSTANCE, "defter"), ignore_errors=True)
+    shutil.rmtree(os.path.join(os.path.dirname(os.path.abspath(VERITABANI)), "defter"), ignore_errors=True)
     print("Veritabanı ve defter silindi; demo verisi yeniden yüklenecek.")
 
-from forum import create_app, ornek_veri  # noqa: E402
+from forum import create_app, gorevler, ornek_veri  # noqa: E402
 
-app = create_app({"ZAMANLAYICI": True, "DEMO": "--demo" in sys.argv})
+# Bir WSGI sunucusu bu modülü içe aktarırsa zamanlayıcı hemen başlar; doğrudan çalıştırılınca demo verisi
+# yüklendikten SONRA başlar (yükleme sırasında saat geçici olarak geriye alınır, zamanlayıcı bunu görmemeli).
+app = create_app({"ZAMANLAYICI": __name__ != "__main__", "DEMO": "--demo" in sys.argv,
+                  "VERITABANI": VERITABANI})
 
 if __name__ == "__main__":
     istenen = int(_secenek("--port", 5000))
     port = _bos_port(istenen)
     if port != istenen:
         print(f"UYARI: {istenen} portunu başka bir program kullanıyor; forum {port} portunda açılacak.")
-    if ornek_veri.gerekirse_yukle(app.config["VERITABANI"]):
+    if "--demo-verisiz" not in sys.argv and ornek_veri.gerekirse_yukle(app.config["VERITABANI"]):
         print(f"Demo verisi yüklendi (bütün demo hesaplarının şifresi: {ornek_veri.SIFRE}).")
     if "--yonetici" in sys.argv:
         _yonetici_yap(_secenek("--yonetici", ""))
+    gorevler.arka_plan_baslat(app.config["VERITABANI"])
 
     from forum import ayarlar
     ag = "--ag" in sys.argv
+    if ag and ornek_veri.demo_hesabi_var_mi(app.config["VERITABANI"]):
+        print("  UYARI: Demo hesaplarının şifresi herkesçe biliniyor ve forum ağa açık. Gerçek kullanımda önce "
+              "'yonetici' hesabının şifresini değiştir ya da --sifirla --demo-verisiz ile boş başlat.")
     adres = f"http://127.0.0.1:{port}"
     print(f"\n  {ayarlar.SITE_ADI} çalışıyor:  {adres}")
     if ag:

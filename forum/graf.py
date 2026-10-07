@@ -4,7 +4,9 @@ Düğümler üyelerdir. Kenarlar:
   DEVIR     veren → alan         (oy devri)
   YANIT     yanıtlayan → yazar   (tartışma etkileşimi)
   TAKIP     takipçi → takip edilen
-  BENZERLIK iki üyenin sonuçlanmış oylamalarda aynı yönde oy verme oranı (yönsüz)
+  BENZERLIK iki üyenin sonuçlanmış oylamalarda aynı yönde oy verme oranı (yönsüz). YALNIZCA İÇ HESAPTA kullanılır:
+            ikili benzerlik dışarı verilirse kendi oyunu bilen biri komşusunun gizli oyunu çıkarabilir (T4 gizli oy).
+            Dışarıya yalnızca en az GRUP_EN_AZ kişilik görüş grupları gösterilir (k-anonimlik).
 
 Graf üzerinde hesaplananlar:
   * Etki puanı (PageRank)
@@ -21,6 +23,7 @@ GRUP_RENKLERI = [ayarlar.YESIL[600], ayarlar.GRI[500], ayarlar.YESIL[300], ayarl
                  ayarlar.GRI[300], ayarlar.YESIL[400], ayarlar.YESIL[200], ayarlar.GRI[700]]
 GRUPSUZ_RENK = ayarlar.TAS_BEYAZI[50]
 KENAR_AGIRLIKLARI = {"DEVIR": 2.0, "YANIT": 1.0, "TAKIP": 0.5}
+GRUP_EN_AZ = 3        # bundan küçük görüş grubu gösterilmez: iki kişilik grup, iki kişinin aynı oyu verdiğini ele verir
 
 
 # --- Takip (sosyal kenar) ---
@@ -104,7 +107,7 @@ def oy_benzerlikleri(db, en_az_ortak=2, esik=0.6):
 # --- Görüş grupları ---
 
 def gorus_gruplari(db):
-    """Oy benzerliği grafında etiket yayılımıyla bulunan gruplar (en az 2 üyeli)."""
+    """Oy benzerliği grafında etiket yayılımıyla bulunan gruplar (en az GRUP_EN_AZ üyeli)."""
     if "gruplar" in db.onbellek:
         return db.onbellek["gruplar"]
     benzerlik = oy_benzerlikleri(db)
@@ -128,7 +131,7 @@ def gorus_gruplari(db):
     kumeler = defaultdict(list)
     for k, e in etiket.items():
         kumeler[e].append(k)
-    gruplar = sorted((sorted(u) for u in kumeler.values() if len(u) >= 2), key=lambda u: (-len(u), u[0]))
+    gruplar = sorted((sorted(u) for u in kumeler.values() if len(u) >= GRUP_EN_AZ), key=lambda u: (-len(u), u[0]))
     sonuc = [{"no": i, "ad": f"Grup {chr(65 + i)}", "renk": GRUP_RENKLERI[i % len(GRUP_RENKLERI)], "uyeler": u}
              for i, u in enumerate(gruplar)]
     db.onbellek["gruplar"] = sonuc
@@ -205,9 +208,7 @@ def graf_verisi(db):
                  "renk": grup_of[r["id"]]["renk"] if r["id"] in grup_of else GRUPSUZ_RENK}
                 for r in db.execute("SELECT id, takma_ad, yz_mi FROM kullanicilar ORDER BY id")]
     kenar_listesi = [{"kaynak": k, "hedef": h, "tur": t, "agirlik": n} for k, h, t, n in kenarlar(db)]
-    kenar_listesi += [{"kaynak": a, "hedef": b, "tur": "BENZERLIK", "agirlik": round(w, 2)}
-                      for (a, b), w in oy_benzerlikleri(db).items()]
-    return {"dugumler": dugumler, "kenarlar": kenar_listesi}
+    return {"dugumler": dugumler, "kenarlar": kenar_listesi}   # ikili oy benzerliği gizli oy nedeniyle verilmez
 
 
 def ozet(db):

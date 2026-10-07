@@ -19,6 +19,7 @@ from .metin import kisalt
 
 MAX_TOPLU_GIZLEME = 20
 FIKIR_UZUNLUGU = (10, 600)
+MAX_YANIT_DERINLIGI = 6      # yanıt ağacı en fazla bu kadar iç içe çizilir; daha derin yanıtlar son kademede listelenir
 
 
 def konu_getir(db, konu_id):
@@ -478,9 +479,14 @@ def mesaj_agaci(db, konu_id):
            WHERE m.konu_id = ? ORDER BY m.id""", (konu_id,)).fetchall()
     suren = gizleme_oylamasindaki_mesajlar(db, konu_id)
     dugumler = {r["id"]: dict(r, cocuklar=[], silme_teklifi=suren.get(r["id"])) for r in satirlar}
-    kokler = []
-    for d in dugumler.values():
-        (dugumler[d["ust_mesaj_id"]]["cocuklar"] if d["ust_mesaj_id"] in dugumler else kokler).append(d)
+    kokler, derinlik, ebeveyn = [], {}, {}
+    for d in dugumler.values():                     # id sırası: ebeveyn her zaman çocuğundan önce gelir
+        ust = d["ust_mesaj_id"] if d["ust_mesaj_id"] in dugumler else None
+        # Sınırsız yanıt zinciri şablondaki özyinelemeyi aşıp konu sayfasını herkes için kalıcı olarak bozuyordu.
+        while ust is not None and derinlik[ust] >= MAX_YANIT_DERINLIGI:
+            ust = ebeveyn[ust]
+        ebeveyn[d["id"]], derinlik[d["id"]] = ust, 0 if ust is None else derinlik[ust] + 1
+        (dugumler[ust]["cocuklar"] if ust is not None else kokler).append(d)
     return kokler
 
 

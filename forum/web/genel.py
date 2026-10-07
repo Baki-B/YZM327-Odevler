@@ -69,8 +69,11 @@ def makbuz_dogrula():
         flash("Oylama bulunamadı.", "hata")
         return redirect(url_for("genel.defter_sayfasi"))
     bulunan = defter.makbuz_dogrula(db.defter_klasoru, teklif_id, makbuz, oylama.secim_anahtarlari(db, t))
-    if bulunan:
-        blok, secim = bulunan
+    if bulunan and not bulunan[2]:
+        flash(f"Bu makbuz, sonradan değiştirdiğin eski oyuna ait (blok #{bulunan[0]['no']}); sayılan oy bu değil. "
+              "Son oyunu verirken aldığın makbuzu kullan.", "hata")
+    elif bulunan:
+        blok, secim, _ = bulunan
         flash(f"Oyun defterde kayıtlı: blok #{blok['no']} ({blok['hash'][:16]}…). Seçimin: "
               f"“{_secim_metni(db, t, secim)}”. Bu bilgiyi sadece makbuz sahibi görebilir.", "basari")
     else:
@@ -89,7 +92,7 @@ def _secim_metni(db, t, secim):
 
 @bp.get("/graf")
 def graf_sayfasi():
-    return render_template("graf.html", ozet=graf.ozet(db_al()))
+    return render_template("graf.html", ozet=graf.ozet(db_al()), grup_en_az=graf.GRUP_EN_AZ)
 
 
 @bp.get("/ara")

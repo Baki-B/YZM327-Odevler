@@ -12,8 +12,8 @@ import unittest
 _KLASOR = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [os.path.dirname(_KLASOR), _KLASOR]
 
-from forum import (anlik, defter, devir, gorevler, guvenlik, kategoriler, konular, kullanicilar, oylama,  # noqa: E402
-                   sonuclar, uygunluk, veritabani, yonetim, yonetmelik, yz)
+from forum import (anlik, defter, devir, gorevler, graf, gundem, guvenlik, kategoriler, konular,  # noqa: E402
+                   kullanicilar, oylama, sonuclar, uygunluk, veritabani, yonetim, yonetmelik, yz)
 from forum.metin import site_ici_yol_mu  # noqa: E402
 from forum.hatalar import KuralHatasi, tamsayi  # noqa: E402
 from test_forum import Ortam  # noqa: E402
@@ -447,6 +447,88 @@ class DefterKorumasi(WebOrtam):
             defter.boz_demo(self.db.defter_klasoru, ad)
         d = defter.durum(self.db.defter_klasoru)
         self.assertEqual({x["durum"] for x in d["dugumler"]}, {"BOZUK"})
+
+
+class GrafGizliOy(WebOrtam):
+    def test_ikili_oy_benzerligi_disari_verilmez(self):
+        """İki üyenin oy benzerliği verilirse, kendi oyunu bilen kişi komşusunun gizli oyunu çıkarabiliyordu (T4)."""
+        kisiler = self.kisiler(6)
+        for i in range(3):                                         # üç çekişmeli oylama: a,b aynı; c,d tersi
+            k, (f1, f2) = self.fikirli_konu(kisiler[:2], baslik=f"Yemekhane menüsü tartışması {i}")
+            self.oyla(k, [(f1, kisiler[0:2] + kisiler[4:5]), (f2, kisiler[2:4] + kisiler[5:6])])
+        self.db.commit()
+        veri = self.istemci.get("/api/v1/graf").get_json()
+        self.assertNotIn("BENZERLIK", {k["tur"] for k in veri["kenarlar"]})
+        for gr in graf.gorus_gruplari(self.db):
+            self.assertGreaterEqual(len(gr["uyeler"]), graf.GRUP_EN_AZ)
+
+
+class ParametreAraliklari(Ortam):
+    def test_anlamsiz_degerler_onerilemez(self):
+        ali = self.kisi("ali")
+        for kod, deger in (("UZMAN_AGIRLIK", "0"), ("SIKAYET_TABANI", "0"), ("SURE_TUR_SAAT", "0"),
+                           ("ELEME_TUR4", "1"), ("ESIK_EZICI", "0.01"), ("ELEME_TUR1", "0.8"), ("MIN_KATILIM", "abc")):
+            with self.assertRaises(KuralHatasi, msg=kod):
+                yonetmelik.degisiklik_teklif_et(self.db, ali, {"tur": "PARAMETRE", "kod": kod, "yeni": deger},
+                                                "Bu değişiklik topluluk için gerekli bir düzenlemedir.")
+        yonetmelik.degisiklik_teklif_et(self.db, ali, {"tur": "PARAMETRE", "kod": "UZMAN_AGIRLIK", "yeni": "5"},
+                                        "Bu değişiklik topluluk için gerekli bir düzenlemedir.")
+
+    def test_varsayilanlar_araliklarin_icinde(self):
+        from forum import ayarlar
+        for kod, deger, tur, _, _ in ayarlar.VARSAYILAN_PARAMETRELER:
+            if tur != "esik":
+                alt, ust = ayarlar.PARAMETRE_ARALIKLARI[kod]
+                self.assertTrue(alt <= float(deger) <= ust, kod)
+
+
+class YanitDerinligi(WebOrtam):
+    def test_cok_derin_yanit_zinciri_sayfayi_bozmaz(self):
+        ali, ayse = self.kisi("ali"), self.kisi("ayse")
+        k = self.konu(ali)
+        ust = None
+        for i in range(300):                                       # eskiden ~250. kademede RecursionError → 500
+            ust = konular.mesaj_yaz(self.db, ali if i % 2 else ayse, k, "ARGUMAN", f"Yanıt {i}", ust)
+        self.db.commit()
+        self.assertEqual(self.istemci.get(f"/konu/{k}").status_code, 200)
+
+        def derinlik(dugum):
+            return 1 + max((derinlik(c) for c in dugum["cocuklar"]), default=0)
+        self.assertLessEqual(max(derinlik(d) for d in konular.mesaj_agaci(self.db, k)), konular.MAX_YANIT_DERINLIGI + 1)
+
+
+class KisiselVeri(Ortam):
+    def test_tc_kimlik_saglamasi(self):
+        self.assertTrue(yonetmelik.tc_kimlik_gecerli_mi("10000000146"))
+        self.assertFalse(yonetmelik.tc_kimlik_gecerli_mi("10000000147"))
+        self.assertIn("T.C. kimlik numarası", yonetmelik.kisisel_veriler("Kimliğim 10000000146"))
+        self.assertEqual(yonetmelik.kisisel_veriler("Sipariş numaram 12345678901, kargo gelmedi"), [])
+
+
+class Makbuz(Ortam):
+    def test_degistirilen_oyun_eski_makbuzu_guncel_degil(self):
+        a, b = self.kisi("ali"), self.kisi("banu")
+        k, (fa, fb) = self.fikirli_konu([a, b])
+        t = self.tur(k)
+        secimler = oylama.secim_anahtarlari(self.db, t)
+        eski = oylama.oy_ver(self.db, t["id"], b, secimler[0])
+        yeni = oylama.oy_ver(self.db, t["id"], b, secimler[1])
+        self.db.commit()
+        self.assertFalse(defter.makbuz_dogrula(self.db.defter_klasoru, t["id"], eski, secimler)[2])
+        self.assertTrue(defter.makbuz_dogrula(self.db.defter_klasoru, t["id"], yeni, secimler)[2])
+
+
+class Gundem(Ortam):
+    def test_tek_kisi_mesaj_seliyle_gundeme_tasiyamaz(self):
+        kisiler = self.kisiler(5)
+        k1 = self.konu(kisiler[0], baslik="Tek kişinin konusu burada")
+        k2 = self.konu(kisiler[1], baslik="Herkesin konusu burada")
+        for i in range(12):
+            konular.mesaj_yaz(self.db, kisiler[0], k1, "ARGUMAN", f"Yine ben yazıyorum {i}")
+        for kim in kisiler[1:]:
+            konular.mesaj_yaz(self.db, kim, k2, "ARGUMAN", "Ben de katılıyorum")
+        trend, _ = gundem.trend_konular(self.db)
+        self.assertEqual(trend[0]["id"], k2)
 
 
 if __name__ == "__main__":

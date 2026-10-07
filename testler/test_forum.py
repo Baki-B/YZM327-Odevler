@@ -13,6 +13,7 @@ from forum import (anlik, arama, ayarlar, defter, devir, gorevler, graf, gundem,
 from forum.hatalar import KuralHatasi  # noqa: E402
 
 SIFRE = "sifre1234"
+guvenlik.SIFRE_YONTEMI = "pbkdf2:sha256:1"   # testlerde hızlı şifre özeti (üretimde scrypt); bkz. guvenlik.py
 
 
 class Ortam(unittest.TestCase):
@@ -361,7 +362,8 @@ class FikirOylamasi(Ortam):
         secimler = oylama.secim_anahtarlari(self.db, t)
         makbuz = oylama.oy_ver(self.db, t["id"], b, secimler[0])
         self.db.commit()
-        _, secim = defter.makbuz_dogrula(self.db.defter_klasoru, t["id"], makbuz, secimler)
+        _, secim, guncel = defter.makbuz_dogrula(self.db.defter_klasoru, t["id"], makbuz, secimler)
+        self.assertTrue(guncel)
         self.assertEqual(secim, secimler[0])
         self.assertIsNone(defter.makbuz_dogrula(self.db.defter_klasoru, t["id"], "YANLIS-KOD", secimler))
 

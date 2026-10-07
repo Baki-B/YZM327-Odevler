@@ -89,6 +89,18 @@ VARSAYILAN_PARAMETRELER = [
     ("ADRES_BEKLEME_GUN", "30", "sayi", "Yeni adresin geçerli olması için geçen süre (gün)", False),
 ]
 
+# Oylamayla değişebilen sayıların anlamlı aralıkları (en az, en çok). Aralık dışı değer önerilemez: ör. UZMAN_AGIRLIK=0
+# uzmanların hiç oy verememesine, SIKAYET_TABANI=0 şikayetlerin yöneticiye hiç ulaşmamasına, SURE_TUR_SAAT=0 turların
+# anında bitmesine yol açardı. Eşik türündeki parametrelerin geçerli değerleri ESIKLER'dir.
+PARAMETRE_ARALIKLARI = {
+    "SURE_TARTISMA_SAAT": (1, 720), "SURE_TUR1_SAAT": (1, 720), "SURE_TUR_SAAT": (1, 720),
+    "ELEME_TUR1": (0.01, 0.5), "ELEME_TUR2": (0.01, 0.5), "ELEME_TUR3": (0.01, 0.5), "ELEME_TUR4": (0.01, 0.5),
+    "ESIK_EZICI": (0.51, 1), "YETER_SAYI_ORANI": (0.01, 1), "MIN_KATILIM": (1, 1000),
+    "SURE_USUL_SAAT": (1, 720), "SURE_YONETMELIK_SAAT": (24, 720),
+    "UZMAN_AGIRLIK": (1, 100), "UZMAN_KONTENJAN": (1, 50), "UZMAN_MIN_MESAJ": (0, 1000), "UZMAN_MIN_KONU": (0, 1000),
+    "UZMAN_SURE_GUN": (1, 3650), "MAX_DEVIR": (0, 1000), "SIKAYET_TABANI": (1, 1000), "ADRES_BEKLEME_GUN": (0, 365),
+}
+
 # --- Değişmeyen tanımlar ---
 KONU_DURUMLARI = {
     "TARTISMA": "Tartışmada",

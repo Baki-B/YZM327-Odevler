@@ -25,6 +25,7 @@ dusuk onemli gerekli mumkun ozellikle yalnizca genelde kolay zor kotu ekstra her
 tartisalim tartisma tartismak istiyoruz isteyen olursa oldugu olan yapilabilir aslinda gerci bazen sanirim
 """.split())
 _KELIME = re.compile(r"[a-zçğıöşüâîû0-9]+")
+KISI_BASI_MESAJ = 3     # trend puanında bir kişinin en çok kaç mesajı sayılır
 
 
 def _once(**sure):
@@ -55,7 +56,10 @@ def _trend(db, esik, limit):
            FROM konular k WHERE k.silindi = 0""", {"e": esik}).fetchall()
     liste = []
     for r in satirlar:
-        puan = r["mesaj"] + 2 * r["fikir"] + 0.5 * r["oy"] + (3 if r["olusturma"] >= esik else 0)
+        # Mesajlar kişi başı en çok KISI_BASI_MESAJ kadar sayılır: tek kişi art arda yazarak konuyu gündeme taşıyamasın
+        # (ölçüt hedef olunca bozulur; çok kişinin katıldığı konu öne çıkmalı).
+        puan = (min(r["mesaj"], KISI_BASI_MESAJ * r["kisi"]) + 2 * r["fikir"] + 0.5 * r["oy"]
+                + (3 if r["olusturma"] >= esik else 0))
         if r["mesaj"] or r["oy"] or r["fikir"]:
             liste.append(dict(r, puan=puan))
     liste.sort(key=lambda r: (-r["puan"], -r["id"]))
