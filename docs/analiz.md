@@ -263,6 +263,7 @@ Bilerek düzeltilmeyen hatalar (kuralın sınırı; düzeltmek ezberlemek olurdu
 | "Ev adresim Bağdat Caddesi No: 12…" → kaçtı | Adres serbest biçimli | NER modeli adayı; bugün şikayet + gizleme |
 | "Ürün kodu 11111111110" → yanlış engel | 11 haneli rastgele bir sayı %1 olasılıkla T.C. kimlik sağlamasını tutar | Kabul edilen bedel (YN çok daha pahalı) |
 | "Öğrencilere burs başvurusu…" → Eğitim | "öğrenci" kelimesi Eğitim'in iki kavramına (ogren, ogrenci) birden uyuyor | Ontoloji verisinde kavram tekrarı temizlenmeli |
+| "Satranç **kulübü** için oda ayrılsın" → kavram eşleşmez | Ünsüz yumuşaması (kulüp → kulübü) ontoloji eşleşmesinde de var; ama D1'deki gibi her kökü yumuşatmak "kent" → "kend" gibi sık kelimelerle (kendi) yanlış eşleşme üretir | Yumuşayan kavramlar ontolojide tek tek, yumuşamış biçimleriyle yazılmalı |
 
 ---
 
