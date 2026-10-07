@@ -9,6 +9,10 @@ sys.path.insert(0, _KOK)
 sys.path.insert(0, os.path.join(_KOK, "olcum"))
 
 import denetim_olcumu as olcum  # noqa: E402
+import urun_metrikleri  # noqa: E402
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from test_forum import Ortam  # noqa: E402
 
 
 class DenetimOlcumu(unittest.TestCase):
@@ -35,6 +39,26 @@ class DenetimOlcumu(unittest.TestCase):
         self.assertEqual((m["DP"], m["YP"], m["YN"], m["DN"]), (1, 1, 1, 1))
         self.assertEqual((m["kesinlik"], m["duyarlilik"], m["F1"]), (0.5, 0.5, 0.5))
         self.assertEqual(olcum.ikili_metrikler(["VAR"], ["YOK"])["F1"], 0.0)       # sıfıra bölme yok
+
+
+class UrunMetrikleri(Ortam):
+    def test_bos_forumda_tanimsiz_degerler_cokmez(self):
+        m = urun_metrikleri.metrikler(self.db)
+        self.assertIsNone(m["is"]["Karara bağlanma oranı (kapanan konular)"])
+        self.assertEqual(m["koruyucu"]["Defter–veritabanı tutarsızlığı (adet)"], 0)
+        self.assertIn("| Koruyucu |", urun_metrikleri.rapor(self.db))
+
+    def test_karar_ve_katilim(self):
+        kisiler = self.kisiler(4)
+        k = self.konu(kisiler[0])
+        self.db.execute("UPDATE konular SET durum = 'KARARA_BAGLANDI', kabul_tarihi = olusturma WHERE id = ?", (k,))
+        self.db.execute("""INSERT INTO teklifler (tip, konu_id, esik, baslangic, bitis, durum, sonuc)
+                           VALUES ('KARAR', ?, 'X', '', '', 'KABUL', ?)""",
+                        (k, '{"katilan": 3, "hak_sahibi": 4, "yeter": true}'))
+        m = urun_metrikleri.metrikler(self.db)
+        self.assertEqual(m["is"]["Karara bağlanma oranı (kapanan konular)"], 1.0)
+        self.assertEqual(m["urun"]["Fikir oylamalarında ortalama katılım (katılan / hak sahibi)"], 0.75)
+        self.assertEqual(m["urun"]["Açılıştan karara medyan süre (saat)"], 0.0)
 
 
 if __name__ == "__main__":
