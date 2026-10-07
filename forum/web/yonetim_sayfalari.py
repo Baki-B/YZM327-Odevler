@@ -266,7 +266,11 @@ def defter_deneme(ad, islem):
     if islem == "boz":
         _demo_olmali()          # kurcalama denemesi yalnızca sunum kipinde: gerçek defter geri dönüşsüz bozulmasın
         no = defter.boz_demo(db.defter_klasoru, ad)
-        flash(f"Deneme: {ad} düğümündeki #{no} numaralı blok bozuldu. Kayıt defteri sayfası bu bozulmayı göstermeli.", "hata")
+        if no is None:
+            flash(f"{ad} düğümünde başlangıç bloğundan başka blok yok; bozulacak bir şey yok.", "bilgi")
+        else:
+            flash(f"Deneme: {ad} düğümündeki #{no} numaralı blok bozuldu. Kayıt defteri sayfası bu bozulmayı "
+                  "göstermeli.", "hata")
     else:
         try:
             defter.onar(db.defter_klasoru, ad)

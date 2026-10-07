@@ -2,8 +2,12 @@
 
 Bağlantı nesnesi iki iş daha yapar:
   * Ontoloji tablolarını (konum, kategori) önbellekte tutar.
-  * Dağıtık deftere yazılacak kayıtları biriktirir ve SADECE işlem (transaction) başarıyla
-    kaydedildiğinde (commit) düğümlere yazar. Geri alınan (rollback) işlemler deftere girmez.
+  * İşlemin (transaction) yan etkilerini (deftere yazılacak bloklar, anlık bildirimler, arka plan işleri) kuyrukta
+    biriktirir. Yan etkiler SADECE işlem başarıyla kaydedilince (commit) gerçekleşir; geri alınan (rollback) işlemin
+    kuyruğu silinir.
+
+GoF **Observer**: "işlem kaydedildi" olayına abone olunur (`commit_aboneligi`). Bu modül, olayı dinleyen üst
+katman modüllerini (ör. defter) tanımaz; onları içe aktarmaz (DIP). Abonelik, abone modül yüklenince yapılır.
 """
 import logging
 import os
@@ -29,6 +33,16 @@ class KuyrukHatirasi:
     anlik: object          # None (kuyruk yoktu) ya da boyu
 
 
+_COMMIT_ABONELERI = []
+
+
+def commit_aboneligi(abone):
+    """Observer aboneliği (dekoratör olarak da kullanılır): abone(db), her başarılı commit'ten sonra çağrılır."""
+    if abone not in _COMMIT_ABONELERI:
+        _COMMIT_ABONELERI.append(abone)
+    return abone
+
+
 class Baglanti(sqlite3.Connection):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -42,14 +56,12 @@ class Baglanti(sqlite3.Connection):
     def commit(self):
         super().commit()
         # Veri artık kalıcı. Yan etkilerden biri başarısız olsa bile istek hata vermez (kullanıcı işlemini tekrar
-        # denerse çift kayıt oluşurdu); hata günlüğe yazılır, eksik defter kaydını tutarlılık denetimi gösterir.
-        if self.defter_kuyrugu and self.defter_klasoru:
-            from . import defter
-            kuyruk, self.defter_kuyrugu = self.defter_kuyrugu, []
+        # denerse çift kayıt oluşurdu); hata günlüğe yazılır.
+        for abone in list(_COMMIT_ABONELERI):
             try:
-                defter.dugumlere_yaz(self.defter_klasoru, kuyruk)
+                abone(self)
             except Exception:
-                log.exception("Kayıt defterine %d blok yazılamadı", len(kuyruk))
+                log.exception("Commit abonesi başarısız: %s", getattr(abone, "__qualname__", abone))
         isler, self.commit_sonrasi = self.commit_sonrasi, []
         for is_ in isler:
             try:

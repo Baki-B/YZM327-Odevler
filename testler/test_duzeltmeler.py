@@ -5,14 +5,16 @@ Her test önce hatayı yeniden üretecek biçimde yazıldı (düzeltmeden önce 
 import logging
 import os
 import sys
+import tempfile
 import threading
 import unittest
+from pathlib import Path
 
 _KLASOR = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [os.path.dirname(_KLASOR), _KLASOR]
 
 from forum import (anlik, ayarlar, defter, denetim, devir, gorevler, graf, gundem, guvenlik, kategoriler, konular,  # noqa: E402
-                   kullanicilar, oylama, sonuclar, teklif_turleri, uygunluk, yonetim, yonetmelik, yz)
+                   kullanicilar, oylama, sonuclar, teklif_turleri, uygunluk, veritabani, yonetim, yonetmelik, yz)
 from forum.metin import site_ici_yol_mu  # noqa: E402
 from forum.hatalar import KuralHatasi, tamsayi  # noqa: E402
 from test_forum import Ortam  # noqa: E402
@@ -72,7 +74,7 @@ class YanEtkiDayanikliligi(Ortam):
         gercek = defter.dugumlere_yaz
         defter.dugumlere_yaz = lambda klasor, kuyruk: (_ for _ in ()).throw(OSError("disk dolu"))
         try:
-            with self.assertLogs("forum.veritabani", logging.ERROR):
+            with self.assertLogs("forum.defter", logging.ERROR):
                 self.kisi("ali")
                 self.db.commit()
         finally:
@@ -596,3 +598,90 @@ class DenetimZinciri(Ortam):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DefterDeposu(unittest.TestCase):
+    """Repository: uzlaşma, onarım ve kurcalama tespiti disk olmadan, bellek içi sahte depolarla sınanır."""
+
+    def setUp(self):
+        self.depolar = defter.bellek_depolari()
+
+    def yaz(self, *turler):
+        defter.dugumlere_yaz(self.depolar, [(t, "{}", "2026-01-02 10:00:00") for t in turler])
+
+    def test_bos_depo_baslangic_blogu_ile_acilir_ve_butun_dugumler_ayni(self):
+        d = defter.durum(self.depolar)
+        self.assertTrue(d["saglikli"])
+        self.assertEqual(d["uzunluk"], 1)
+        self.assertEqual(len({x["bas"] for x in d["dugumler"]}), 1)
+
+    def test_yazilan_bloklar_her_dugumde_ve_zincir_gecerli(self):
+        self.yaz("UYE", "KONU")
+        for depo in self.depolar:
+            z = depo.bloklar()
+            self.assertEqual([b["tur"] for b in z], ["BASLANGIC", "UYE", "KONU"])
+            self.assertEqual(defter.zinciri_dogrula(z), (True, None))
+
+    def test_bozulan_dugum_azinlikta_kalir_ve_onarilir(self):
+        self.yaz("UYE", "KONU")
+        no = defter.boz_demo(self.depolar, "B")
+        self.assertIn(no, (1, 2))
+        d = defter.durum(self.depolar)
+        self.assertEqual({x["ad"]: x["durum"] for x in d["dugumler"]}, {"A": "UYUMLU", "B": "BOZUK", "C": "UYUMLU"})
+        self.yaz("MESAJ")                       # bozuk düğüme yazılmaz
+        self.assertEqual(len(self.depolar[1].bloklar()), 3)
+        defter.onar(self.depolar, "B")
+        self.assertTrue(defter.durum(self.depolar)["saglikli"])
+        self.assertEqual(len(self.depolar[1].bloklar()), 4)
+
+    def test_cogunluk_yoksa_onarim_reddedilir(self):
+        self.yaz("UYE")
+        defter.boz_demo(self.depolar, "A")
+        defter.boz_demo(self.depolar, "B")
+        with self.assertRaises(ValueError):
+            defter.onar(self.depolar, "A")
+
+    def test_yalniz_baslangic_blogu_varken_bozma_bir_sey_yapmaz(self):
+        self.assertIsNone(defter.boz_demo(self.depolar, "A"))
+        self.assertTrue(defter.durum(self.depolar)["saglikli"])
+
+    def test_sqlite_ve_bellek_deposu_ayni_zinciri_uretir(self):
+        """İki gerçekleme birbirinin yerine geçebilir (LSP): aynı girdiyle aynı hash'ler."""
+        with tempfile.TemporaryDirectory() as klasor:
+            sqlite_depolari = list(defter._depolar(klasor).values())
+            for kaynak in (self.depolar, sqlite_depolari):
+                defter.dugumlere_yaz(kaynak, [("UYE", '{"a": 1}', "2026-01-02 10:00:00")])
+            self.assertEqual(self.depolar[0].bloklar(), sqlite_depolari[0].bloklar())
+
+
+class CommitGozlemcisi(Ortam):
+    """Observer: veritabanı bağlantısı defteri tanımaz; defter commit olayına abonedir."""
+
+    def test_veritabani_modulu_defteri_ice_aktarmaz(self):
+        kaynak = Path(veritabani.__file__).read_text(encoding="utf-8")
+        self.assertNotIn("import defter", kaynak)
+        self.assertNotIn("defter.", kaynak.split('"""', 2)[2])
+
+    def test_defter_commit_abonesidir(self):
+        self.assertIn(defter._islem_kaydedildi, veritabani._COMMIT_ABONELERI)
+
+    def test_geri_alinan_islem_deftere_girmez(self):
+        once = defter.durum(self.db.defter_klasoru)["uzunluk"]
+        self.kisi("ali")
+        self.db.rollback()
+        self.db.commit()
+        self.assertEqual(defter.durum(self.db.defter_klasoru)["uzunluk"], once)
+
+    def test_yeni_abone_her_committe_cagrilir_ve_hatasi_digerlerini_durdurmaz(self):
+        cagrilar = []
+        abone = veritabani.commit_aboneligi(lambda db: cagrilar.append(db))
+        bozuk = veritabani.commit_aboneligi(lambda db: 1 / 0)
+        try:
+            with self.assertLogs("forum.veritabani", logging.ERROR):
+                self.kisi("ali")
+                self.db.commit()
+            self.assertEqual(cagrilar, [self.db])
+            self.assertIsNotNone(kullanicilar.takma_ad_ile(self.db, "ali"))
+        finally:
+            veritabani._COMMIT_ABONELERI.remove(abone)
+            veritabani._COMMIT_ABONELERI.remove(bozuk)
