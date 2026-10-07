@@ -10,7 +10,6 @@ from flask import Blueprint, g, jsonify, request
 
 from .. import (anlik, arama, ayarlar, bildirimler, gundem, kategoriler, defter, graf, guvenlik, kararlar, konular, kullanicilar,
                 ontoloji, oylama, uygunluk, yonetmelik)
-from ..hatalar import KuralHatasi
 from . import db_al, giris_gerekli
 
 bp = Blueprint("api", __name__, url_prefix="/api/v1")
@@ -275,8 +274,3 @@ def ara():
                               "baglanti": s["baglanti"], "alinti": s["alinti"]}
                              for s in arama.ara(db, request.args.get("q", ""))])
 
-
-@bp.errorhandler(KuralHatasi)
-def kural_hatasi(e):
-    db_al().rollback()
-    return jsonify(hata=str(e)), 422
