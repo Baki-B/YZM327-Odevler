@@ -6,6 +6,7 @@ Bir konunun yolculuğu:
   * Konuyu her üye açar; onay beklemez. Yönetmelik denetimi (hakaret, kişisel veri...) açılırken çalışır.
   * Her katılımcı bir konuda en fazla BİR fikir yazar; fikirler tartışma boyunca ve 1. tur bitene kadar yazılabilir.
   * Oylama sürerken tartışma devam eder. Eleme kuralları sonuclar.py içindedir.
+  * Hangi durumda ne yapılabileceğini konu_durumlari.py (State deseni) söyler.
 Mesajlar silinmez; düzenlenince eski hâli saklanır; gizleme oylamaya tabidir.
 """
 import json
@@ -13,6 +14,8 @@ from datetime import timedelta
 
 from . import (arama, ayarlar, bildirimler, defter, gunluk, oylama, ontoloji, uygunluk, yonetmelik, zaman)
 from .hatalar import KuralHatasi, tamsayi
+from .konu_durumlari import durumu, okunabilir_olmali, yazilabilir_olmali
+from .metin import kisalt
 
 MAX_TOPLU_GIZLEME = 20
 FIKIR_UZUNLUGU = (10, 600)
@@ -38,26 +41,18 @@ def _katilimci_olmali(db, kullanici, konu):
         raise KuralHatasi("Bu konuda gözlemcisin: " + "; ".join(m for g, m in u.satirlar if not g))
 
 
-def _canli_olmali(konu):
-    if konu["silindi"]:
-        raise KuralHatasi("Bu konu kaldırıldı.")
-
-
-def _aktif_olmali(konu):
-    _canli_olmali(konu)
-    if konu["durum"] not in ayarlar.AKTIF_DURUMLAR:
-        raise KuralHatasi("Bu konu kapandı; artık yazılamaz. Karara katılmıyorsan itiraz konusu açabilirsin.")
+def okunur_konu(db, konu_id):
+    """İçeriği gösterilebilecek konu (kaldırılmış konunun içeriği ve geçmişi gösterilmez)."""
+    konu = konu_getir(db, konu_id)
+    okunabilir_olmali(konu)
+    return konu
 
 
 def durum_degistir(db, konu_id, durum):
+    durumu(konu_getir(db, konu_id)).gecis_dogrula(durum)
     db.execute("UPDATE konular SET durum = ? WHERE id = ?", (durum, konu_id))
     gunluk.kaydet(db, None, "KONU_DURUM", f"#{konu_id} durumu: {ayarlar.KONU_DURUMLARI[durum]}")
     defter.ekle(db, "KONU_DURUM", {"konu": konu_id, "durum": durum})
-
-
-def _kisalt(metin, n):
-    metin = " ".join(metin.split())
-    return metin if len(metin) <= n else metin[: n - 1] + "…"
 
 
 # --- Konu açma ve düzenleme ---
@@ -124,11 +119,11 @@ def konu_ac(db, sahip, form, ust_id=None, itiraz_id=None):
     ust = None
     if ust_id:
         ust = konu_getir(db, ust_id)
-        _aktif_olmali(ust)
+        yazilabilir_olmali(ust)
         _katilimci_olmali(db, sahip, ust)
     if itiraz_id:
         eski = konu_getir(db, itiraz_id)
-        if eski["silindi"] or eski["durum"] not in ("KARARA_BAGLANDI", "SONUCSUZ"):
+        if not durumu(eski).kapali:
             raise KuralHatasi("İtiraz konusu yalnızca kapanmış bir konu için açılabilir.")
     alanlar = _alanlari_dogrula(db, form, ust)
     _sahibin_uygunlugu(db, sahip, alanlar, ust_id)
@@ -170,12 +165,17 @@ def _surum_kaydet(db, konu, neden):
                (konu["id"], konu["baslik"], konu["aciklama"], konu["bilirkisi_agirlik"], zaman.simdi_metin(), neden))
 
 
+def konu_duzenleme_izni(db, kullanici, konu_id):
+    """Düzenleme formu (GET) ve kaydetme (POST) aynı korumadan geçer. Döner: konu."""
+    konu = okunur_konu(db, konu_id)
+    if not durumu(konu).konu_duzenlenebilir() or konu["sahip_id"] != kullanici["id"]:
+        raise KuralHatasi("Konuyu yalnızca açan kişi ve yalnızca oylama başlamadan önce düzenleyebilir.")
+    return konu
+
+
 def konu_duzenle(db, kullanici, konu_id, form):
     """Konuyu açan kişi tartışma aşamasında başlığı ve açıklamayı düzenleyebilir; eski hâli saklanır."""
-    konu = konu_getir(db, konu_id)
-    _canli_olmali(konu)
-    if konu["durum"] != "TARTISMA" or konu["sahip_id"] != kullanici["id"]:
-        raise KuralHatasi("Konuyu yalnızca açan kişi ve yalnızca oylama başlamadan önce düzenleyebilir.")
+    konu = konu_duzenleme_izni(db, kullanici, konu_id)
     ust = konu_getir(db, konu["ust_id"]) if konu["ust_id"] else None
     alanlar = _alanlari_dogrula(db, dict(form, kategori_id=konu["kategori_id"], konum_id=konu["konum_id"],
                                          min_yas=konu["min_yas"], max_yas=konu["max_yas"]), ust)
@@ -204,17 +204,18 @@ def fikirler(db, konu_id):
 
 def fikir_yazilabilir_mi(konu):
     """Fikirler tartışma boyunca ve 1. tur bitene kadar yazılabilir."""
-    return not konu["silindi"] and (konu["durum"] == "TARTISMA" or (konu["durum"] == "OYLAMA" and konu["tur"] == 1))
+    return durumu(konu).fikir_yazilabilir(konu)
 
 
 def kullanicinin_fikri(db, konu_id, kullanici_id):
-    return db.execute("SELECT * FROM mesajlar WHERE konu_id = ? AND yazar_id = ? AND tip = 'FIKIR'",
+    """Kişinin yarışan (gizlenmemiş) fikri. Fikri oylamayla gizlenen katılımcı yeni bir fikir yazabilir."""
+    return db.execute("SELECT * FROM mesajlar WHERE konu_id = ? AND yazar_id = ? AND tip = 'FIKIR' AND gizli = 0",
                       (konu_id, kullanici_id)).fetchone()
 
 
 def fikir_yaz(db, kullanici, konu_id, icerik):
     konu = konu_getir(db, konu_id)
-    _aktif_olmali(konu)
+    yazilabilir_olmali(konu)
     _katilimci_olmali(db, kullanici, konu)
     if not fikir_yazilabilir_mi(konu):
         raise KuralHatasi("1. tur bittiği için artık yeni fikir yazılamaz.")
@@ -228,7 +229,7 @@ def fikir_yaz(db, kullanici, konu_id, icerik):
     gunluk.kaydet(db, kullanici["id"], "MESAJ", f"#{konu_id} konusuna fikir yazdı")
     tur = oylama.acik_teklif(db, "KARAR", konu_id=konu_id)
     if tur:                                 # 1. tur sürüyorsa fikir oylamaya da eklenir
-        oylama.secenek_ekle(db, tur["id"], _kisalt(icerik, 200), mesaj_id)
+        oylama.secenek_ekle(db, tur["id"], kisalt(icerik, 200), mesaj_id)
     if konu["sahip_id"] != kullanici["id"]:
         bildirimler.gonder(db, konu["sahip_id"], f"Konuna yeni bir fikir yazıldı: {konu['baslik']}",
                            f"/konu/{konu_id}#m{mesaj_id}")
@@ -246,7 +247,7 @@ def oylamayi_baslat(db, konu_id):
     defter.ekle(db, "KONU_DURUM", {"konu": konu_id, "durum": "OYLAMA", "tur": 1})
     liste = fikirler(db, konu_id)
     teklif_id = oylama.teklif_ac(db, "KARAR", None, konu_id=konu_id, tur_no=1,
-                                 secenekler=[(_kisalt(m["icerik"], 200), m["id"]) for m in liste])
+                                 secenekler=[(kisalt(m["icerik"], 200), m["id"]) for m in liste])
     saat = yonetmelik.deger(db, "SURE_TUR1_SAAT")
     sistem_mesaji(db, konu_id, f"Fikir oylaması başladı (1. tur, {saat} saat). Şu an {len(liste)} fikir var; tur bitene "
                                "kadar yeni fikir yazılabilir. Tartışma devam ediyor.")
@@ -277,7 +278,7 @@ def itirazlar(db, konu_id):
 def kaldirma_teklifi(db, kullanici, konu_id, gerekce, katilim_denetimi=True):
     """katilim_denetimi=False: yönetici bir şikayeti oylamaya alırken gözlemci olduğu konuda da oylama açabilir."""
     konu = konu_getir(db, konu_id)
-    _canli_olmali(konu)
+    okunabilir_olmali(konu)
     if katilim_denetimi:
         _katilimci_olmali(db, kullanici, konu)
     gerekce = (gerekce or "").strip()
@@ -332,7 +333,7 @@ def yz_mesaji(db, konu_id, yz_hesabi, icerik, ust_mesaj_id=None):
 
 def mesaj_yaz(db, kullanici, konu_id, tip, icerik, ust_mesaj_id=None):
     konu = konu_getir(db, konu_id)
-    _aktif_olmali(konu)
+    yazilabilir_olmali(konu)
     _katilimci_olmali(db, kullanici, konu)
     if tip not in ayarlar.KULLANICI_MESAJ_TIPLERI:
         raise KuralHatasi("Geçersiz mesaj türü.")
@@ -358,17 +359,32 @@ def mesaj_yaz(db, kullanici, konu_id, tip, icerik, ust_mesaj_id=None):
     return mesaj_id
 
 
-def mesaj_duzenle(db, kullanici, mesaj_id, icerik):
-    """Yazan kişi mesajını düzenleyebilir; eski hâli mesaj geçmişinde herkese görünür."""
+def mesaj_duzenleme_izni(db, kullanici, mesaj_id):
+    """Düzenleme formu (GET) ve kaydetme (POST) aynı korumadan geçer: gizlenmiş mesajın metni formda bile gösterilmez."""
     m = mesaj_getir(db, mesaj_id)
     if m["yazar_id"] != kullanici["id"] or m["tip"] in ("SISTEM", "YZ"):
         raise KuralHatasi("Sadece kendi mesajını düzenleyebilirsin.")
     if m["gizli"]:
         raise KuralHatasi("Gizlenmiş bir mesaj düzenlenemez.")
     konu = konu_getir(db, m["konu_id"])
-    _aktif_olmali(konu)
-    if m["tip"] == "FIKIR" and konu["durum"] != "TARTISMA":
+    yazilabilir_olmali(konu)
+    if m["tip"] == "FIKIR" and not durumu(konu).fikir_duzenlenebilir():
         raise KuralHatasi("Oylama başladıktan sonra fikir değiştirilemez; oylanan metin aynı kalmalı.")
+    return m
+
+
+def okunur_mesaj(db, mesaj_id):
+    """Geçmişi gösterilebilecek mesaj: gizlenmemiş ve konusu kaldırılmamış."""
+    m = mesaj_getir(db, mesaj_id)
+    if m["gizli"]:
+        raise KuralHatasi("Bu mesaj oylamayla gizlendi; geçmişi de gösterilmiyor.")
+    okunur_konu(db, m["konu_id"])
+    return m
+
+
+def mesaj_duzenle(db, kullanici, mesaj_id, icerik):
+    """Yazan kişi mesajını düzenleyebilir; eski hâli mesaj geçmişinde herkese görünür."""
+    m = mesaj_duzenleme_izni(db, kullanici, mesaj_id)
     icerik = (icerik or "").strip()
     alt, ust = FIKIR_UZUNLUGU if m["tip"] == "FIKIR" else (2, 5000)
     if not alt <= len(icerik) <= ust:
@@ -421,7 +437,7 @@ def mesaj_silme_teklifi(db, kullanici, mesaj_idleri, neden, aciklama, katilim_de
     if any(m["gizli"] for m in mesajlar):
         raise KuralHatasi("Seçilen mesajlardan biri zaten gizlenmiş.")
     konu = konu_getir(db, konu_id)
-    _canli_olmali(konu)
+    okunabilir_olmali(konu)
     if katilim_denetimi:
         _katilimci_olmali(db, kullanici, konu)
     if neden not in ayarlar.SILME_NEDENLERI:
@@ -442,6 +458,13 @@ def mesaji_gizle(db, mesaj_id, not_metni, teklif_id):
     db.execute("UPDATE mesajlar SET gizli = 1, gizlenme_notu = ? WHERE id = ?", (not_metni, mesaj_id))
     arama.kaldir(db, "MESAJ", mesaj_id)
     defter.ekle(db, "GIZLEME", {"mesaj": mesaj_id, "teklif": teklif_id})
+    # Gizlenen fikir süren turda yarışmaz (oylama.sayim onu dışarıda bırakır); ona oy verenler oyunu değiştirebilir.
+    for r in db.execute("""SELECT DISTINCT o.kullanici_id, t.id AS teklif_id FROM secenekler s
+                           JOIN teklifler t ON t.id = s.teklif_id AND t.durum = 'ACIK'
+                           JOIN oylar o ON o.teklif_id = t.id AND o.secim = CAST(s.id AS TEXT)
+                           WHERE s.mesaj_id = ?""", (mesaj_id,)).fetchall():
+        bildirimler.gonder(db, r["kullanici_id"], "Oy verdiğin fikir oylamayla gizlendi; tur bitene kadar oyunu "
+                                                  "başka bir fikre verebilirsin.", f"/oylama/{r['teklif_id']}")
 
 
 # --- Okuma ---

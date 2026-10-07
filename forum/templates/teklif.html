@@ -81,8 +81,8 @@
       {% set mevcut = durum.oy.secim if durum.oy else None %}
       {% if fikir_oylamasi %}
         {% for s in secenekler %}
-          <label class="secenek"><input type="radio" name="secim" value="{{ s.id }}" required {{ 'checked' if mevcut == s.id|string }}>
-            <span>{{ s.metin }}{% if s.mesaj_id %} <a class="soluk kucuk" href="{{ url_for('konular.konu', konu_id=t.konu_id, _anchor='m' ~ s.mesaj_id) }}">(tartışmasını gör)</a>{% endif %}</span></label>
+          <label class="secenek{{ ' soluk' if s.gizli }}"><input type="radio" name="secim" value="{{ s.id }}" required {{ 'checked' if mevcut == s.id|string }} {{ 'disabled' if s.gizli }}>
+            <span>{{ s.metin }}{% if s.mesaj_id and not s.gizli %} <a class="soluk kucuk" href="{{ url_for('konular.konu', konu_id=t.konu_id, _anchor='m' ~ s.mesaj_id) }}">(tartışmasını gör)</a>{% endif %}</span></label>
         {% else %}<p class="soluk">Henüz fikir yazılmadı. Konu sayfasından bir fikir ekleyebilirsin.</p>{% endfor %}
         <label class="secenek"><input type="radio" name="secim" value="CEKIMSER" required {{ 'checked' if mevcut == 'CEKIMSER' }}>
           <span><strong>Çekimser</strong> <small class="soluk">Hiçbir fikri desteklemiyorum. Toplamda sayılır, fikirlerin oranını düşürür.</small></span></label>

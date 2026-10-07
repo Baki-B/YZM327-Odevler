@@ -266,8 +266,8 @@ class FikirOylamasi(Ortam):
         s = {"yeter": yeter, "katilan": 10, "gerekli": 2,
              "secenekler": [{"anahtar": str(i), "oran": o, "kisi": 1 if o else 0, "metin": f"f{i}"}
                             for i, o in enumerate(oranlar)]}
-        sonuc, kalan, _ = sonuclar.tur_karari(self.db, tur_no, s)
-        return sonuc, len(kalan)
+        k = sonuclar.tur_karari(tur_no, s, *sonuclar.tur_kurallari(self.db, tur_no))   # saf fonksiyon: kurallar parametre
+        return k.sonuc, len(k.kalanlar)
 
     def test_eleme_esikleri(self):
         self.assertEqual(self._karar(1, [.50, .30, .06, .049, .04]), ("DEVAM", 3))    # 1. tur: %5 altı elenir

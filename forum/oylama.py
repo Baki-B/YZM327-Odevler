@@ -79,8 +79,15 @@ def _acilis_bildirimi(db, t):
     bildirimler.coklu_gonder(db, alicilar, f"Yeni oylama: {baslik}", f"/oylama/{t['id']}", haric=t["acan_id"])
 
 
+GIZLENEN_FIKIR = "Bu fikir oylamayla gizlendi."
+
+
 def secenekler(db, teklif_id):
-    return db.execute("SELECT * FROM secenekler WHERE teklif_id = ? ORDER BY id", (teklif_id,)).fetchall()
+    """Fikir oylamasının seçenekleri. `gizli`: fikrin mesajı oylamayla gizlendi; seçenek artık yarışmaz ve metni
+    gösterilmez (seçenek silinmez, çünkü ona verilmiş oylar yeter sayıda sayılmaya devam eder)."""
+    return [dict(s, metin=GIZLENEN_FIKIR if s["gizli"] else s["metin"]) for s in db.execute(
+        """SELECT s.*, COALESCE(m.gizli, 0) AS gizli FROM secenekler s LEFT JOIN mesajlar m ON m.id = s.mesaj_id
+           WHERE s.teklif_id = ? ORDER BY s.id""", (teklif_id,))]
 
 
 def secim_anahtarlari(db, teklif):
@@ -118,6 +125,8 @@ def oy_ver(db, teklif_id, kullanici, secim, gerekce=""):
         raise KuralHatasi(aciklama)
     if secim not in secim_anahtarlari(db, t):
         raise KuralHatasi("Geçersiz seçim.")
+    if t["tip"] == "KARAR" and any(str(s["id"]) == secim and s["gizli"] for s in secenekler(db, teklif_id)):
+        raise KuralHatasi("Bu fikir oylamayla gizlendi; başka bir seçenek seç.")
     gerekce = (gerekce or "").strip()
     if agirlik > 1 and len(gerekce) < 10:
         raise KuralHatasi(f"Uzman olarak oyun {agirlik} sayıldığı için gerekçe yazmalısın (en az 10 karakter). "
@@ -184,7 +193,7 @@ def sayim(db, teklif):
     fikir_oylamasi = teklif["tip"] == "KARAR"
     if fikir_oylamasi:
         tablo = {str(s["id"]): {"anahtar": str(s["id"]), "metin": s["metin"], "mesaj_id": s["mesaj_id"],
-                                "agirlik": 0, "kisi": 0} for s in secenekler(db, teklif["id"])}
+                                "gizli": bool(s["gizli"]), "agirlik": 0, "kisi": 0} for s in secenekler(db, teklif["id"])}
         tablo[CEKIMSER] = {"anahtar": CEKIMSER, "metin": "Çekimser", "mesaj_id": None, "agirlik": 0, "kisi": 0}
     else:
         tablo = {s: {"anahtar": s, "metin": ayarlar.SECIM_ADLARI[s], "agirlik": 0, "kisi": 0} for s in EVET_HAYIR}
@@ -211,8 +220,8 @@ def sayim(db, teklif):
     cekimser = tablo[CEKIMSER]
     if fikir_oylamasi:
         sirali = sorted((s for s in tablo.values() if s["anahtar"] != CEKIMSER),
-                        key=lambda s: (-s["oran"], -s["agirlik"], int(s["anahtar"])))
-        onde = sirali[0] if sirali and sirali[0]["kisi"] > 0 else None
+                        key=lambda s: (s["gizli"], -s["oran"], -s["agirlik"], int(s["anahtar"])))
+        onde = sirali[0] if sirali and sirali[0]["kisi"] > 0 and not sirali[0]["gizli"] else None
         agirlik_ok = kisi_ok = kabul = False          # fikir oylamasında sonucu eleme kuralları belirler (sonuclar.py)
     else:
         sirali = list(tablo.values())
@@ -245,8 +254,10 @@ def sonuclandir(db, teklif_id):
     if t["durum"] != "ACIK":
         return
     s = sayim(db, t)
+    from . import sonuclar   # döngüsel içe aktarmayı önlemek için burada
     if t["tip"] == "KARAR":
         durum = "BITTI" if s["yeter"] else "YETERSIZ"
+        s["tur"] = sonuclar.tur_karari(t["tur_no"], s, *sonuclar.tur_kurallari(db, t["tur_no"])).sozluk()
     else:
         durum = "KABUL" if s["kabul"] else ("YETERSIZ" if not s["yeter"] else "RET")
     sonuc_json = json.dumps(s, ensure_ascii=False)
@@ -266,7 +277,6 @@ def sonuclandir(db, teklif_id):
         bildirimler.coklu_gonder(db, oy_verenler + ([t["acan_id"]] if t["acan_id"] else []),
                                  f"Oylama sonuçlandı ({ayarlar.TEKLIF_DURUMLARI[durum].lower()}): {teklif_basligi(db, t)}",
                                  f"/oylama/{teklif_id}")
-    from . import sonuclar   # döngüsel içe aktarmayı önlemek için burada
     sonuclar.uygula(db, teklif_getir(db, teklif_id), s, durum)
 
 

@@ -127,7 +127,7 @@ def konu_yeni():
 @giris_gerekli
 def konu_duzenle(konu_id):
     db = db_al()
-    k = konular.konu_getir(db, konu_id)
+    k = konular.konu_duzenleme_izni(db, g.kullanici, konu_id)
     if request.method == "POST":
         konular.konu_duzenle(db, g.kullanici, konu_id, request.form)
         db.commit()
@@ -214,7 +214,7 @@ def kaldir(konu_id):
 @bp.get("/konu/<int:konu_id>/gecmis")
 def konu_gecmisi(konu_id):
     db = db_al()
-    return render_template("konu_gecmis.html", konu=konular.konu_getir(db, konu_id),
+    return render_template("konu_gecmis.html", konu=konular.okunur_konu(db, konu_id),
                            surumler=konular.konu_surumleri(db, konu_id))
 
 
@@ -222,11 +222,7 @@ def konu_gecmisi(konu_id):
 @giris_gerekli
 def ozet_iste(konu_id):
     db = db_al()
-    k = konular.konu_getir(db, konu_id)
-    if not uygunluk.uygunluk(db, g.kullanici, k).katilimci or k["durum"] not in ayarlar.AKTIF_DURUMLAR:
-        raise KuralHatasi("Özet, süren bir konuda katılımcılar tarafından istenebilir.")
-    if not yz.tartisma_ozeti(db, konu_id):
-        raise KuralHatasi("Forumda özet yazacak bir yapay zeka hesabı yok.")
+    yz.ozet_iste(db, g.kullanici, konu_id)
     db.commit()
     return redirect(url_for("konular.konu", konu_id=konu_id, _anchor="mesajlar"))
 
@@ -257,7 +253,7 @@ def mesaj_yaz(konu_id):
 @giris_gerekli
 def mesaj_duzenle(mesaj_id):
     db = db_al()
-    m = konular.mesaj_getir(db, mesaj_id)
+    m = konular.mesaj_duzenleme_izni(db, g.kullanici, mesaj_id)
     if request.method == "POST":
         konular.mesaj_duzenle(db, g.kullanici, mesaj_id, request.form.get("icerik"))
         db.commit()
@@ -269,9 +265,7 @@ def mesaj_duzenle(mesaj_id):
 @bp.get("/mesaj/<int:mesaj_id>/gecmis")
 def mesaj_gecmisi(mesaj_id):
     db = db_al()
-    m = konular.mesaj_getir(db, mesaj_id)
-    if m["gizli"]:
-        raise KuralHatasi("Bu mesaj oylamayla gizlendi; geçmişi de gösterilmiyor.")
+    m = konular.okunur_mesaj(db, mesaj_id)
     return render_template("mesaj_gecmis.html", mesaj=m, surumler=konular.mesaj_surumleri(db, mesaj_id))
 
 

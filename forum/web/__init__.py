@@ -13,6 +13,7 @@ from flask import (abort, current_app, flash, g, jsonify, redirect, render_templ
 from .. import (ayarlar, bildirimler, gorevler, guvenlik, konular, kullanicilar, ontoloji, oylama, sikayetler,
                 veritabani, yonetim, yonetmelik, zaman)
 from ..hatalar import KuralHatasi
+from ..metin import yuzde
 from . import ikonlar, yardimcilar
 
 log = logging.getLogger(__name__)
@@ -198,9 +199,7 @@ def kur(app):
     def kategori_rengi(kategori_id):
         return ontoloji.kategori_rengi(db_al(), kategori_id) if kategori_id else ayarlar.VARSAYILAN_KATEGORI_RENGI
 
-    @app.template_filter("yuzde")
-    def yuzde(deger):
-        return f"%{round((deger or 0) * 100)}"
+    app.template_filter("yuzde")(yuzde)
 
     @app.template_filter("konum")
     def konum(konum_id):

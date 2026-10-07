@@ -9,6 +9,7 @@ import re
 
 from . import ayarlar, gunluk, ontoloji, zaman
 from .hatalar import KuralHatasi
+from .metin import yuzde
 
 KABA_IFADELER = ["aptal", "salak", "gerizekal", "geri zekal", "cahil", "ahmak", "beyinsiz", "serefsiz",
                  "haysiyetsiz", "mankafa", "dangalak", "embesil"]
@@ -142,7 +143,7 @@ def deger_metni(tur, deger_):
     if tur == "esik":
         return ayarlar.ESIKLER[deger_]["ad"].lower() + f" ({ayarlar.ESIKLER[deger_]['kisa']})"
     if tur == "oran":
-        return f"%{round(float(deger_) * 100)}"
+        return yuzde(float(deger_))
     return str(deger_)
 
 
