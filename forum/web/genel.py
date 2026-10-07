@@ -75,17 +75,10 @@ def makbuz_dogrula():
     elif bulunan:
         blok, secim, _ = bulunan
         flash(f"Oyun defterde kayıtlı: blok #{blok['no']} ({blok['hash'][:16]}…). Seçimin: "
-              f"“{_secim_metni(db, t, secim)}”. Bu bilgiyi sadece makbuz sahibi görebilir.", "basari")
+              f"“{oylama.turu(t).secim_metni(db, t, secim)}”. Bu bilgiyi sadece makbuz sahibi görebilir.", "basari")
     else:
         flash("Bu makbuzla eşleşen bir oy bulunamadı (oyunu sonradan değiştirdiysen yeni makbuzu kullan).", "hata")
     return redirect(url_for("genel.defter_sayfasi"))
-
-
-def _secim_metni(db, t, secim):
-    if t["tip"] == "KARAR" and secim != oylama.CEKIMSER:
-        r = db.execute("SELECT metin FROM secenekler WHERE id = ?", (int(secim),)).fetchone()
-        return r["metin"] if r else secim
-    return ayarlar.SECIM_ADLARI.get(secim, secim)
 
 
 # --- Graf, arama, günlük ---

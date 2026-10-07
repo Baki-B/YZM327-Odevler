@@ -6,7 +6,7 @@ sunucu --demo ile başlatılırsa "süreyi ilerlet" düğmeleri görünür (her 
 """
 from flask import Blueprint, Response, current_app, flash, g, redirect, render_template, request, url_for
 
-from .. import (ayarlar, defter, gunluk, konular, kullanicilar, ontoloji, oylama, sikayetler, uzmanlik, yonetim,
+from .. import (ayarlar, defter, gorevler, gunluk, kullanicilar, ontoloji, oylama, sikayetler, uzmanlik, yonetim,
                zaman)
 from ..hatalar import KuralHatasi
 from ..metin import site_ici_yol_mu
@@ -121,15 +121,7 @@ def konu_ilerlet(konu_id):
     """Sunum kipi: tartışma süresini beklemeden oylamayı başlatır ya da açık turu sonuçlandırır."""
     _demo_olmali()
     db = db_al()
-    k = konular.konu_getir(db, konu_id)
-    if k["durum"] == "TARTISMA":
-        konular.oylamayi_baslat(db, konu_id)
-    elif k["durum"] == "OYLAMA":
-        t = oylama.acik_teklif(db, "KARAR", konu_id=konu_id)
-        if t:
-            oylama.sonuclandir(db, t["id"])
-    else:
-        raise KuralHatasi("Bu konu kapanmış.")
+    k = gorevler.konuyu_ilerlet(db, konu_id)
     gunluk.kaydet(db, g.kullanici["id"], "SURE", f"Sunum kipi: #{konu_id} “{k['baslik']}” için süre ilerletildi")
     db.commit()
     flash("Süre ilerletildi.", "bilgi")
@@ -140,7 +132,7 @@ def konu_ilerlet(konu_id):
 def oylamalar():
     db = db_al()
     acik = [{"t": t, "baslik": oylama.teklif_basligi(db, t),
-             "oy": db.execute("SELECT COUNT(*) FROM oylar WHERE teklif_id = ?", (t["id"],)).fetchone()[0]}
+             "oy": oylama.oy_sayisi(db, t["id"])}
             for t in db.execute("SELECT * FROM teklifler WHERE durum = 'ACIK' ORDER BY bitis")]
     biten = [{"t": t, "baslik": oylama.teklif_basligi(db, t)}
              for t in db.execute("SELECT * FROM teklifler WHERE durum != 'ACIK' ORDER BY id DESC LIMIT 20")]

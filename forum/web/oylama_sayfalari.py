@@ -2,7 +2,7 @@ import json
 
 from flask import Blueprint, flash, g, redirect, render_template, request, session, url_for
 
-from .. import kararlar, konular, kullanicilar, oylama, sonuclar, uygunluk, uzmanlik
+from .. import kararlar, konular, kullanicilar, oylama, sonuclar, uygunluk
 from ..metin import yuzde
 from . import db_al, giris_gerekli, sayfa_no
 from .yardimcilar import sayfala
@@ -24,7 +24,7 @@ def gundem():
 
 def _tur_bilgisi(db, t, karar=None):
     """Fikir oylaması turunun kuralı: bu turda hangi oranın altı elenir? Kapanmış turda, kapanış anındaki kurallar."""
-    if t["tip"] != "KARAR":
+    if not oylama.turu(t).fikir_oylamasi:
         return None
     ezici, eleme = (karar.ezici, karar.eleme) if karar else sonuclar.tur_kurallari(db, t["tur_no"])
     return {"no": t["tur_no"], "son": eleme is None, "ezici": yuzde(ezici), "eleme": None if eleme is None else yuzde(eleme)}
@@ -34,41 +34,24 @@ def _tur_bilgisi(db, t, karar=None):
 def teklif(teklif_id):
     db = db_al()
     t = oylama.teklif_getir(db, teklif_id)
-    veri = json.loads(t["veri"] or "{}")
+    tur_ = oylama.turu(t)
     konu = konular.konu_getir(db, t["konu_id"]) if t["konu_id"] else None
-    gizli_konu = bool(konu and konu["silindi"])          # kaldırılmış konunun mesajları burada da gösterilmez
-    hedef_mesajlar, aday = [], None
-    kategori_onerisi = None
-    if t["tip"] == "KATEGORI":
-        from .. import kategoriler as _k
-        kategori_onerisi = {"yol": _k.oneri_basligi(db, veri), "ust": veri.get("ust_id"), "kavramlar": veri.get("kavramlar", []),
-                            "eklenen": db.execute("SELECT id FROM kategoriler WHERE ad = ? AND ust_id IS ?",
-                                                  (veri["ad"], veri.get("ust_id"))).fetchone() if t["durum"] == "KABUL" else None}
-    if t["tip"] == "MESAJ_SILME" and not gizli_konu:
-        idler = veri.get("mesajlar", [t["hedef_id"]])
-        hedef_mesajlar = db.execute(
-            f"""SELECT m.*, k.takma_ad, k.yz_mi FROM mesajlar m LEFT JOIN kullanicilar k ON k.id = m.yazar_id
-                WHERE m.id IN ({','.join('?' * len(idler))}) ORDER BY m.id""", idler).fetchall()
-    if t["tip"] == "UZMANLIK":
-        k = kullanicilar.getir(db, t["hedef_id"])
-        aday = {"k": k, "sart": uzmanlik.on_sartlar(db, k["id"], veri["kategori_id"]),
-                "kontenjan": uzmanlik.kontenjan(db, veri["kategori_id"])}
     makbuz = session.pop("son_makbuz", None)
     if makbuz and makbuz.get("teklif") != teklif_id:
         makbuz = None
     sonuc = oylama.sonuc(t)
     tur_sonucu = karar = None
-    if t["tip"] == "KARAR" and sonuc and t["durum"] in ("BITTI", "YETERSIZ"):
+    if tur_.fikir_oylamasi and sonuc and t["durum"] in ("BITTI", "YETERSIZ"):
         karar = sonuclar.tur_sonucu(db, t, sonuc)
         tur_sonucu = {"karar": karar.sonuc, "kalanlar": set(karar.kalanlar), "aciklama": karar.aciklama}
     return render_template(
-        "teklif.html", t=t, veri=veri, konu=konu, baslik=oylama.teklif_basligi(db, t),
-        acan=kullanicilar.getir(db, t["acan_id"]) if t["acan_id"] else None,
+        "teklif.html", t=t, veri=json.loads(t["veri"] or "{}"), konu=konu, baslik=tur_.baslik(db, t),
+        fikir_oylamasi=tur_.fikir_oylamasi, acan=kullanicilar.getir(db, t["acan_id"]) if t["acan_id"] else None,
         secenekler=oylama.secenekler(db, teklif_id), durum=oylama.oy_durumu(db, t, g.kullanici),
-        sonuc=sonuc, tur_sonucu=tur_sonucu, tur_bilgisi=_tur_bilgisi(db, t, karar), hedef_mesajlar=hedef_mesajlar, aday=aday,
-        kategori_onerisi=kategori_onerisi,
-        oy_sayisi=db.execute("SELECT COUNT(*) FROM oylar WHERE teklif_id = ?", (teklif_id,)).fetchone()[0],
-        hak_sahibi=len(uygunluk.oy_hakki_olanlar(db, uygunluk.teklif_baglami(db, t))), makbuz=makbuz,
+        sonuc=sonuc, tur_sonucu=tur_sonucu, tur_bilgisi=_tur_bilgisi(db, t, karar),
+        oy_sayisi=oylama.oy_sayisi(db, teklif_id),
+        hak_sahibi=len(uygunluk.oy_hakki_olanlar(db, oylama.teklif_baglami(db, t))), makbuz=makbuz,
+        **tur_.sayfa_verisi(db, t),           # türe özgü bölümün verisi (teklif/_<tür>.html)
     )
 
 

@@ -36,9 +36,10 @@ ESIKLER = {
 }
 
 # --- Oylama türleri ---
-# esik/sure: yönetmelik parametresinin kodu. KARAR (fikir oylaması turu) eşik yerine eleme kurallarını kullanır.
+# esik/sure: yönetmelik parametresinin kodu. Davranışları teklif_turleri.py'deki sınıflardadır (Strategy + Registry).
+# KARAR (fikir oylaması turu) eşik yerine eleme kurallarını kullanır; süresi tur numarasına göre seçilir.
 TEKLIF_TIPLERI = {
-    "KARAR":       {"ad": "Fikir oylaması", "esik": None, "sure": "SURE_TUR_SAAT"},
+    "KARAR":       {"ad": "Fikir oylaması", "esik": None, "sure": None},
     "MESAJ_SILME": {"ad": "Mesaj gizleme", "esik": "ESIK_MESAJ_SILME", "sure": "SURE_USUL_SAAT"},
     "KONU_SILME":  {"ad": "Konu kaldırma", "esik": "ESIK_KONU_SILME", "sure": "SURE_USUL_SAAT"},
     "UZMANLIK":    {"ad": "Uzmanlık başvurusu", "esik": "ESIK_UZMANLIK", "sure": "SURE_USUL_SAAT"},

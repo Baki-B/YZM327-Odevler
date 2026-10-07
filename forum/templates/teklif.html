@@ -2,7 +2,6 @@
 {% from "_makrolar.html" import csrf, kisi, teklif_durumu, esik, sonuc_tablosu %}
 {% block baslik %}{{ baslik }}{% endblock %}
 {% block icerik %}
-{% set fikir_oylamasi = t.tip == 'KARAR' %}
 <section class="kart orta">
   {% if konu %}<p class="soluk"><a href="{{ url_for('konular.konu', konu_id=konu.id) }}">← {{ konu.baslik }}</a></p>
   {% elif t.tip == 'YONETMELIK' %}<p class="soluk"><a href="{{ url_for('genel.yonetmelik_sayfasi') }}">← Yönetmelik</a></p>{% endif %}
@@ -12,51 +11,7 @@
       {% if t.durum == 'ACIK' %}bitiş {{ t.bitis|tarih }} ({{ t.bitis|kalan }}){% else %}kapanış {{ t.kapanis|tarih }}{% endif %}</span></p>
   {% if t.gerekce %}<p><strong>Gerekçe:</strong> {{ t.gerekce|bicimle }}</p>{% endif %}
 
-  {% if fikir_oylamasi and tur_bilgisi %}
-    <div class="kutucuk">
-      <p><strong>{{ tur_bilgisi.no }}. tur kuralı:</strong>
-        {% if tur_bilgisi.son %}Son tur. En yüksek oranı alan fikir kabul edilir ve konu kapanır.
-        {% else %}Tur bitince oranı {{ tur_bilgisi.eleme }} altında kalan fikirler elenir. Geriye tek fikir kalırsa o kabul edilir.{% endif %}
-        Herhangi bir fikir {{ tur_bilgisi.ezici }} ya da daha fazla alırsa hemen kabul edilir.</p>
-      <p class="soluk kucuk">Bir fikrin oranı iki ayrı hesaplanır (ağırlıklı oylarda ve kişi sayısında); küçük olan geçerlidir. Çekimser oylar toplamda sayılır.</p>
-    </div>
-  {% elif t.tip == 'MESAJ_SILME' and hedef_mesajlar %}
-    {% if hedef_mesajlar|length > 1 %}<p><strong>Tartışmanın bir kısmı:</strong> {{ hedef_mesajlar|length }} mesaj tek oylamada.</p>{% endif %}
-    {% for hm in hedef_mesajlar %}
-    <div class="mesaj tip-{{ hm.tip|lower }}">
-      <img class="avatar mesaj-avatar" src="{{ avatar(hm.takma_ad, hm.yz_mi) }}" alt="">
-      <div class="mesaj-govde">
-        <header>{{ kisi(hm.takma_ad, hm.yz_mi, resim=False) }} <span class="rozet mtip">{{ ayarlar.MESAJ_TIPLERI[hm.tip] }}</span>
-          <span class="soluk kucuk">#{{ hm.id }} · {{ hm.olusturma|tarih }}</span></header>
-        {% if hm.gizli %}<p class="iz">{{ ikon('oy') }} {{ hm.gizlenme_notu }}</p>{% else %}<div class="icerik">{{ hm.icerik|bicimle }}</div>{% endif %}
-      </div>
-    </div>
-    {% endfor %}
-    <p class="soluk kucuk">Kabul edilirse mesajlar silinmez, gizlenir: yerinde iz kalır, özetleri kayıt defterinde durur.</p>
-  {% elif t.tip == 'UZMANLIK' and aday %}
-    <p>{{ kisi(aday.k.takma_ad, aday.k.yz_mi) }} için <strong>{{ veri.kategori_id|kategori }}</strong> alanında uzmanlık isteniyor.
-      Kabul edilirse {{ parametre('UZMAN_SURE_GUN') }} gün boyunca bu alandaki fikir oylamalarında oyu {{ parametre('UZMAN_AGIRLIK') }} sayılır.</p>
-    <ul class="kontrol-listesi">
-      <li class="{{ 'tamam' if aday.sart.mesaj >= aday.sart.gereken_mesaj else 'eksik' }}">Ön şart: bu alanda {{ aday.sart.mesaj }} mesaj (en az {{ aday.sart.gereken_mesaj }})</li>
-      <li class="{{ 'tamam' if aday.sart.konu >= aday.sart.gereken_konu else 'eksik' }}">Ön şart: bu alanda {{ aday.sart.konu }} farklı konu (en az {{ aday.sart.gereken_konu }})</li>
-      <li class="{{ 'tamam' if aday.kontenjan.yer_var else 'eksik' }}">Kontenjan: {{ aday.kontenjan.alan }} alanında {{ aday.kontenjan.dolu }}/{{ aday.kontenjan.toplam }} uzman</li>
-    </ul>
-    <p class="soluk kucuk">Bu oylamaya yalnızca {{ aday.kontenjan.alan }} alanındaki konulara yazmış üyeler katılır. Herkesin oyu 1 sayılır; aday oy kullanamaz.</p>
-  {% elif t.tip == 'YONETMELIK' %}
-    <div class="kutucuk"><p><strong>Önerilen değişiklik:</strong> {{ veri.aciklama }}</p>
-      {% if veri.tur == 'BEYAN' %}<p><em>{{ veri.baslik }}:</em> {{ veri.metin }}</p>{% endif %}
-      {% if veri.korunan %}<p class="uyari hata">Bu değişiklik korunan bir temel hak maddesine dokunuyor; {{ ayarlar.ESIKLER[t.esik].ad|lower }} gerekir.</p>{% endif %}
-      <p class="soluk kucuk">Yönetmelik oylamasında herkesin oyu 1 sayılır.</p></div>
-  {% elif t.tip == 'KATEGORI' and kategori_onerisi %}
-    <div class="kutucuk"><p><strong>Önerilen kategori:</strong> {{ kategori_onerisi.yol }}
-      <span class="soluk kucuk">({{ 'alt kategori' if kategori_onerisi.ust else 'yeni ana kategori' }})</span></p>
-      {% if kategori_onerisi.kavramlar %}<p class="kucuk">Kavramlar: {{ kategori_onerisi.kavramlar|join(', ') }}</p>{% endif %}
-      {% if kategori_onerisi.eklenen %}<p>{{ ikon('tik') }} Kategori eklendi: <a href="{{ url_for('konular.ana_sayfa', kategori=kategori_onerisi.eklenen.id) }}">konularına git →</a></p>{% endif %}
-      <p class="soluk kucuk">Kabul edilirse kategori hemen eklenir ve herkes o kategoride konu açabilir. Bu oylamada herkesin oyu 1 sayılır.
-        <a href="{{ url_for('konular.kategori_sayfasi') }}">Bütün kategoriler →</a></p></div>
-  {% elif t.tip == 'KONU_SILME' and konu %}
-    <p>Oylanan: <strong>“{{ konu.baslik }}”</strong> konusunun (ve alt konularının) kaldırılması. Kabul edilirse konu gizlenir, yerinde iz kalır.</p>
-  {% endif %}
+  {% include 'teklif/_' ~ t.tip|lower ~ '.html' ignore missing %}
 </section>
 
 <section class="kart orta" id="oy">

@@ -8,6 +8,8 @@ import threading
 import time
 
 from . import konular, oylama, veritabani, zaman
+from .hatalar import KuralHatasi
+from .konu_durumlari import durumu
 
 log = logging.getLogger(__name__)
 
@@ -22,6 +24,22 @@ def tick(db):
     for t in db.execute("SELECT id FROM teklifler WHERE durum = 'ACIK' AND bitis <= ? ORDER BY id",
                         (simdi,)).fetchall():
         _yalitilmis(db, f"#{t['id']} numaralı oylama sonuçlandırılamadı", oylama.sonuclandir, t["id"])
+
+
+def konuyu_ilerlet(db, konu_id):
+    """Sunum kipi: konunun sıradaki zamanlanmış işini süresini beklemeden yürütür (tick'in tek konuluk hâli).
+    Döner: konu."""
+    konu = konular.konu_getir(db, konu_id)
+    kod = durumu(konu).kod
+    if kod == "TARTISMA":
+        konular.oylamayi_baslat(db, konu_id)
+    elif kod == "OYLAMA":
+        t = oylama.acik_teklif(db, "KARAR", konu_id=konu_id)
+        if t:
+            oylama.sonuclandir(db, t["id"])
+    else:
+        raise KuralHatasi("Bu konu kapanmış.")
+    return konu
 
 
 def _yalitilmis(db, hata_metni, is_, *argumanlar):

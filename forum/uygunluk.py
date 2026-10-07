@@ -6,7 +6,6 @@ Temel kural: önce uygunluk, sonra ağırlık.
   3. Uzmanlık ve yönetmelik oylamalarında herkesin oyu 1'dir.
   Yapay zeka hesapları oy kullanmaz.
 """
-import json
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -133,19 +132,6 @@ def alanda_yazanlar(db, kategori_id):
 
 def konu_baglami(konu):
     return Baglam(konu, konu["kategori_id"], konu["bilirkisi_agirlik"])
-
-
-def teklif_baglami(db, teklif):
-    if teklif["konu_id"]:
-        konu = db.execute("SELECT * FROM konular WHERE id = ?", (teklif["konu_id"],)).fetchone()
-        return konu_baglami(konu)
-    if teklif["tip"] in ("YONETMELIK", "KATEGORI"):
-        # Kurallar ve forumun yapısı karşısında eşitlik: herkesin oyu 1.
-        return Baglam(None, None, 1, esit_agirlik=True)
-    # Uzmanlık başvurusu: yalnızca o alanda yazmış üyeler oylar, herkes 1 oy, aday oy kullanamaz.
-    kategori_id = json.loads(teklif["veri"])["kategori_id"]
-    return Baglam(None, kategori_id, 1, {teklif["hedef_id"]}, esit_agirlik=True,
-                  secmenler=alanda_yazanlar(db, kategori_id))
 
 
 def askida_mi(kullanici, an=None):

@@ -1,0 +1,9 @@
+{# Oylama sayfasının KATEGORI türüne özgü bölümü (teklif.html bunu tür koduna göre içerir). #}
+{% if kategori_onerisi %}
+<div class="kutucuk"><p><strong>Önerilen kategori:</strong> {{ kategori_onerisi.yol }}
+  <span class="soluk kucuk">({{ 'alt kategori' if kategori_onerisi.ust else 'yeni ana kategori' }})</span></p>
+  {% if kategori_onerisi.kavramlar %}<p class="kucuk">Kavramlar: {{ kategori_onerisi.kavramlar|join(', ') }}</p>{% endif %}
+  {% if kategori_onerisi.eklenen %}<p>{{ ikon('tik') }} Kategori eklendi: <a href="{{ url_for('konular.ana_sayfa', kategori=kategori_onerisi.eklenen.id) }}">konularına git →</a></p>{% endif %}
+  <p class="soluk kucuk">Kabul edilirse kategori hemen eklenir ve herkes o kategoride konu açabilir. Bu oylamada herkesin oyu 1 sayılır.
+    <a href="{{ url_for('konular.kategori_sayfasi') }}">Bütün kategoriler →</a></p></div>
+{% endif %}

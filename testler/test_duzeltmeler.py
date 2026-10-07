@@ -5,15 +5,14 @@ Her test önce hatayı yeniden üretecek biçimde yazıldı (düzeltmeden önce 
 import logging
 import os
 import sys
-import tempfile
 import threading
 import unittest
 
 _KLASOR = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [os.path.dirname(_KLASOR), _KLASOR]
 
-from forum import (anlik, defter, devir, gorevler, graf, gundem, guvenlik, kategoriler, konular,  # noqa: E402
-                   kullanicilar, oylama, sonuclar, uygunluk, veritabani, yonetim, yonetmelik, yz)
+from forum import (anlik, ayarlar, defter, devir, gorevler, graf, gundem, guvenlik, kategoriler, konular,  # noqa: E402
+                   kullanicilar, oylama, sonuclar, teklif_turleri, uygunluk, yonetim, yonetmelik, yz)
 from forum.metin import site_ici_yol_mu  # noqa: E402
 from forum.hatalar import KuralHatasi, tamsayi  # noqa: E402
 from test_forum import Ortam  # noqa: E402
@@ -304,7 +303,7 @@ class AcikYonlendirme(WebOrtam):
         self.assertNotIn("kotu.com", yanit.headers["Location"])
 
     def test_postta_giris_istenince_geri_donus_adresi_yok(self):
-        yanit = self.istemci.post(f"/konu/1/fikir", data={"csrf": "x"})
+        yanit = self.istemci.post("/konu/1/fikir", data={"csrf": "x"})
         self.assertNotIn("sonra=", yanit.headers.get("Location", ""))
 
 
@@ -389,7 +388,7 @@ class OylamaYarislari(Ortam):
         kisiler = self.kisiler(4)
         k, _ = self.fikirli_konu(kisiler[:2])
         t = self.tur(k)
-        baglam = uygunluk.teklif_baglami(self.db, t)
+        baglam = oylama.teklif_baglami(self.db, t)
         self.assertEqual(len(uygunluk.oy_hakki_olanlar(self.db, baglam)), 4)
         self.db.execute("UPDATE kullanicilar SET askida_bitis = '2999-01-01 00:00:00' WHERE id = ?", (kisiler[3]["id"],))
         self.assertEqual(len(uygunluk.oy_hakki_olanlar(self.db, baglam)), 3)
@@ -529,6 +528,45 @@ class Gundem(Ortam):
             konular.mesaj_yaz(self.db, kim, k2, "ARGUMAN", "Ben de katılıyorum")
         trend, _ = gundem.trend_konular(self.db)
         self.assertEqual(trend[0]["id"], k2)
+
+
+
+class TeklifTurleri(Ortam):
+    """Strategy + Registry: oylama motoru tür adı bilmez; yeni tür, motora dokunmadan eklenir."""
+
+    def test_kayit_defteri_tanimlarla_eslesir(self):
+        self.assertEqual(set(teklif_turleri.TURLER), set(ayarlar.TEKLIF_TIPLERI))
+        for kod, tur in teklif_turleri.TURLER.items():
+            self.assertIsInstance(tur, teklif_turleri.TeklifTuru)
+            self.assertEqual(tur.kod, kod)
+
+    def test_yeni_tur_motor_degismeden_calisir(self):
+        """Açık/Kapalı ilkesinin kanıtı: oylama.py'ye tek satır eklemeden yeni bir oylama türü uçtan uca çalışır."""
+        uygulananlar = []
+
+        class AnketTuru(teklif_turleri.EvetHayirTuru):
+            kod = "ANKET"
+
+            def baglam(self, db, t):
+                return uygunluk.Baglam(None, None, 1, esit_agirlik=True)
+
+            def uygula(self, db, t, s, durum):
+                uygulananlar.append(durum)
+
+        ayarlar.TEKLIF_TIPLERI["ANKET"] = {"ad": "Anket", "esik": "ESIK_KATEGORI", "sure": "SURE_USUL_SAAT"}
+        self.addCleanup(ayarlar.TEKLIF_TIPLERI.pop, "ANKET")
+        teklif_turleri.kaydet(AnketTuru)
+        self.addCleanup(teklif_turleri.TURLER.pop, "ANKET")
+        with self.assertRaises(KeyError):                        # aynı kod iki kez kaydedilemez
+            teklif_turleri.kaydet(AnketTuru)
+
+        kisiler = self.kisiler(3)
+        t = oylama.teklif_ac(self.db, "ANKET", kisiler[0]["id"], gerekce="Kulüp tişörtü yeşil olsun mu?")
+        self.assertEqual(oylama.teklif_basligi(self.db, oylama.teklif_getir(self.db, t)), "Anket: ")
+        for kim in kisiler:                                      # herkes oy verince erken biter (EvetHayirTuru)
+            oylama.oy_ver(self.db, t, kim, "EVET")
+        self.assertEqual(uygulananlar, ["KABUL"])
+        self.assertEqual(oylama.teklif_getir(self.db, t)["durum"], "KABUL")
 
 
 if __name__ == "__main__":

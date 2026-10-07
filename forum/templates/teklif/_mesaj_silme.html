@@ -1,0 +1,16 @@
+{# Oylama sayfasının MESAJ_SILME türüne özgü bölümü (teklif.html bunu tür koduna göre içerir). #}
+{% from "_makrolar.html" import kisi %}
+{% if hedef_mesajlar %}
+{% if hedef_mesajlar|length > 1 %}<p><strong>Tartışmanın bir kısmı:</strong> {{ hedef_mesajlar|length }} mesaj tek oylamada.</p>{% endif %}
+{% for hm in hedef_mesajlar %}
+<div class="mesaj tip-{{ hm.tip|lower }}">
+  <img class="avatar mesaj-avatar" src="{{ avatar(hm.takma_ad, hm.yz_mi) }}" alt="">
+  <div class="mesaj-govde">
+    <header>{{ kisi(hm.takma_ad, hm.yz_mi, resim=False) }} <span class="rozet mtip">{{ ayarlar.MESAJ_TIPLERI[hm.tip] }}</span>
+      <span class="soluk kucuk">#{{ hm.id }} · {{ hm.olusturma|tarih }}</span></header>
+    {% if hm.gizli %}<p class="iz">{{ ikon('oy') }} {{ hm.gizlenme_notu }}</p>{% else %}<div class="icerik">{{ hm.icerik|bicimle }}</div>{% endif %}
+  </div>
+</div>
+{% endfor %}
+<p class="soluk kucuk">Kabul edilirse mesajlar silinmez, gizlenir: yerinde iz kalır, özetleri kayıt defterinde durur.</p>
+{% endif %}

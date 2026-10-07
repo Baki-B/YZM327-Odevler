@@ -1,0 +1,4 @@
+{# Oylama sayfasının KONU_SILME türüne özgü bölümü (teklif.html bunu tür koduna göre içerir). #}
+{% if konu %}
+<p>Oylanan: <strong>“{{ konu.baslik }}”</strong> konusunun (ve alt konularının) kaldırılması. Kabul edilirse konu gizlenir, yerinde iz kalır.</p>
+{% endif %}

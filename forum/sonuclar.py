@@ -1,5 +1,6 @@
-"""Bir oylama sonuçlandığında ne olacağı.
+"""Fikir oylaması turunun sonucu: eleme kuralları ve turun sonuçları.
 
+(Evet/Hayır oylamalarının sonucu kendi tür sınıflarındadır: teklif_turleri.py.)
 Fikir oylamasında (KARAR) tur bitince eleme kuralları uygulanır:
   1. Yeter sayı yoksa ya da hiç fikir yoksa konu sonuçsuz kapanır.
   2. Bir fikir ezici üstünlük oranına (varsayılan %75) ulaştıysa hemen kabul edilir.
@@ -8,10 +9,9 @@ Fikir oylamasında (KARAR) tur bitince eleme kuralları uygulanır:
      Geriye tek fikir kalırsa o kabul edilir; hiç kalmazsa konu sonuçsuz kapanır; birden fazla kalırsa sonraki tur açılır.
 Oran = ağırlıklı pay ile kişi payının küçüğü (çekimserler toplamda sayılır); bkz. oylama.sayim.
 """
-import json
 from dataclasses import dataclass
 
-from . import ayarlar, bildirimler, kararlar, kategoriler, konular, uzmanlik, yonetmelik, yz, zaman
+from . import ayarlar, bildirimler, kararlar, konular, yonetmelik, yz
 from .konu_durumlari import durumu
 from .metin import yuzde
 
@@ -21,15 +21,6 @@ _HASSASIYET = 1e-9
 def ozet(s):
     return (f"ağırlıklı {yuzde(s['agirlik_oran'])}, kişi {yuzde(s['kisi_oran'])}, "
             f"katılım {s['katilan']}/{s['hak_sahibi']}")
-
-
-def _durum_metni(durum):
-    return {"KABUL": "kabul edildi", "RET": "reddedildi", "YETERSIZ": "yeter sayıya ulaşılamadı"}[durum]
-
-
-def uygula(db, teklif, s, durum):
-    {"KARAR": _tur, "MESAJ_SILME": _mesaj_silme, "KONU_SILME": _konu_silme, "UZMANLIK": _uzmanlik,
-     "YONETMELIK": _yonetmelik, "KATEGORI": _kategori}[teklif["tip"]](db, teklif, s, durum)
 
 
 # --- Fikir oylaması turu ---
@@ -98,7 +89,8 @@ def tur_sonucu(db, t, s):
     return tur_karari(t["tur_no"], s, *tur_kurallari(db, t["tur_no"]))
 
 
-def _tur(db, t, s, durum):
+def tur_uygula(db, t, s):
+    """Tur bitince: karar (konu kapanır), sonraki tur ya da sonuçsuz kapanış; sonra yapay zeka tur özeti."""
     konu_id, tur_no = t["konu_id"], t["tur_no"]
     konu = konular.konu_getir(db, konu_id)
     if durumu(konu).kod != "OYLAMA":
@@ -127,44 +119,3 @@ def _tur(db, t, s, durum):
                                            "İsteyen yeni bir konu açabilir.")
         bildirimler.coklu_gonder(db, alicilar, f"Konu sonuçsuz kapandı: {konu['baslik']}", baglanti)
     yz.tur_ozeti(db, konu_id, tur_no, s, k)
-
-
-# --- Evet/Hayır oylamaları ---
-
-def _mesaj_listesi(idler):
-    if len(idler) == 1:
-        return f"#{idler[0]} numaralı mesajın"
-    return ", ".join(f"#{i}" for i in idler) + " numaralı mesajların"
-
-
-def _mesaj_silme(db, t, s, durum):
-    idler = json.loads(t["veri"] or "{}").get("mesajlar", [t["hedef_id"]])
-    if durum == "KABUL":
-        for mesaj_id in idler:
-            konular.mesaji_gizle(db, mesaj_id, f"Bu mesaj {zaman.simdi():%d.%m.%Y} tarihinde oylamayla "
-                                               f"gizlendi ({ozet(s)}). Gerekçe: {t['gerekce']}", t["id"])
-    konular.sistem_mesaji(db, t["konu_id"], f"{_mesaj_listesi(idler)} gizleme oylaması: "
-                                            f"{_durum_metni(durum)} ({ozet(s)}).")
-
-
-def _konu_silme(db, t, s, durum):
-    if durum == "KABUL":
-        konular.konuyu_kaldir(db, t["konu_id"], f"Bu konu {zaman.simdi():%d.%m.%Y} tarihinde oylamayla "
-                                                f"kaldırıldı ({ozet(s)}). Gerekçe: {t['gerekce']}")
-    else:
-        konular.sistem_mesaji(db, t["konu_id"], f"Konu kaldırma oylaması: {_durum_metni(durum)} ({ozet(s)}).")
-
-
-def _uzmanlik(db, t, s, durum):
-    if durum == "KABUL":
-        uzmanlik.uzmanlik_ver(db, t["hedef_id"], json.loads(t["veri"])["kategori_id"])
-
-
-def _yonetmelik(db, t, s, durum):
-    if durum == "KABUL":
-        yonetmelik.degisikligi_uygula(db, json.loads(t["veri"]))
-
-
-def _kategori(db, t, s, durum):
-    if durum == "KABUL":
-        kategoriler.ekle(db, t)

@@ -46,11 +46,7 @@ def _konu(db, k, detay=False):
 def _teklif(db, t):
     d = {"id": t["id"], "tip": t["tip"], "baslik": oylama.teklif_basligi(db, t), "durum": t["durum"], "esik": t["esik"],
          "konu_id": t["konu_id"], "tur": t["tur_no"], "baslangic": t["baslangic"], "bitis": t["bitis"]}
-    if t["tip"] == "KARAR":
-        d["secenekler"] = [{"id": str(s["id"]), "metin": s["metin"]} for s in oylama.secenekler(db, t["id"])]
-        d["secenekler"].append({"id": oylama.CEKIMSER, "metin": ayarlar.SECIM_ADLARI[oylama.CEKIMSER]})
-    else:
-        d["secenekler"] = [{"id": s, "metin": ayarlar.SECIM_ADLARI[s]} for s in oylama.EVET_HAYIR]
+    d["secenekler"] = [{"id": a, "metin": m} for a, m, _ in oylama.turu(t).secenekler(db, t)]
     if t["durum"] != "ACIK" and t["sonuc"]:
         s = json.loads(t["sonuc"])
         d["sonuc"] = {k: s.get(k) for k in ("secenekler", "cekimser", "agirlik_oran", "kisi_oran", "yeter", "katilan",

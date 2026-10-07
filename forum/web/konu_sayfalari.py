@@ -71,7 +71,7 @@ def kategori_sayfasi():
     return render_template("kategoriler.html", satirlar=satirlar, duz=duz, q=q, sirala=sirala, suz=suz,
                            siralamalar=kategoriler.SIRALAMALAR, suzgecler=kategoriler.SUZGECLER,
                            oneriler=[{"t": t, "baslik": oylama.teklif_basligi(db, t), "veri": json.loads(t["veri"]),
-                                      "oy": db.execute("SELECT COUNT(*) FROM oylar WHERE teklif_id = ?", (t["id"],)).fetchone()[0]}
+                                      "oy": oylama.oy_sayisi(db, t["id"])}
                                      for t in kategoriler.oylama_suren_oneriler(db)],
                            sonuclananlar=[{"t": t, "baslik": oylama.teklif_basligi(db, t)} for t in kategoriler.son_oneriler(db, 6)],
                            ana_kategoriler=kategoriler.ana_kategoriler(db), toplam=len(db.execute("SELECT id FROM kategoriler").fetchall()),
