@@ -7,7 +7,7 @@ kabul edilirse kategori eklenir ve önerirken yazılan kavramlar kategori deneti
 import json
 from datetime import timedelta
 
-from . import ayarlar, bildirimler, defter, gunluk, ontoloji, oylama, yonetmelik, zaman
+from . import ayarlar, bildirimler, defter, denetim, gunluk, ontoloji, oylama, zaman
 from .hatalar import KuralHatasi, tamsayi
 
 MAX_KAVRAM = 15
@@ -76,7 +76,7 @@ def oner(db, kullanici, ad, ust_id, kavramlar, gerekce):
     gerekce = (gerekce or "").strip()
     if len(gerekce) < 20:
         raise KuralHatasi("Bu kategoriye neden ihtiyaç olduğunu yaz (en az 20 karakter).")
-    yonetmelik.mesaj_denetle(db, f"{ad} {gerekce} {' '.join(terimler)}")
+    denetim.mesaj_denetle(db, f"{ad} {gerekce} {' '.join(terimler)}")
     return oylama.teklif_ac(db, "KATEGORI", kullanici["id"], gerekce=gerekce,
                             veri={"ad": ad, "ust_id": ust_id, "kavramlar": terimler})
 

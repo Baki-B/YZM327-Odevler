@@ -12,7 +12,8 @@ Mesajlar silinmez; düzenlenince eski hâli saklanır; gizleme oylamaya tabidir.
 import json
 from datetime import timedelta
 
-from . import (arama, ayarlar, bildirimler, defter, gunluk, oylama, ontoloji, uygunluk, yonetmelik, zaman)
+from . import (arama, ayarlar, bildirimler, defter, denetim, gunluk, oylama, ontoloji, uygunluk, yonetmelik,
+               zaman)
 from .hatalar import KuralHatasi, tamsayi
 from .konu_durumlari import durumu, okunabilir_olmali, yazilabilir_olmali
 from .metin import kisalt
@@ -99,12 +100,12 @@ def denetim_onizleme(db, form, ust_id=None):
     ust_id = tamsayi(ust_id, "Geçersiz üst konu.")
     ust = konu_getir(db, ust_id) if ust_id else None
     alanlar = _alanlari_dogrula(db, form, ust)
-    return yonetmelik.denetle(db, alanlar["baslik"], alanlar["aciklama"], alanlar["kategori_id"],
+    return denetim.denetle(db, alanlar["baslik"], alanlar["aciklama"], alanlar["kategori_id"],
                               alanlar["konum_id"], ust)
 
 
 def _denetle(db, alanlar, ust, haric_konu_id=None):
-    rapor = yonetmelik.denetle(db, alanlar["baslik"], alanlar["aciklama"], alanlar["kategori_id"],
+    rapor = denetim.denetle(db, alanlar["baslik"], alanlar["aciklama"], alanlar["kategori_id"],
                                alanlar["konum_id"], ust, haric_konu_id=haric_konu_id)
     if rapor["engel"]:
         raise KuralHatasi("Yönetmelik denetimi engelledi: " +
@@ -225,7 +226,7 @@ def fikir_yaz(db, kullanici, konu_id, icerik):
     icerik = (icerik or "").strip()
     if not FIKIR_UZUNLUGU[0] <= len(icerik) <= FIKIR_UZUNLUGU[1]:
         raise KuralHatasi(f"Fikir {FIKIR_UZUNLUGU[0]}–{FIKIR_UZUNLUGU[1]} karakter olmalı.")
-    yonetmelik.mesaj_denetle(db, icerik)
+    denetim.mesaj_denetle(db, icerik)
     mesaj_id = _mesaj_ekle(db, konu_id, kullanici, "FIKIR", icerik)
     gunluk.kaydet(db, kullanici["id"], "MESAJ", f"#{konu_id} konusuna fikir yazdı")
     tur = oylama.acik_teklif(db, "KARAR", konu_id=konu_id)
@@ -285,7 +286,7 @@ def kaldirma_teklifi(db, kullanici, konu_id, gerekce, katilim_denetimi=True):
     gerekce = (gerekce or "").strip()
     if len(gerekce) < 10:
         raise KuralHatasi("Konunun neden kaldırılması gerektiğini en az 10 karakterle yaz.")
-    yonetmelik.mesaj_denetle(db, gerekce)
+    denetim.mesaj_denetle(db, gerekce)
     if oylama.acik_teklif(db, "KONU_SILME", konu_id=konu_id):
         raise KuralHatasi("Bu konu için zaten süren bir kaldırma oylaması var.")
     return oylama.teklif_ac(db, "KONU_SILME", kullanici["id"], konu_id=konu_id, gerekce=gerekce)
@@ -341,7 +342,7 @@ def mesaj_yaz(db, kullanici, konu_id, tip, icerik, ust_mesaj_id=None):
     icerik = (icerik or "").strip()
     if not 2 <= len(icerik) <= 5000:
         raise KuralHatasi("Mesaj 2–5000 karakter olmalı.")
-    yonetmelik.mesaj_denetle(db, icerik)
+    denetim.mesaj_denetle(db, icerik)
     ust_mesaj_id = tamsayi(ust_mesaj_id)
     ust = None
     if ust_mesaj_id:
@@ -392,7 +393,7 @@ def mesaj_duzenle(db, kullanici, mesaj_id, icerik):
         raise KuralHatasi(f"Metin {alt}–{ust} karakter olmalı.")
     if icerik == m["icerik"]:
         raise KuralHatasi("Hiçbir değişiklik yapmadın.")
-    yonetmelik.mesaj_denetle(db, icerik)
+    denetim.mesaj_denetle(db, icerik)
     db.execute("INSERT INTO mesaj_surumleri (mesaj_id, icerik, tarih) VALUES (?, ?, ?)",
                (mesaj_id, m["icerik"], zaman.simdi_metin()))
     db.execute("UPDATE mesajlar SET icerik = ?, duzenleme = ? WHERE id = ?", (icerik, zaman.simdi_metin(), mesaj_id))
@@ -447,7 +448,7 @@ def mesaj_silme_teklifi(db, kullanici, mesaj_idleri, neden, aciklama, katilim_de
     if any(i in suren for i in idler):
         raise KuralHatasi("Seçilen mesajlardan biri için zaten süren bir gizleme oylaması var.")
     gerekce = neden + (f": {aciklama.strip()}" if (aciklama or "").strip() else "")
-    yonetmelik.mesaj_denetle(db, gerekce)
+    denetim.mesaj_denetle(db, gerekce)
     teklif_id = oylama.teklif_ac(db, "MESAJ_SILME", kullanici["id"], konu_id=konu_id, hedef_id=idler[0],
                                  gerekce=gerekce, veri={"neden": neden, "mesajlar": idler})
     for yazar_id in {m["yazar_id"] for m in mesajlar} - {kullanici["id"]}:

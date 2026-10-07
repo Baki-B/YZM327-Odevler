@@ -19,7 +19,7 @@ import math
 import secrets
 from datetime import timedelta
 
-from . import ayarlar, bildirimler, defter, devir, gunluk, teklif_turleri, uygunluk, yonetmelik, zaman
+from . import ayarlar, bildirimler, defter, denetim, devir, gunluk, teklif_turleri, uygunluk, yonetmelik, zaman
 from .hatalar import KuralHatasi
 from .teklif_turleri import CEKIMSER, GIZLENEN_FIKIR, esik_saglandi
 
@@ -125,7 +125,7 @@ def oy_ver(db, teklif_id, kullanici, secim, gerekce=""):
         raise KuralHatasi(f"Uzman olarak oyun {agirlik} sayıldığı için gerekçe yazmalısın (en az 10 karakter). "
                           "Uzman oyları herkese açıktır.")
     if gerekce:
-        yonetmelik.mesaj_denetle(db, gerekce)
+        denetim.mesaj_denetle(db, gerekce)
 
     makbuz = "-".join(secrets.token_hex(2).upper() for _ in range(4))
     taahhut = defter.taahhut(teklif_id, secim, makbuz)

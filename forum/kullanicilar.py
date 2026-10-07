@@ -2,7 +2,7 @@
 import re
 from datetime import date, timedelta
 
-from . import ayarlar, defter, gunluk, guvenlik, ontoloji, uygunluk, yonetmelik, zaman
+from . import ayarlar, defter, denetim, gunluk, guvenlik, ontoloji, uygunluk, yonetmelik, zaman
 from .hatalar import KuralHatasi
 
 TAKMA_AD_DESENI = re.compile(r"^[A-Za-z0-9_.çğıöşüÇĞİÖŞÜ]{3,30}$")
@@ -47,7 +47,7 @@ def kayit(db, ad_soyad, takma_ad, sifre, sifre_tekrar, dogum_tarihi, konum_id, i
         raise KuralHatasi("Takma ad 3–30 karakter olmalı; harf, rakam, nokta ve alt çizgi kullanılabilir.")
     if takma_ad_ile(db, takma_ad) or _benzer_takma_ad_var_mi(db, takma_ad):
         raise KuralHatasi("Bu takma ad (ya da yazılışı çok benzeri) alınmış.")
-    if yonetmelik.kaba_ifadeler(takma_ad):
+    if denetim.kaba_ifadeler(takma_ad):
         raise KuralHatasi("Takma ad kaba ifade içeremez.")
     guvenlik.sifre_kontrol(sifre, sifre_tekrar)
     try:

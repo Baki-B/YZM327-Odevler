@@ -7,7 +7,7 @@ from datetime import date, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from forum import (anlik, arama, ayarlar, defter, devir, gorevler, graf, gundem, gunluk, guvenlik, kararlar,  # noqa: E402
+from forum import (anlik, arama, ayarlar, defter, denetim, devir, gorevler, graf, gundem, gunluk, guvenlik, kararlar,  # noqa: E402
                    kategoriler, konular, kullanicilar, ontoloji, oylama, sikayetler, sonuclar, uzmanlik, veritabani, yonetim,
                    yonetmelik, yz, zaman)
 from forum.hatalar import KuralHatasi  # noqa: E402
@@ -121,7 +121,7 @@ class OntolojiVeYonetmelik(Ortam):
             self.konu(self.kisi("ali"), aciklama="Bu menüyü savunanlar cahil, yemekhane rezalet durumda.")
 
     def test_konum_uyarisi_ve_kategori_onerisi(self):
-        rapor = yonetmelik.denetle(self.db, "Ankara'da otobüs seferleri artsın",
+        rapor = denetim.denetle(self.db, "Ankara'da otobüs seferleri artsın",
                                    "Ankara'da ring otobüsleri gece de çalışsın, ulaşım kolaylaşsın.",
                                    self.kategori("Kültür ve Sanat", "Sinema"))
         kodlar = {b["kod"] for b in rapor["uyarilar"]}
@@ -131,7 +131,7 @@ class OntolojiVeYonetmelik(Ortam):
 
     def test_mesajda_kisisel_veri_engellenir(self):
         with self.assertRaises(KuralHatasi):
-            yonetmelik.mesaj_denetle(self.db, "Beni 0532 123 45 67 numarasından ara")
+            denetim.mesaj_denetle(self.db, "Beni 0532 123 45 67 numarasından ara")
 
     def test_korunan_parametre_dortte_uc_ister(self):
         kisiler = self.kisiler(4, "uye")
@@ -144,7 +144,7 @@ class OntolojiVeYonetmelik(Ortam):
 
     def test_denetim_maddesi_kapatilabilir(self):
         yonetmelik.degisikligi_uygula(self.db, {"tur": "DENETIM", "kod": "D1", "yeni": "KAPALI"})
-        yonetmelik.mesaj_denetle(self.db, "Bu fikir cahilce.")   # artık engellemez
+        denetim.mesaj_denetle(self.db, "Bu fikir cahilce.")   # artık engellemez
 
     def test_varsayilan_sureler_ve_esikler(self):
         d = lambda kod: yonetmelik.deger(self.db, kod)  # noqa: E731
@@ -992,7 +992,7 @@ class Kategoriler(Ortam):
         self.assertEqual(ontoloji.kategori_listesi(self.db)[-1][1], "Genel")         # Genel listenin sonunda
 
     def test_genel_kategoride_kategori_denetimi_aranmaz(self):
-        rapor = yonetmelik.denetle(self.db, "Forumda haftalık soru cevap saati olsun",
+        rapor = denetim.denetle(self.db, "Forumda haftalık soru cevap saati olsun",
                                    "Her pazar akşamı bir saat boyunca sorular yanıtlansın, yeni gelenler forumu tanısın.",
                                    self.kategori("Genel"))
         self.assertNotIn("D3", {b["kod"] for b in rapor["uyarilar"]})
@@ -1007,7 +1007,7 @@ class Kategoriler(Ortam):
             oylama.oy_ver(self.db, t, kim, secim)                     # herkes oy verince biter
         k = self.db.execute("SELECT * FROM kategoriler WHERE ad = 'Spor ve Oyun' AND ust_id IS NULL").fetchone()
         self.assertEqual((k["kaynak"], k["kavramlar"]), ("TOPLULUK", "turnuva,espor,satranc"))
-        rapor = yonetmelik.denetle(self.db, "Bahar turnuvası düzenlensin",
+        rapor = denetim.denetle(self.db, "Bahar turnuvası düzenlensin",
                                    "Kampüste satranç ve espor turnuvası düzenleyelim, ödüller de olsun.", k["id"])
         self.assertNotIn("D3", {b["kod"] for b in rapor["uyarilar"]})
         self.konu(kisiler[1], baslik="Bahar satranç turnuvası", kategori_id=k["id"],

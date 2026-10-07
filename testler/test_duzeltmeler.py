@@ -11,7 +11,7 @@ import unittest
 _KLASOR = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [os.path.dirname(_KLASOR), _KLASOR]
 
-from forum import (anlik, ayarlar, defter, devir, gorevler, graf, gundem, guvenlik, kategoriler, konular,  # noqa: E402
+from forum import (anlik, ayarlar, defter, denetim, devir, gorevler, graf, gundem, guvenlik, kategoriler, konular,  # noqa: E402
                    kullanicilar, oylama, sonuclar, teklif_turleri, uygunluk, yonetim, yonetmelik, yz)
 from forum.metin import site_ici_yol_mu  # noqa: E402
 from forum.hatalar import KuralHatasi, tamsayi  # noqa: E402
@@ -498,10 +498,10 @@ class YanitDerinligi(WebOrtam):
 
 class KisiselVeri(Ortam):
     def test_tc_kimlik_saglamasi(self):
-        self.assertTrue(yonetmelik.tc_kimlik_gecerli_mi("10000000146"))
-        self.assertFalse(yonetmelik.tc_kimlik_gecerli_mi("10000000147"))
-        self.assertIn("T.C. kimlik numarası", yonetmelik.kisisel_veriler("Kimliğim 10000000146"))
-        self.assertEqual(yonetmelik.kisisel_veriler("Sipariş numaram 12345678901, kargo gelmedi"), [])
+        self.assertTrue(denetim.tc_kimlik_gecerli_mi("10000000146"))
+        self.assertFalse(denetim.tc_kimlik_gecerli_mi("10000000147"))
+        self.assertIn("T.C. kimlik numarası", denetim.kisisel_veriler("Kimliğim 10000000146"))
+        self.assertEqual(denetim.kisisel_veriler("Sipariş numaram 12345678901, kargo gelmedi"), [])
 
 
 class Makbuz(Ortam):
@@ -567,6 +567,27 @@ class TeklifTurleri(Ortam):
             oylama.oy_ver(self.db, t, kim, "EVET")
         self.assertEqual(uygulananlar, ["KABUL"])
         self.assertEqual(oylama.teklif_getir(self.db, t)["durum"], "KABUL")
+
+
+
+class DenetimZinciri(Ortam):
+    """Chain of Responsibility: her yönetmelik denetim maddesi zincirde bir halka."""
+
+    def test_her_denetim_maddesinin_halkasi_var(self):
+        maddeler = {kod for kod, tur, *_ in yonetmelik.MADDELER if tur == "DENETIM"}
+        self.assertEqual({h.kod for h in denetim.ZINCIR.halkalar()}, maddeler)
+
+    def test_halka_tek_basina_calisir(self):
+        istek = denetim.DenetimIstegi(self.db, "Kısa", "Kısa açıklama", self.kategori("Sağlık"))
+        self.assertEqual(denetim.Aciklik().kontrol(istek)[0], False)
+        self.assertIsNone(denetim.AltKonuIliskisi().kontrol(istek))          # üst konu yoksa madde uygulanmaz
+
+    def test_kapatilan_madde_mesajlara_uygulanmaz(self):
+        with self.assertRaises(KuralHatasi):
+            denetim.mesaj_denetle(self.db, "Bunu savunanlar aptal.")
+        self.db.execute("UPDATE yonetmelik_maddeleri SET ciddiyet = 'KAPALI' WHERE kod = 'D1'")
+        self.db.onbellek.clear()
+        denetim.mesaj_denetle(self.db, "Bunu savunanlar aptal.")
 
 
 if __name__ == "__main__":
