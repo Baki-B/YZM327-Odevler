@@ -6,13 +6,15 @@ import logging
 import os
 import sys
 import tempfile
+import threading
 import unittest
 
 _KLASOR = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [os.path.dirname(_KLASOR), _KLASOR]
 
-from forum import (defter, devir, gorevler, kategoriler, konular, kullanicilar, oylama, sonuclar, veritabani,  # noqa: E402
-                   yonetim, yonetmelik, yz)
+from forum import (anlik, defter, devir, gorevler, guvenlik, kategoriler, konular, kullanicilar, oylama,  # noqa: E402
+                   sonuclar, uygunluk, veritabani, yonetim, yonetmelik, yz)
+from forum.metin import site_ici_yol_mu  # noqa: E402
 from forum.hatalar import KuralHatasi, tamsayi  # noqa: E402
 from test_forum import Ortam  # noqa: E402
 
@@ -280,6 +282,171 @@ class YapayZekaOzetleri(Ortam):
         konular.mesaj_yaz  # kaldırılmış konuya özet yazılmaz
         with self.assertRaises(KuralHatasi):
             yz.ozet_iste(self.db, ayse, k)
+
+
+class AcikYonlendirme(WebOrtam):
+    def test_site_ici_yol(self):
+        for iyi in ("/", "/konu/3", "/konu/3?x=1#m2"):
+            self.assertTrue(site_ici_yol_mu(iyi), iyi)
+        for kotu in ("//kotu.com", "/\t/kotu.com", "/\\kotu.com", "https://kotu.com", "kotu.com", "", None,
+                     "/\n/kotu.com"):
+            self.assertFalse(site_ici_yol_mu(kotu), repr(kotu))
+
+    def test_giristen_sonra_disari_yonlendirilmez(self):
+        self.kisi("ali")
+        self.db.commit()
+        self.istemci.get("/giris")
+        with self.istemci.session_transaction() as s:
+            csrf = s["csrf"]
+        yanit = self.istemci.post("/giris", data={"takma_ad": "ali", "sifre": "sifre1234", "csrf": csrf,
+                                                  "sonra": "/\t/kotu.com"})
+        self.assertEqual(yanit.status_code, 302)
+        self.assertNotIn("kotu.com", yanit.headers["Location"])
+
+    def test_postta_giris_istenince_geri_donus_adresi_yok(self):
+        yanit = self.istemci.post(f"/konu/1/fikir", data={"csrf": "x"})
+        self.assertNotIn("sonra=", yanit.headers.get("Location", ""))
+
+
+class OturumVeAnahtarlar(WebOrtam):
+    def setUp(self):
+        super().setUp()
+        self.ali = self.kisi("ali")
+
+    def test_sifre_degisince_eski_oturum_ve_api_anahtarlari_gecersiz(self):
+        anahtar = guvenlik.api_anahtari_olustur(self.db, self.ali["id"], "Telefon")
+        self.giris(kullanicilar.getir(self.db, self.ali["id"]))
+        eski = self.app.test_client()                                          # aynı çerezle ikinci cihaz
+        with self.istemci.session_transaction() as s, eski.session_transaction() as e:
+            e.update(s)
+        self.assertEqual(eski.get("/profil").status_code, 200)
+        self.assertEqual(self.post("/profil/sifre", eski="sifre1234", yeni="yeniSifre99",
+                                   yeni_tekrar="yeniSifre99").status_code, 302)
+        self.assertEqual(self.istemci.get("/profil").status_code, 200)         # şifreyi değiştiren oturum açık kalır
+        self.assertEqual(eski.get("/profil").status_code, 302)                 # çalınmış eski çerez geçersiz
+        self.assertEqual(self.istemci.get("/api/v1/bildirimler", headers={"Authorization": f"Bearer {anahtar}"}
+                                          ).status_code, 401)
+
+    def test_ayni_cihaz_anahtari_yenilenir(self):
+        for _ in range(7):                                                     # eskiden 6. girişte kilitleniyordu
+            guvenlik.api_anahtari_olustur(self.db, self.ali["id"], "Mobil uygulama")
+        self.assertEqual(len(guvenlik.api_anahtarlari(self.db, self.ali["id"])), 1)
+
+    def test_api_anahtari_yalnizca_api_altinda_gecerli(self):
+        self.db.execute("UPDATE kullanicilar SET yonetici_mi = 1 WHERE id = ?", (self.ali["id"],))
+        anahtar = guvenlik.api_anahtari_olustur(self.db, self.ali["id"], "Telefon")
+        self.db.commit()
+        basliklar = {"Authorization": f"Bearer {anahtar}"}
+        self.assertEqual(self.istemci.get("/api/v1/bildirimler", headers=basliklar).status_code, 200)
+        self.assertEqual(self.istemci.get("/yonetim/yedek", headers=basliklar).status_code, 403)
+
+    def test_oturumda_sifre_tahmini_sinirli(self):
+        for _ in range(5):
+            with self.assertRaises(KuralHatasi):
+                kullanicilar.sifre_degistir(self.db, self.ali, "yanlis1234", "yeniSifre99", "yeniSifre99")
+        with self.assertRaises(KuralHatasi):                                   # doğru şifre de kilit sürerken geçmez
+            kullanicilar.sifre_degistir(self.db, self.ali, "sifre1234", "yeniSifre99", "yeniSifre99")
+
+    def test_api_govdesi_nesne_degilse_500_vermez(self):
+        anahtar = guvenlik.api_anahtari_olustur(self.db, self.ali["id"], "Telefon")
+        self.db.commit()
+        basliklar = {"Authorization": f"Bearer {anahtar}"}
+        for govde in ([1, 2], "metin", 5, {"baslik": 5, "aciklama": True}):
+            yanit = self.istemci.post("/api/v1/konular", json=govde, headers=basliklar)
+            self.assertLess(yanit.status_code, 500, govde)
+
+
+class Kayit(Ortam):
+    def test_turkce_benzer_takma_ad_alinamaz(self):
+        self.kisi("Çağlar")
+        for benzer in ("çağlar", "ÇAĞLAR", "Caglar"):
+            with self.assertRaises(KuralHatasi, msg=benzer):
+                self.kisi(benzer)
+
+    def test_ayni_adresten_kayit_siniri(self):
+        il = self.konum("İstanbul")
+        sinir, _ = kullanicilar.KAYIT_SINIRI
+        for i in range(sinir):
+            kullanicilar.kayit(self.db, "Test Kişi", f"uye{i}", "sifre1234", "sifre1234", "2000-01-01", il,
+                               istemci="10.0.0.9")
+        with self.assertRaises(KuralHatasi):
+            kullanicilar.kayit(self.db, "Test Kişi", "fazla", "sifre1234", "sifre1234", "2000-01-01", il,
+                               istemci="10.0.0.9")
+        kullanicilar.kayit(self.db, "Test Kişi", "baska", "sifre1234", "sifre1234", "2000-01-01", il,
+                           istemci="10.0.0.10")
+
+
+class OylamaYarislari(Ortam):
+    def test_suresi_dolmus_oylamaya_oy_verilmez(self):
+        kisiler = self.kisiler(3)
+        k, (f1, f2) = self.fikirli_konu(kisiler[:2])
+        t = self.tur(k)["id"]
+        self.ileri_sar(hours=49)                                               # zamanlayıcı henüz çalışmadı
+        with self.assertRaises(KuralHatasi):
+            oylama.oy_ver(self.db, t, kisiler[2], self.secenek(t, f1))
+
+    def test_askidaki_uye_hak_sahibi_sayilmaz(self):
+        kisiler = self.kisiler(4)
+        k, _ = self.fikirli_konu(kisiler[:2])
+        t = self.tur(k)
+        baglam = uygunluk.teklif_baglami(self.db, t)
+        self.assertEqual(len(uygunluk.oy_hakki_olanlar(self.db, baglam)), 4)
+        self.db.execute("UPDATE kullanicilar SET askida_bitis = '2999-01-01 00:00:00' WHERE id = ?", (kisiler[3]["id"],))
+        self.assertEqual(len(uygunluk.oy_hakki_olanlar(self.db, baglam)), 3)
+
+    def test_ayni_anda_gelen_fikirler(self):
+        """Eşzamanlı istekler "zaten bir fikrin var" kontrolünü birlikte geçip birden fazla fikir yazabiliyordu."""
+        from forum import create_app
+        ali, ayse = self.kisi("ali"), self.kisi("ayse")
+        k = self.konu(ali)
+        self.db.commit()
+        app = create_app({"VERITABANI": self.yol, "TESTING": True})
+        engel = threading.Barrier(8)
+
+        def gonder(i):
+            istemci = app.test_client()
+            with istemci.session_transaction() as s:
+                s["kullanici_id"], s["csrf"] = ayse["id"], "a"
+            engel.wait()
+            istemci.post(f"/konu/{k}/fikir", data={"csrf": "a", "icerik": f"Eşzamanlı fikir numarası {i}"})
+        isler = [threading.Thread(target=gonder, args=(i,)) for i in range(8)]
+        for i in isler:
+            i.start()
+        for i in isler:
+            i.join()
+        sayi = self.db.execute("SELECT COUNT(*) FROM mesajlar WHERE konu_id = ? AND yazar_id = ? AND tip = 'FIKIR'",
+                               (k, ayse["id"])).fetchone()[0]
+        self.assertEqual(sayi, 1)
+
+
+class AnlikAbonelikAdresi(Ortam):
+    def test_yalnizca_push_servisleri(self):
+        ali = self.kisi("ali")
+        anahtarlar = {"p256dh": "x" * 20, "auth": "y" * 10}
+        for kotu in ("https://10.0.0.5:8443/x", "https://localhost/x", "https://169.254.169.254/latest",
+                     "https://fcm.googleapis.com.kotu.com/x", "http://fcm.googleapis.com/x"):
+            with self.assertRaises(KuralHatasi, msg=kotu):
+                anlik.abone_ol(self.db, ali, "WEB", {"endpoint": kotu, "keys": anahtarlar})
+        anlik.abone_ol(self.db, ali, "WEB", {"endpoint": "https://updates.push.services.mozilla.com/wpush/v2/abc",
+                                             "keys": anahtarlar})
+
+
+class DefterKorumasi(WebOrtam):
+    def test_bozma_denemesi_yalnizca_sunum_kipinde(self):
+        y = self.kisi("yonetici")
+        self.db.execute("UPDATE kullanicilar SET yonetici_mi = 1 WHERE id = ?", (y["id"],))
+        self.giris(y)
+        self.post("/yonetim/defter/A/boz")
+        self.post("/yonetim/defter/B/boz")
+        self.assertTrue(defter.durum(self.db.defter_klasoru)["saglikli"])
+
+    def test_butun_dugumler_bozuksa_durum_yine_okunur(self):
+        self.kisi("ali")
+        self.db.commit()
+        for ad in ("A", "B", "C"):
+            defter.boz_demo(self.db.defter_klasoru, ad)
+        d = defter.durum(self.db.defter_klasoru)
+        self.assertEqual({x["durum"] for x in d["dugumler"]}, {"BOZUK"})
 
 
 if __name__ == "__main__":

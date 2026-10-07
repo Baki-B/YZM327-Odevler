@@ -62,6 +62,7 @@ class Baglanti(sqlite3.Connection):
         self.defter_kuyrugu = []
         self.commit_sonrasi = []
         self.anlik_kuyrugu = None
+        self.onbellek.clear()      # geri alınan işlemin önbelleğe aldığı değerler (ör. değişmiş parametre) kalmasın
 
     def __exit__(self, tur, deger, iz):
         """`with db:` da kendi commit/rollback'imizden geçsin (yoksa sqlite3 yan etki kuyruklarını atlardı)."""
@@ -91,7 +92,7 @@ class Baglanti(sqlite3.Connection):
         """Blok hata verirse yalnızca o bloğun veritabanı değişiklikleri ve kuyruğa eklediği yan etkiler geri alınır;
         dış işlem (transaction) sürer. Zamanlayıcı her konuyu ve oylamayı ayrı bir kayıt noktasında işler."""
         if not self.in_transaction:
-            self.execute("BEGIN")
+            self.execute("BEGIN IMMEDIATE")
         h = self.hatira()
         self.execute(f"SAVEPOINT {ad}")
         try:
@@ -140,7 +141,7 @@ EK_SUTUNLAR = [("kullanicilar", "askida_bitis", "TEXT"), ("kullanicilar", "askid
                ("kategoriler", "renk", "TEXT"), ("konular", "itiraz_id", "INTEGER"),
                ("konular", "tur", "INTEGER NOT NULL DEFAULT 0"), ("konular", "tartisma_bitis", "TEXT"),
                ("kategoriler", "kaynak", "TEXT NOT NULL DEFAULT 'SISTEM'"), ("kategoriler", "kavramlar", "TEXT"),
-               ("kategoriler", "olusturma", "TEXT")]
+               ("kategoriler", "olusturma", "TEXT"), ("kullanicilar", "oturum_surumu", "INTEGER NOT NULL DEFAULT 0")]
 KALKAN_SUTUNLAR = [("parametreler", "abd")]
 
 
@@ -154,6 +155,11 @@ def _sutunlari_esitle(db):
         if sutun in sutunlar(tablo):
             db.execute(f"ALTER TABLE {tablo} DROP COLUMN {sutun}")
     _yeni_akisa_gecir(db)
+    try:   # kişi başı tek (yarışan) fikir kuralı veri katmanında da korunur; eski bir kopya varsa kurulum durmaz
+        db.execute("CREATE UNIQUE INDEX IF NOT EXISTS tek_fikir ON mesajlar (konu_id, yazar_id) "
+                   "WHERE tip = 'FIKIR' AND gizli = 0")
+    except sqlite3.IntegrityError:
+        log.warning("Aynı konuda birden fazla fikri olan üye var; tek_fikir dizini oluşturulamadı.")
     db.commit()
 
 

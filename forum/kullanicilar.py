@@ -6,6 +6,13 @@ from . import ayarlar, defter, gunluk, guvenlik, ontoloji, uygunluk, yonetmelik,
 from .hatalar import KuralHatasi
 
 TAKMA_AD_DESENI = re.compile(r"^[A-Za-z0-9_.çğıöşüÇĞİÖŞÜ]{3,30}$")
+KAYIT_SINIRI = (20, 60)          # bir IP adresinden 60 dakikada en fazla 20 yeni üyelik (sahte hesap seli)
+
+
+def _benzer_takma_ad_var_mi(db, takma_ad):
+    """Türkçe büyük/küçük harf ve şapkasız yazım farkı taklide izin vermesin: Çağlar = çağlar = CAGLAR = Caglar."""
+    aranan = ontoloji.katla(takma_ad)
+    return any(ontoloji.katla(r["takma_ad"]) == aranan for r in db.execute("SELECT takma_ad FROM kullanicilar"))
 
 
 def getir(db, kullanici_id):
@@ -27,8 +34,9 @@ def _konum_dogrula(db, konum_id):
     return konum_id
 
 
-def kayit(db, ad_soyad, takma_ad, sifre, sifre_tekrar, dogum_tarihi, konum_id):
-    """Yeni üye. Döner: (id, kurtarma_kodu) — kurtarma kodu sadece bu an gösterilir."""
+def kayit(db, ad_soyad, takma_ad, sifre, sifre_tekrar, dogum_tarihi, konum_id, istemci=None):
+    """Yeni üye. Döner: (id, kurtarma_kodu) — kurtarma kodu sadece bu an gösterilir.
+    istemci: isteğin IP adresi (web); verilirse aynı adresten saatlik üyelik sınırı uygulanır."""
     from . import yonetim
     if yonetim.site_ayari(db, "kayit_acik") != "1":
         raise KuralHatasi("Yeni üyelik şu an kapalı.")
@@ -37,8 +45,8 @@ def kayit(db, ad_soyad, takma_ad, sifre, sifre_tekrar, dogum_tarihi, konum_id):
         raise KuralHatasi("Ad soyad 3–100 karakter olmalı.")
     if not TAKMA_AD_DESENI.match(takma_ad):
         raise KuralHatasi("Takma ad 3–30 karakter olmalı; harf, rakam, nokta ve alt çizgi kullanılabilir.")
-    if takma_ad_ile(db, takma_ad):
-        raise KuralHatasi("Bu takma ad alınmış.")
+    if takma_ad_ile(db, takma_ad) or _benzer_takma_ad_var_mi(db, takma_ad):
+        raise KuralHatasi("Bu takma ad (ya da yazılışı çok benzeri) alınmış.")
     if yonetmelik.kaba_ifadeler(takma_ad):
         raise KuralHatasi("Takma ad kaba ifade içeremez.")
     guvenlik.sifre_kontrol(sifre, sifre_tekrar)
@@ -59,6 +67,9 @@ def kayit(db, ad_soyad, takma_ad, sifre, sifre_tekrar, dogum_tarihi, konum_id):
            VALUES (?, ?, ?, ?, ?, ?, ?)""",
         (ad_soyad, takma_ad, guvenlik.sifre_hash(sifre), guvenlik.kurtarma_hash(kod), dogum.isoformat(), konum_id,
          zaman.simdi_metin())).lastrowid
+    if istemci is not None:
+        guvenlik.hiz_siniri(db, f"kayit|{istemci}", *KAYIT_SINIRI,
+                            "Bu bağlantıdan çok sayıda yeni üyelik açıldı; bir süre sonra tekrar dene.")
     gunluk.kaydet(db, kullanici_id, "KAYIT", f"@{takma_ad} foruma katıldı")
     defter.ekle(db, "UYE", {"takma_ad": takma_ad, "yz": False})
     return kullanici_id, kod
@@ -76,11 +87,22 @@ def giris(db, takma_ad, sifre, istemci=""):
     return k
 
 
+def _sifre_sor(db, kullanici, sifre, hata):
+    """Oturum açıkken şifre soran işlemler de giriş gibi deneme sınırına tabidir (çalınan oturumla tahmin edilemesin)."""
+    anahtar = f"sifre|{kullanici['id']}"
+    guvenlik.giris_kilitli_mi(db, anahtar)
+    if not guvenlik.sifre_dogru_mu(kullanici["sifre_hash"], sifre):
+        guvenlik.hatali_giris(db, anahtar)
+        raise KuralHatasi(hata)
+    guvenlik.basarili_giris(db, anahtar)
+
+
 def sifre_degistir(db, kullanici, eski, yeni, yeni_tekrar):
-    if not guvenlik.sifre_dogru_mu(kullanici["sifre_hash"], eski):
-        raise KuralHatasi("Mevcut şifre hatalı.")
+    _sifre_sor(db, kullanici, eski, "Mevcut şifre hatalı.")
     guvenlik.sifre_kontrol(yeni, yeni_tekrar)
     db.execute("UPDATE kullanicilar SET sifre_hash = ? WHERE id = ?", (guvenlik.sifre_hash(yeni), kullanici["id"]))
+    guvenlik.oturumlari_kapat(db, kullanici["id"])
+    gunluk.kaydet(db, kullanici["id"], "SIFRE", "Şifresini değiştirdi")
 
 
 def sifre_sifirla(db, takma_ad, kurtarma_kodu, yeni, yeni_tekrar, istemci=""):
@@ -95,14 +117,14 @@ def sifre_sifirla(db, takma_ad, kurtarma_kodu, yeni, yeni_tekrar, istemci=""):
     kod = guvenlik.kurtarma_kodu_uret()
     db.execute("UPDATE kullanicilar SET sifre_hash = ?, kurtarma_hash = ? WHERE id = ?",
                (guvenlik.sifre_hash(yeni), guvenlik.kurtarma_hash(kod), k["id"]))
+    guvenlik.oturumlari_kapat(db, k["id"])
     guvenlik.basarili_giris(db, anahtar)
     gunluk.kaydet(db, k["id"], "SIFRE", "Şifresini kurtarma koduyla sıfırladı")
     return k, kod
 
 
 def kurtarma_kodu_yenile(db, kullanici, sifre):
-    if not guvenlik.sifre_dogru_mu(kullanici["sifre_hash"], sifre):
-        raise KuralHatasi("Şifre hatalı.")
+    _sifre_sor(db, kullanici, sifre, "Şifre hatalı.")
     kod = guvenlik.kurtarma_kodu_uret()
     db.execute("UPDATE kullanicilar SET kurtarma_hash = ? WHERE id = ?", (guvenlik.kurtarma_hash(kod), kullanici["id"]))
     return kod
@@ -141,7 +163,7 @@ def yz_ekle(db, yonetici, takma_ad):
     if db.execute("SELECT COUNT(*) FROM kullanicilar WHERE yz_mi = 1").fetchone()[0] >= ayarlar.MAX_YZ_HESABI:
         raise KuralHatasi(f"En fazla {ayarlar.MAX_YZ_HESABI} yapay zeka hesabı açılabilir.")
     takma_ad = (takma_ad or "").strip()
-    if not TAKMA_AD_DESENI.match(takma_ad) or takma_ad_ile(db, takma_ad):
+    if not TAKMA_AD_DESENI.match(takma_ad) or takma_ad_ile(db, takma_ad) or _benzer_takma_ad_var_mi(db, takma_ad):
         raise KuralHatasi("Geçersiz ya da alınmış takma ad.")
     kullanici_id = db.execute("INSERT INTO kullanicilar (takma_ad, yz_mi, olusturma) VALUES (?, 1, ?)",
                               (takma_ad, zaman.simdi_metin())).lastrowid

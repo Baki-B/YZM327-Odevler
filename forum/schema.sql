@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS kullanicilar (
     yonetici_mi        INTEGER NOT NULL DEFAULT 0,
     askida_bitis       TEXT,                          -- yönetici askıya aldıysa bitiş zamanı
     askida_neden       TEXT,
+    oturum_surumu      INTEGER NOT NULL DEFAULT 0,   -- şifre değişince artar; eski oturum çerezleri geçersiz olur
     olusturma          TEXT NOT NULL,
     son_giris          TEXT
 );

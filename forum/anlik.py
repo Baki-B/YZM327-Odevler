@@ -23,6 +23,17 @@ from .hatalar import KuralHatasi
 
 log = logging.getLogger(__name__)
 _kilit = threading.Lock()
+# Tarayıcıların Web Push servisleri. Abonelik adresi yalnızca bunlardan biri olabilir: sunucu bu adrese istek
+# attığı için, serbest bir adres kabul etmek iç ağa istek attırmaya (SSRF) kapı açardı.
+PUSH_SERVISLERI = ("fcm.googleapis.com", "android.googleapis.com", "push.services.mozilla.com",
+                   "notify.windows.com", "push.apple.com")
+
+
+def push_adresi_gecerli_mi(adres):
+    parca = urllib.parse.urlsplit(adres or "")
+    ad = (parca.hostname or "").lower()
+    return parca.scheme == "https" and parca.port in (None, 443) and \
+        any(ad == s or ad.endswith("." + s) for s in PUSH_SERVISLERI)
 _fcm_erisim = {"anahtar": None, "bitis": 0}
 
 
@@ -55,7 +66,7 @@ def vapid_acik_anahtar(db):
     with _kilit:
         if not os.path.exists(yol):
             ozel = ec.generate_private_key(ec.SECP256R1())
-            with open(yol, "wb") as f:
+            with os.fdopen(os.open(yol, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb") as f:
                 f.write(ozel.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
                                            serialization.NoEncryption()))
         with open(yol, "rb") as f:
@@ -86,7 +97,7 @@ def abone_ol(db, kullanici, tur, veri, cihaz=""):
     if tur == "WEB":
         adres = (veri or {}).get("endpoint", "")
         anahtarlar = (veri or {}).get("keys") or {}
-        if not adres.startswith("https://") or not anahtarlar.get("p256dh") or not anahtarlar.get("auth"):
+        if not push_adresi_gecerli_mi(adres) or not anahtarlar.get("p256dh") or not anahtarlar.get("auth"):
             raise KuralHatasi("Geçersiz tarayıcı aboneliği.")
         anahtar_json = json.dumps({"p256dh": anahtarlar["p256dh"], "auth": anahtarlar["auth"]})
     elif tur == "FCM":

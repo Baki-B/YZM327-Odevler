@@ -53,8 +53,8 @@
         <p><span class="rozet dugum-{{ d.durum|lower }}">{{ {'UYUMLU': 'Uyumlu', 'BOZUK': 'Bozuk zincir', 'AYRISMIS': 'Ayrışmış', 'AZINLIKTA': 'Uzlaşma yok'}[d.durum] }}</span>
           <span class="soluk kucuk">{{ d.uzunluk }} blok</span></p>
         <div class="eylem-satiri">
-          <form method="post" action="{{ url_for('yonetim.defter_deneme', ad=d.ad, islem='boz') }}">{{ csrf() }}
-            <button class="dugme ince tehlike kucuk-dugme" data-onay="Deneme: {{ d.ad }} düğümündeki bir blok bozulsun mu?">Bozmayı dene</button></form>
+          {% if config.DEMO %}<form method="post" action="{{ url_for('yonetim.defter_deneme', ad=d.ad, islem='boz') }}">{{ csrf() }}
+            <button class="dugme ince tehlike kucuk-dugme" data-onay="Deneme: {{ d.ad }} düğümündeki bir blok bozulsun mu?">Bozmayı dene</button></form>{% endif %}
           {% if d.durum != 'UYUMLU' %}<form method="post" action="{{ url_for('yonetim.defter_deneme', ad=d.ad, islem='onar') }}">{{ csrf() }}
             <button class="dugme kucuk-dugme">Onar</button></form>{% endif %}
         </div>

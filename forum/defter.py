@@ -12,6 +12,7 @@ Kişisel veri deftere yazılmaz: mesajların sadece SHA-256 özeti, oyların sad
 """
 import hashlib
 import json
+import logging
 import os
 import random
 import sqlite3
@@ -21,6 +22,7 @@ from collections import Counter
 from . import ayarlar, zaman
 
 _KILIT = threading.Lock()
+log = logging.getLogger(__name__)
 BASLANGIC_HASH = "0" * 64
 # Deftere yazılabilen blok türleri (tek doğruluk kaynağı: defter sayfasındaki süzgeç de buradan gelir).
 BLOK_TURLERI = ("KONU", "KONU_DUZENLEME", "KONU_DURUM", "MESAJ", "MESAJ_DUZENLEME", "GIZLEME", "TEKLIF", "OY", "SONUC",
@@ -96,6 +98,8 @@ def _uzlasma(klasor):
                          "gecerli": gecerli, "bozuk_blok": bozuk})
     sayac = Counter(d["bas"] for d in durumlar if d["gecerli"])
     if not sayac:
+        for d in durumlar:
+            d["durum"] = "BOZUK"
         return None, [], durumlar
     bas, oy = sayac.most_common(1)[0]
     cogunluk = oy > len(ayarlar.DEFTER_DUGUMLERI) // 2
@@ -114,6 +118,7 @@ def dugumlere_yaz(klasor, kuyruk):
     with _KILIT:
         bas, zincir, durumlar = _uzlasma(klasor)
         if not zincir:
+            log.error("Kayıt defterinde sağlam düğüm yok; %d blok yazılamadı", len(kuyruk))
             return
         son = zincir[-1]
         yeni = []

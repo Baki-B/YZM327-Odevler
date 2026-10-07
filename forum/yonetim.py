@@ -8,8 +8,9 @@ import sqlite3
 import tempfile
 from datetime import timedelta
 
-from . import ayarlar, bildirimler, defter, gunluk, kategoriler, ontoloji, sikayetler, zaman
+from . import ayarlar, bildirimler, defter, gunluk, kategoriler, ontoloji, sikayetler, uygunluk, zaman
 from .hatalar import KuralHatasi, tamsayi
+from .metin import site_ici_yol_mu
 
 # Yönetim işlemlerinin günlükteki eylem adları (panodaki "son yönetim işlemleri" bunları süzer)
 YONETIM_EYLEMLERI = ("YETKI", "ASKI", "ASKI_BITTI", "KATEGORI", "SITE_AYARI", "YZ", "SURE", "SIKAYET",
@@ -58,7 +59,7 @@ def site_ayari_yaz(db, yonetici, anahtar, deger):
 # --- Yetki ve askı ---
 
 def askida_mi(kullanici):
-    return bool(kullanici and kullanici["askida_bitis"] and kullanici["askida_bitis"] > zaman.simdi_metin())
+    return uygunluk.askida_mi(kullanici)
 
 
 def _hedef(db, kullanici_id):
@@ -314,7 +315,7 @@ def toplu_bildirim(db, yonetici, hedef, metin, baglanti="", konum_id=None, kateg
     if not 5 <= len(metin) <= 300:
         raise KuralHatasi("Bildirim metni 5–300 karakter olmalı.")
     baglanti = (baglanti or "").strip()
-    if baglanti and (not baglanti.startswith("/") or baglanti.startswith("//")):
+    if baglanti and not site_ici_yol_mu(baglanti):
         raise KuralHatasi("Bağlantı sitenin içinden olmalı ve / ile başlamalı (ör. /konu/3).")
     alicilar = toplu_bildirim_alicilari(db, hedef, konum_id, kategori_id)
     if not alicilar:

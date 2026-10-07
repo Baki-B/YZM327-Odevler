@@ -117,7 +117,7 @@ def oy_durumu(db, teklif, kullanici):
 def oy_ver(db, teklif_id, kullanici, secim, gerekce=""):
     """Oyu kaydeder ve seçmene özel makbuz kodunu döndürür. Oylama bitene kadar oy değiştirilebilir."""
     t = teklif_getir(db, teklif_id)
-    if t["durum"] != "ACIK":
+    if t["durum"] != "ACIK" or t["bitis"] <= zaman.simdi_metin():
         raise KuralHatasi("Bu oylama kapandı.")
     baglam = uygunluk.teklif_baglami(db, t)
     agirlik, aciklama = uygunluk.oy_agirligi(db, kullanici, baglam)
@@ -136,14 +136,18 @@ def oy_ver(db, teklif_id, kullanici, secim, gerekce=""):
 
     makbuz = "-".join(secrets.token_hex(2).upper() for _ in range(4))
     taahhut = defter.taahhut(teklif_id, secim, makbuz)
-    db.execute(
+    an = zaman.simdi_metin()
+    # Koşullu yazma: kontrol ile kayıt arasında oylama başka bir bağlantıda kapandıysa oy kaydedilmez ve makbuz verilmez.
+    if db.execute(
         """INSERT INTO oylar (teklif_id, kullanici_id, secim, agirlik, aciklama, gerekce, taahhut, zaman)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+           SELECT ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS
+             (SELECT 1 FROM teklifler WHERE id = ? AND durum = 'ACIK' AND bitis > ?)
            ON CONFLICT (teklif_id, kullanici_id) DO UPDATE SET secim = excluded.secim, agirlik = excluded.agirlik,
              aciklama = excluded.aciklama, gerekce = excluded.gerekce, taahhut = excluded.taahhut,
              zaman = excluded.zaman""",
-        (teklif_id, kullanici["id"], secim, agirlik, aciklama, gerekce, taahhut, zaman.simdi_metin()),
-    )
+        (teklif_id, kullanici["id"], secim, agirlik, aciklama, gerekce, taahhut, an, teklif_id, an),
+    ).rowcount == 0:
+        raise KuralHatasi("Bu oylama kapandı.")
     defter.ekle(db, "OY", {"teklif": teklif_id, "yurttas": kullanici["takma_ad"], "taahhut": taahhut,
                            "agirlik": agirlik})
     # Evet/Hayır oylamaları herkes oy verince erken biter. Fikir turları süresini doldurur:
@@ -250,6 +254,8 @@ def sayim(db, teklif):
 # --- Sonuçlandırma ---
 
 def sonuclandir(db, teklif_id):
+    if not db.in_transaction:
+        db.execute("BEGIN IMMEDIATE")      # sayım ile kapanış arasında başka bir bağlantı oy yazamasın
     t = teklif_getir(db, teklif_id)
     if t["durum"] != "ACIK":
         return

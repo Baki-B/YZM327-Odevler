@@ -148,11 +148,17 @@ def teklif_baglami(db, teklif):
                   secmenler=alanda_yazanlar(db, kategori_id))
 
 
+def askida_mi(kullanici, an=None):
+    return bool(kullanici and kullanici["askida_bitis"] and kullanici["askida_bitis"] > zaman.metin(an or zaman.simdi()))
+
+
 def katilabilir_mi(db, kullanici, baglam, an=None):
     if kullanici is None:
         return False, "Oy vermek için giriş yapmalısın."
     if kullanici["yz_mi"]:
         return False, "Yapay zeka hesapları oy kullanmaz."
+    if askida_mi(kullanici, an):              # askıdaki üye yeter sayıyı da şişirmesin
+        return False, "Hesabın askıda; askı bitene kadar oy kullanamazsın."
     if kullanici["id"] in baglam.haric:
         return False, "Kendi uzmanlık oylamanda oy kullanamazsın."
     if baglam.secmenler is not None and kullanici["id"] not in baglam.secmenler:

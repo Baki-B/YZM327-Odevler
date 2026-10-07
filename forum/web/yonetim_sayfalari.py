@@ -9,6 +9,7 @@ from flask import Blueprint, Response, current_app, flash, g, redirect, render_t
 from .. import (ayarlar, defter, gunluk, konular, kullanicilar, ontoloji, oylama, sikayetler, uzmanlik, yonetim,
                zaman)
 from ..hatalar import KuralHatasi
+from ..metin import site_ici_yol_mu
 from . import db_al, sayfa_no, yonetici_gerekli
 from .yardimcilar import sayfala
 
@@ -23,7 +24,7 @@ def _yalniz_yonetici():
 
 def _geri(varsayilan):
     hedef = request.form.get("geri") or ""
-    return redirect(hedef if hedef.startswith("/yonetim") else varsayilan)
+    return redirect(hedef if hedef.startswith("/yonetim") and site_ici_yol_mu(hedef) else varsayilan)
 
 
 # --- Pano ---
@@ -94,7 +95,7 @@ KONU_FILTRELERI = [("", "Tümü")] + list(ayarlar.KONU_DURUMLARI.items()) + [("S
 
 def _demo_olmali():
     if not current_app.config.get("DEMO"):
-        raise KuralHatasi("Süre yalnızca sunum kipinde (--demo) ilerletilebilir.")
+        raise KuralHatasi("Bu işlem yalnızca sunum kipinde (--demo) yapılabilir.")
 
 
 @bp.get("/konular")
@@ -271,6 +272,7 @@ def defter_deneme(ad, islem):
     if ad not in ayarlar.DEFTER_DUGUMLERI or islem not in ("boz", "onar"):
         raise KuralHatasi("Geçersiz işlem.")
     if islem == "boz":
+        _demo_olmali()          # kurcalama denemesi yalnızca sunum kipinde: gerçek defter geri dönüşsüz bozulmasın
         no = defter.boz_demo(db.defter_klasoru, ad)
         flash(f"Deneme: {ad} düğümündeki #{no} numaralı blok bozuldu. Kayıt defteri sayfası bu bozulmayı göstermeli.", "hata")
     else:

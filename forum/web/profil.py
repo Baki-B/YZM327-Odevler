@@ -2,6 +2,7 @@ from flask import Blueprint, abort, flash, g, redirect, render_template, request
 
 from .. import (bildirimler, devir, graf, guvenlik, kullanicilar, ontoloji, oylama, sikayetler, uygunluk, uzmanlik,
                 yonetim)
+from ..metin import site_ici_yol_mu
 from . import db_al, giris_gerekli, sayfa_no
 from .yardimcilar import sayfa_bilgisi
 
@@ -114,7 +115,8 @@ def sifre():
     f = request.form
     kullanicilar.sifre_degistir(db, g.kullanici, f.get("eski"), f.get("yeni"), f.get("yeni_tekrar"))
     db.commit()
-    flash("Şifren değişti.", "basari")
+    session["surum"] = kullanicilar.getir(db, g.kullanici["id"])["oturum_surumu"]    # bu oturum açık kalır
+    flash("Şifren değişti. Diğer cihazlardaki oturumların ve API anahtarların kapatıldı.", "basari")
     return redirect(url_for("profil.guvenlik_sayfasi"))
 
 
@@ -238,7 +240,7 @@ def bildirim_ac(bildirim_id):
     db = db_al()
     hedef = bildirimler.okundu_yap(db, g.kullanici["id"], bildirim_id)
     db.commit()
-    return redirect(hedef if hedef and hedef.startswith("/") else url_for("profil.bildirim_listesi"))
+    return redirect(hedef if site_ici_yol_mu(hedef) else url_for("profil.bildirim_listesi"))
 
 
 @bp.post("/bildirimler/okundu")

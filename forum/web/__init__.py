@@ -4,6 +4,7 @@ Kimlik doğrulama iki yoldan olur:
   * Tarayıcı: imzalı oturum çerezi + her POST'ta CSRF anahtarı.
   * Uygulama (API): `Authorization: Bearer <anahtar>` başlığı (CSRF gerekmez, çerez kullanılmaz).
 """
+import hmac
 import logging
 import secrets
 from functools import wraps
@@ -32,7 +33,8 @@ def giris_gerekli(f):
             if g.get("api"):
                 return jsonify(hata="Kimlik doğrulaması gerekli."), 401
             flash("Bu işlem için giriş yapmalısın.", "hata")
-            return redirect(url_for("hesap.giris", sonra=request.path))
+            # Girişten sonra yalnızca bir sayfaya (GET) dönülür; POST adresine dönmek 405 verirdi.
+            return redirect(url_for("hesap.giris", sonra=request.path if request.method == "GET" else None))
         return f(*args, **kwargs)
     return sarici
 
@@ -56,12 +58,6 @@ def sayfa_no():
     return request.args.get("sayfa", 1, type=int)
 
 
-def geri(varsayilan):
-    """Formdaki `geri` alanı site içi bir adresse oraya, değilse varsayılana döner (ör. yönetim panelinden gelen işlemler)."""
-    hedef = request.form.get("geri") or ""
-    return hedef if hedef.startswith("/") and not hedef.startswith("//") else varsayilan
-
-
 def kur(app):
     @app.before_request
     def istek_oncesi():
@@ -71,14 +67,14 @@ def kur(app):
         g.kullanici, g.token = None, False
         db = db_al()
         yetki = request.headers.get("Authorization", "")
-        if yetki.startswith("Bearer "):
+        if yetki.startswith("Bearer ") and g.api:           # API anahtarı yalnızca /api/ altında geçerli (en az yetki)
             g.kullanici = guvenlik.api_anahtari_kullanici(db, yetki[7:].strip())
             g.token = True
             if g.kullanici is None:
                 return jsonify(hata="Geçersiz API anahtarı."), 401
         elif "kullanici_id" in session:
             k = kullanicilar.getir(db, session["kullanici_id"])
-            if k is None:
+            if k is None or session.get("surum", 0) != k["oturum_surumu"]:   # silinmiş hesap ya da şifre değişti
                 session.clear()
             else:
                 g.kullanici = kullanicilar.bekleyen_adresi_uygula(db, k)
@@ -96,13 +92,17 @@ def kur(app):
         if request.method == "POST" and app.config["CSRF"] and not g.token:
             cerezli = "kullanici_id" in session
             if cerezli or not g.api:
-                gelen = request.form.get("csrf") or request.headers.get("X-CSRF-Token")
-                if not session.get("csrf") or gelen != session.get("csrf"):
+                gelen = request.form.get("csrf") or request.headers.get("X-CSRF-Token") or ""
+                if not session.get("csrf") or not hmac.compare_digest(gelen, session["csrf"]):
                     if g.api:
                         return jsonify(hata="Güvenlik anahtarı (CSRF) geçersiz."), 400
                     abort(400, "Güvenlik anahtarı geçersiz; sayfayı yenileyip tekrar dene.")
         gorevler.tick(db)   # süresi dolan tartışmalar ve oylama turları
         db.commit()
+        if request.method == "POST":
+            # Yazma isteği baştan yazma kilidini alır: "zaten fikrin var mı?" gibi kontrol ile kayıt arasında başka
+            # bir istek araya giremez (eşzamanlı isteklerle kişi başı tek fikir kuralı aşılabiliyordu).
+            db.execute("BEGIN IMMEDIATE")
 
     @app.after_request
     def guvenlik_basliklari(yanit):
@@ -112,7 +112,9 @@ def kur(app):
         yanit.headers.setdefault("Content-Security-Policy",
                                  "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
                                  "script-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; "
-                                 "frame-ancestors 'none'; form-action 'self'")
+                                 "frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'")
+        if getattr(g, "kullanici", None) is not None:
+            yanit.headers.setdefault("Cache-Control", "no-store")   # kişisel sayfalar tarayıcı önbelleğinde kalmasın
         return yanit
 
     @app.teardown_appcontext

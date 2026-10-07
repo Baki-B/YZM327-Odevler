@@ -17,7 +17,12 @@ bp = Blueprint("api", __name__, url_prefix="/api/v1")
 
 
 def _veri():
-    return request.get_json(silent=True) or request.form.to_dict()
+    """İstek gövdesi: JSON nesnesi ya da form. Liste/sayı gövde boş sayılır; sayı ve mantıksal alanlar metne çevrilir
+    (iş katmanı metin bekler: {"baslik": 5} 500 değil, anlaşılır bir doğrulama hatası versin)."""
+    veri = request.get_json(silent=True)
+    if not isinstance(veri, dict):
+        veri = request.form.to_dict()
+    return {k: str(v) if isinstance(v, (int, float, bool)) else v for k, v in veri.items()}
 
 
 def _yurttas(k):

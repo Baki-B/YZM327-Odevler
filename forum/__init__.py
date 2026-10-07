@@ -16,11 +16,13 @@ def create_app(ayar=None):
     os.makedirs(app.instance_path, exist_ok=True)
     app.config.update(
         VERITABANI=os.environ.get("FORUM_VERITABANI", os.path.join(app.instance_path, "forum.db")),
-        SECRET_KEY=os.environ.get("FORUM_GIZLI_ANAHTAR") or _gizli_anahtar(app.instance_path),
+        SECRET_KEY=os.environ.get("FORUM_GIZLI_ANAHTAR") or (ayar or {}).get("SECRET_KEY")
+        or _gizli_anahtar(app.instance_path),
         CSRF=True,
         ZAMANLAYICI=False,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_SECURE=os.environ.get("FORUM_HTTPS") == "1",   # HTTPS arkasında yayınlanınca açılır
         MAX_CONTENT_LENGTH=1024 * 1024,
         JSON_AS_ASCII=False,
     )
@@ -49,8 +51,8 @@ def _gizli_anahtar(klasor):
     """Oturum çerezlerini imzalayan anahtar; ilk çalıştırmada üretilir ve saklanır."""
     yol = os.path.join(klasor, "gizli_anahtar.txt")
     if not os.path.exists(yol):
-        with open(yol, "w", encoding="utf-8") as f:
-            f.write(secrets.token_hex(32))
+        with os.fdopen(os.open(yol, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w", encoding="utf-8") as f:
+            f.write(secrets.token_hex(32))     # yalnızca sunucuyu çalıştıran kullanıcı okuyabilir
     with open(yol, encoding="utf-8") as f:
         return f.read().strip()
 

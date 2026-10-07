@@ -1225,7 +1225,7 @@ class SikayetVeBildirim(Ortam):
         gercek = anlik._gonder
         anlik._gonder = lambda yol, isler: gonderilen.extend(isler)
         try:
-            anlik.abone_ol(self.db, self.a, "WEB", {"endpoint": "https://push.ornek/abc",
+            anlik.abone_ol(self.db, self.a, "WEB", {"endpoint": "https://fcm.googleapis.com/fcm/send/abc",
                                                     "keys": {"p256dh": "x" * 20, "auth": "y" * 10}})
             self.db.commit()
             konular.mesaj_yaz(self.db, self.c, self.k, "SORU", "Ali bu konuyu neden açtın?", self.m)
