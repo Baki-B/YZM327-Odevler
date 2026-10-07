@@ -78,8 +78,9 @@ def _bicim(deger):
 
 def rapor(db):
     satirlar = ["| Katman | Metrik | Değer |", "|---|---|---|"]
+    m = metrikler(db)
     for katman, ad in (("is", "İş"), ("urun", "Ürün"), ("koruyucu", "Koruyucu")):
-        for metrik, deger in metrikler(db)[katman].items():
+        for metrik, deger in m[katman].items():
             satirlar.append(f"| {ad} | {metrik} | {_bicim(deger)} |")
     return "\n".join(satirlar)
 

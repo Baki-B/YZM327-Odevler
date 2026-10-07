@@ -29,11 +29,17 @@ def _yumusamis(kok):
 
 
 KABA_KOKLER = sorted(set(KABA_IFADELER) | {_yumusamis(k) for k in KABA_IFADELER})
+# Kök kelimenin başında aranır (Türkçe sondan eklemeli): "asalak bitkiler" içindeki "salak" hakaret sayılmaz.
+_KABA_DESENLER = {k: re.compile(r"(?<![a-z0-9])" + re.escape(k)) for k in KABA_KOKLER}
+# Desenler rakam ya da kelime sınırında başlar. Sınırsız e-posta deseni, uzun bir metinde her konumdan yeniden
+# denendiği için süre metin uzunluğunun karesiyle büyüyordu (40.000 karakterlik bir gerekçe ~7 sn); telefon deseni de
+# 13 haneli bir barkodun içindeki 10 haneyi telefon sanıyordu.
 KISISEL_VERI_DESENLERI = {
-    "telefon numarası": re.compile(r"(\+90|0)?\s?\(?5\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}"),
-    "e-posta adresi": re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"),
-    "IBAN": re.compile(r"\bTR\s?\d{2}(\s?\d{4}){5}\s?\d{2}\b", re.IGNORECASE),
+    "telefon numarası": re.compile(r"(?<!\d)(?:\+?90|0)?\s?\(?5\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}(?!\d)"),
+    "e-posta adresi": re.compile(r"(?<![\w.+-])[\w.+-]+@[\w-]+\.[\w.]+"),
+    "IBAN": re.compile(r"(?<![a-z0-9])TR\s?\d{2}(?:[\s-]?\d{4}){5}[\s-]?\d{2}(?!\d)", re.IGNORECASE),
 }
+METIN_EN_UZUN = 5000    # serbest metinler (mesaj, fikir, gerekçe, açıklama) için üst sınır
 _ON_BIR_HANE = re.compile(r"(?<!\d)[1-9]\d{10}(?!\d)")
 
 
@@ -48,7 +54,7 @@ def tc_kimlik_gecerli_mi(no):
 
 def kaba_ifadeler(metin):
     katli = ontoloji.katla(metin)
-    return [k for k in KABA_KOKLER if k in katli]
+    return [k for k, desen in _KABA_DESENLER.items() if desen.search(katli)]
 
 
 def kisisel_veriler(metin):
@@ -248,7 +254,9 @@ def denetle(db, baslik, aciklama, kategori_id, konum_id=None, ust=None, haric_ko
 
 def mesaj_denetle(db, icerik):
     """Mesajlar (ve fikir, gerekçe gibi serbest metinler) için zincirin yalnızca ENGEL durumundaki mesaj halkaları
-    uygulanır (hakaret, kişisel veri)."""
+    uygulanır (hakaret, kişisel veri). Gerekçe alanlarının kendi üst sınırı olmadığından uzunluk burada sınırlanır."""
+    if len(icerik) > METIN_EN_UZUN:
+        raise KuralHatasi(f"Metin en fazla {METIN_EN_UZUN} karakter olabilir.")
     sorunlar = [s for h in ZINCIR.halkalar() if h.mesajlara_uygulanir and yonetmelik.ciddiyet(db, h.kod) == "ENGEL"
                 for s in [h.mesaj_sorunu(icerik)] if s]
     if sorunlar:

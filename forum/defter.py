@@ -27,9 +27,11 @@ import os
 import random
 import sqlite3
 import threading
+import time
 import weakref
 from abc import ABC, abstractmethod
 from collections import Counter
+from contextlib import contextmanager
 
 from . import ayarlar, veritabani, zaman
 
@@ -99,7 +101,7 @@ class DugumDeposu(ABC):
 
     @abstractmethod
     def ekle(self, yeni):
-        """Blokları zincirin sonuna ekler."""
+        """Blokları zincirin sonuna ekler. Aynı numaralı bir blok zaten varsa hata verir."""
 
     @abstractmethod
     def yeniden_kur(self, zincir):
@@ -120,7 +122,7 @@ class DugumDeposu(ABC):
         return next((b for b in self.bloklar() if b["no"] == no), None)
 
     def sayfa(self, tur, atla, boy):
-        """En yeniden eskiye (tur verilirse yalnız o türden) bloklar: (liste, toplam)."""
+        """En yeniden eskiye (tur verilirse yalnız o türden) bloklar: (liste, toplam). atla ≥ 0 olmalı."""
         liste = [b for b in reversed(self.bloklar()) if tur is None or b["tur"] == tur]
         return liste[atla:atla + boy], len(liste)
 
@@ -183,15 +185,23 @@ class SqliteDugumDeposu(DugumDeposu):
         self._yaz([("UPDATE bloklar SET veri = ? WHERE no = ?", (veri, no))])
 
     def surum(self):
-        """SQLite dosya başlığındaki değişiklik sayacı (her yazma işleminde artar; dosyayı başka bir programla
-        değiştirmek de artırır) + dosya boyu ve zamanı. Dosya yoksa None."""
+        """SQLite dosya başlığındaki değişiklik sayacı (SQLite ile yapılan her yazmada artar) + dosyanın kimliği (inode),
+        boyu, değişiklik zamanı ve durum değişim zamanı (ctime) + varsa WAL dosyasının boyu ve zamanı. Dosyayı SQLite'ı
+        atlayıp ham bayt olarak değiştirmek sayacı değiştirmez; değişiklik zamanı da geri alınabilir (os.utime), ama
+        ctime geri alınamaz. (Windows'ta ctime oluşturma zamanıdır; oradaki güvence önbellek ömrüdür, bkz. _dugum_durumu.)
+        Dosya yoksa None."""
         try:
             with open(self.yol, "rb") as f:
                 baslik = f.read(28)
             bilgi = os.stat(self.yol)
         except FileNotFoundError:
             return None
-        return baslik[24:28], bilgi.st_size, bilgi.st_mtime_ns
+        try:
+            wal = os.stat(self.yol + "-wal")
+            wal = (wal.st_size, wal.st_mtime_ns, wal.st_ctime_ns)
+        except FileNotFoundError:
+            wal = None
+        return baslik[24:28], bilgi.st_ino, bilgi.st_size, bilgi.st_mtime_ns, bilgi.st_ctime_ns, wal
 
     def son_blok(self):
         return self._oku("SELECT * FROM bloklar ORDER BY no DESC LIMIT 1")[0]
@@ -202,9 +212,16 @@ class SqliteDugumDeposu(DugumDeposu):
 
     def sayfa(self, tur, atla, boy):
         kosul = "WHERE ? IS NULL OR tur = ?"
-        liste = self._oku(f"SELECT * FROM bloklar {kosul} ORDER BY no DESC LIMIT ? OFFSET ?", (tur, tur, boy, atla))
-        toplam = self._oku(f"SELECT COUNT(*) AS n FROM bloklar {kosul}", (tur, tur))[0]["n"]
-        return liste, toplam
+        c = self._baglan()
+        try:       # liste ve toplam aynı bağlantıdan, arada yazma araya girmesin
+            toplam = c.execute(f"SELECT COUNT(*) FROM bloklar {kosul}", (tur, tur)).fetchone()[0]
+            if atla >= toplam:
+                return [], toplam
+            liste = [dict(r) for r in c.execute(f"SELECT * FROM bloklar {kosul} ORDER BY no DESC LIMIT ? OFFSET ?",
+                                                (tur, tur, boy, atla))]
+            return liste, toplam
+        finally:
+            c.close()
 
     def turdeki(self, turler):
         return self._oku(f"SELECT * FROM bloklar WHERE tur IN ({','.join('?' * len(turler))}) ORDER BY no",
@@ -238,7 +255,11 @@ class BellekDugumDeposu(DugumDeposu):
 
     def ekle(self, yeni):
         self._ac()
-        self._bloklar.extend(dict(b) for b in yeni)
+        var = {b["no"] for b in self._bloklar}
+        yeni = [dict(b) for b in yeni]
+        if any(b["no"] in var for b in yeni) or len({b["no"] for b in yeni}) != len(yeni):
+            raise ValueError("Bu numarada bir blok zaten var.")     # SQLite deposundaki birincil anahtarın karşılığı
+        self._bloklar.extend(yeni)
         self._degisti()
 
     def yeniden_kur(self, zincir):
@@ -247,8 +268,10 @@ class BellekDugumDeposu(DugumDeposu):
 
     def veri_degistir(self, no, veri):
         self._ac()
-        self._bloklar[no]["veri"] = veri
-        self._degisti()
+        for b in self._bloklar:
+            if b["no"] == no:
+                b["veri"] = veri
+                self._degisti()
 
     def surum(self):
         return self._surum
@@ -293,20 +316,24 @@ def zinciri_dogrula(bloklar):
 
 # Düğüm başına son tam doğrulamanın sonucu, düğümün o anki sürümüyle birlikte. Sürüm değişmedikçe zincir yeniden
 # okunup hash'lenmez. Önceden her yazma ve her defter sayfası üç zinciri baştan doğruluyordu: 50.000 blokta bir oy
-# yarım saniye sürüyordu (olcum/gecikme_olcumu.py). Defterin kendi eklemeleri önbelleği günceller; dışarıdan yapılan
-# her değişiklik (kurcalama) sürümü değiştirdiği için bir sonraki okumada tam doğrulama yapılır.
+# yarım saniye sürüyordu (olcum/gecikme_olcumu.py). Defterin kendi eklemeleri önbelleği günceller; dosyayı dışarıdan
+# değiştirmek sürümü değiştirir ve bir sonraki okumada tam doğrulama yapılır. Sürümün göremeyeceği değişikliklere
+# (disk bozulması; Windows'ta zamanı geri alınmış ham bayt değişikliği) karşı iki güvence: bir sonuç en fazla
+# DOGRULAMA_OMRU saniye kullanılır ve "denetle" istekleri (tam=True) önbelleği hiç kullanmaz.
 _DOGRULAMA = weakref.WeakKeyDictionary()
+DOGRULAMA_OMRU = 600
+_saat = time.monotonic      # testler değiştirir
 
 
-def _dugum_durumu(depo):
+def _dugum_durumu(depo, tam=False):
     with _KILIT:
         surum = depo.surum()
         d = _DOGRULAMA.get(depo)
-        if d is None or d["surum"] != surum:
+        if tam or d is None or d["surum"] != surum or _saat() - d["dogrulama"] > DOGRULAMA_OMRU:
             z = depo.bloklar()
             gecerli, bozuk = zinciri_dogrula(z)
             d = {"surum": surum, "uzunluk": len(z), "bas": z[-1]["hash"] if z else None, "gecerli": gecerli,
-                 "bozuk_blok": bozuk}
+                 "bozuk_blok": bozuk, "dogrulama": _saat()}
             _DOGRULAMA[depo] = d
         return dict(d)
 
@@ -318,15 +345,17 @@ def _eklendi(depo, yeni):
         d.update(surum=depo.surum(), uzunluk=yeni[-1]["no"] + 1, bas=yeni[-1]["hash"])
 
 
-def _uzlasma(kaynak):
+def _uzlasma(kaynak, tam=False):
     """Geçerli zincirlerin baş hash'lerine göre çoğunluk: (çoğunluk baş hash'i ya da None, okunacak depo ya da None,
-    düğüm durumları). Okunacak depo, en çok düğümün paylaştığı geçerli zincirdeki ilk düğümdür."""
+    düğüm durumları). Okunacak depo, en çok düğümün paylaştığı geçerli zincirdeki ilk düğümdür. Düğümler kilit altında
+    okunur: bir yazmanın ortasında okunan düğümler yanlışlıkla "ayrışmış" görünmesin. tam=True: önbellek kullanılmaz."""
     depolar = _depolar(kaynak)
     durumlar = []
-    for ad, depo in depolar.items():
-        d = _dugum_durumu(depo)
-        durumlar.append({"ad": ad, "uzunluk": d["uzunluk"], "bas": d["bas"], "gecerli": d["gecerli"],
-                         "bozuk_blok": d["bozuk_blok"]})
+    with _KILIT:
+        for ad, depo in depolar.items():
+            d = _dugum_durumu(depo, tam)
+            durumlar.append({"ad": ad, "uzunluk": d["uzunluk"], "bas": d["bas"], "gecerli": d["gecerli"],
+                             "bozuk_blok": d["bozuk_blok"]})
     sayac = Counter(d["bas"] for d in durumlar if d["gecerli"])
     if not sayac:
         for d in durumlar:
@@ -345,11 +374,31 @@ def _uzlasma(kaynak):
     return (bas if cogunluk else None), depolar[kaynak_adi], durumlar
 
 
+@contextmanager
+def _surecler_arasi_kilit(depolar):
+    """Aynı düğümlere birden fazla sunucu süreci (ör. birden çok WSGI işçisi) yazarsa iki süreç aynı numaralı bloğu
+    ekleyip zinciri bölebilirdi. Yazmalar, düğüm klasöründeki kilit.db üzerinde BEGIN IMMEDIATE ile sıraya girer:
+    SQLite'ın kendi dosya kilidi, Windows'ta da çalışır. Bellek depolarında (testler) gerekmez."""
+    klasorler = sorted({os.path.dirname(d.yol) for d in depolar.values() if isinstance(d, SqliteDugumDeposu)})
+    if not klasorler:
+        yield
+        return
+    os.makedirs(klasorler[0], exist_ok=True)
+    c = sqlite3.connect(os.path.join(klasorler[0], "kilit.db"), timeout=30, isolation_level=None)
+    try:
+        c.execute("BEGIN IMMEDIATE")
+        yield
+    finally:
+        c.close()          # açık işlem kapanışta geri alınır, kilit bırakılır
+
+
 def dugumlere_yaz(kaynak, kuyruk):
     """kuyruk: (tür, veri_json, zaman) üçlüleri. Bloklar çoğunluk zincirinin sonuna eklenir ve o zincirdeki
     bütün düğümlere yazılır. Zincirin yalnızca son bloğu okunur."""
-    with _KILIT:
-        depolar = _depolar(kaynak)
+    if not kuyruk:
+        return
+    depolar = _depolar(kaynak)
+    with _KILIT, _surecler_arasi_kilit(depolar):
         _, okunan, durumlar = _uzlasma(depolar)
         if okunan is None:
             log.error("Kayıt defterinde sağlam düğüm yok; %d blok yazılamadı", len(kuyruk))
@@ -373,17 +422,18 @@ def _uzunluk(okunan, durumlar):
     return next((d["uzunluk"] for d in durumlar if okunan and d["ad"] == okunan.ad), 0)
 
 
-def durum(kaynak):
-    bas, okunan, durumlar = _uzlasma(kaynak)
+def durum(kaynak, tam=False):
+    """tam=True: düğümler önbelleğe bakılmadan baştan doğrulanır ("denetle" istekleri)."""
+    bas, okunan, durumlar = _uzlasma(kaynak, tam)
     return {"bas": bas, "uzunluk": _uzunluk(okunan, durumlar), "dugumler": durumlar,
             "saglikli": all(d.get("durum") == "UYUMLU" for d in durumlar)}
 
 
 def onar(kaynak, ad):
     """Bozuk/ayrışmış düğümü çoğunluk zincirinden yeniden kurar."""
-    with _KILIT:
-        depolar = _depolar(kaynak)
-        bas, okunan, _ = _uzlasma(depolar)
+    depolar = _depolar(kaynak)
+    with _KILIT, _surecler_arasi_kilit(depolar):
+        bas, okunan, _ = _uzlasma(depolar, tam=True)       # onarım kaynağı önbelleğe güvenilmeden seçilir
         if bas is None:
             raise ValueError("Çoğunluk sağlanamıyor; onarım için en az iki sağlam düğüm gerekli.")
         depolar[ad].yeniden_kur(okunan.bloklar())
@@ -394,10 +444,10 @@ def boz_demo(kaynak, ad):
     Döner: bozulan bloğun numarası (başlangıç bloğundan başka blok yoksa None)."""
     with _KILIT:
         depo = _depolar(kaynak)[ad]
-        n = depo.son_blok()["no"]
-        blok = depo.blok(random.randint(1, n)) if n else None
-        if blok is None:
+        adaylar = [b for b in depo.bloklar() if b["no"] > 0]      # yalnızca demo: bütün zinciri okumak sorun değil
+        if not adaylar:
             return None
+        blok = random.choice(adaylar)
         veri = json.loads(blok["veri"])
         veri["kurcalandi"] = 1
         depo.veri_degistir(blok["no"], json.dumps(veri, ensure_ascii=False, sort_keys=True))
@@ -416,7 +466,7 @@ def bloklar(kaynak, sayfa=1, boy=25, tur=None):
     _, okunan, _ = _uzlasma(kaynak)
     if okunan is None:
         return [], 0
-    secilen, toplam = okunan.sayfa(tur, (sayfa - 1) * boy, boy)
+    secilen, toplam = okunan.sayfa(tur, (max(1, sayfa) - 1) * boy, boy)
     return [_json_ekle(b) for b in secilen], toplam
 
 

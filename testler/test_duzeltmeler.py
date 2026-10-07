@@ -869,3 +869,99 @@ class PanoSayilari(Ortam):
         bugun = zaman.simdi().date()
         self.assertEqual(p["sayilar"]["mesaj_hafta"], 1)
         self.assertEqual(next(e["mesaj"] for e in p["etkinlik"] if e["gun"] == bugun), 1)
+
+
+class DefterDayanikliligi(unittest.TestCase):
+    """İkinci inceleme turunda bulunanlar: önbelleğin göremeyeceği değişiklik, uç girdiler, çok süreçli yazma."""
+
+    def yaz(self, kaynak, n=3, i=0):
+        defter.dugumlere_yaz(kaynak, [("MESAJ", '{"i": %d}' % (i + j), "2026-01-02 10:00:00") for j in range(n)])
+
+    def test_surumun_goremedigi_degisiklik_tam_denetimde_ve_omur_dolunca_yakalanir(self):
+        depolar = defter.bellek_depolari()
+        self.yaz(depolar)
+        self.assertTrue(defter.durum(depolar)["saglikli"])
+        depolar[0]._bloklar[2]["veri"] = '{"i": 99}'        # sürümü değiştirmeden (disk bozulması gibi)
+        self.assertTrue(defter.durum(depolar)["saglikli"])  # önbellek henüz görmüyor
+        self.assertFalse(defter.durum(depolar, tam=True)["saglikli"])
+        depolar[0]._bloklar[2]["veri"] = '{"i": 2}'
+        defter.durum(depolar, tam=True)
+        depolar[0]._bloklar[2]["veri"] = '{"i": 99}'
+        gercek = defter._saat
+        try:
+            defter._saat = lambda: gercek() + defter.DOGRULAMA_OMRU + 1
+            self.assertFalse(defter.durum(depolar)["saglikli"])
+        finally:
+            defter._saat = gercek
+
+    @unittest.skipIf(os.name == "nt", "Windows'ta ctime oluşturma zamanıdır; orada güvence önbellek ömrüdür")
+    def test_ham_bayt_degisikligi_zamani_geri_alinsa_da_yakalanir(self):
+        with tempfile.TemporaryDirectory() as klasor:
+            self.yaz(klasor)
+            self.assertTrue(defter.durum(klasor)["saglikli"])
+            yol = os.path.join(klasor, "A.db")
+            bilgi = os.stat(yol)
+            with open(yol, "rb") as f:
+                icerik = f.read()
+            konum = icerik.find(b'{"i": 1}')
+            with open(yol, "r+b") as f:
+                f.seek(konum)
+                f.write(b'{"i": 7}')
+            os.utime(yol, ns=(bilgi.st_atime_ns, bilgi.st_mtime_ns))
+            self.assertEqual({x["ad"]: x["durum"] for x in defter.durum(klasor)["dugumler"]}["A"], "BOZUK")
+
+    def test_uc_girdiler(self):
+        depolar = defter.bellek_depolari()
+        defter.dugumlere_yaz(depolar, [])                    # boş kuyruk sessizce geçer
+        self.yaz(depolar)
+        self.assertEqual(defter.bloklar(depolar, sayfa=10 ** 20)[0], [])
+        self.assertEqual(len(defter.bloklar(depolar, sayfa=0)[0]), 4)
+        with tempfile.TemporaryDirectory() as klasor:
+            self.yaz(klasor)
+            self.assertEqual(defter.bloklar(klasor, sayfa=10 ** 20), ([], 4))
+        with self.assertRaises(ValueError):
+            depolar[0].ekle([depolar[0].son_blok()])         # aynı numara: SQLite'taki birincil anahtar gibi
+
+    def test_bozma_denemesi_ardisik_olmayan_numaralarda(self):
+        depolar = defter.bellek_depolari()
+        self.yaz(depolar)
+        del depolar[1]._bloklar[1:3]                         # yalnız 0 ve 3 numaralı bloklar kaldı
+        for _ in range(10):
+            self.assertEqual(defter.boz_demo(depolar, "B"), 3)
+
+    def test_birden_cok_surec_ayni_anda_yazinca_zincir_bolunmez(self):
+        import subprocess
+        kod = ("import sys; sys.path.insert(0, sys.argv[1]); from forum import defter\n"
+               "for i in range(15):\n"
+               "    defter.dugumlere_yaz(sys.argv[2], [('MESAJ', '{\"s\": %s, \"i\": %d}' % (sys.argv[3], i), 'z')])\n")
+        with tempfile.TemporaryDirectory() as klasor:
+            self.yaz(klasor, 1)
+            surecler = [subprocess.Popen([sys.executable, "-c", kod, os.path.dirname(_KLASOR), klasor, str(n)])
+                        for n in range(3)]
+            self.assertEqual([s.wait(timeout=120) for s in surecler], [0, 0, 0])
+            d = defter.durum(klasor, tam=True)
+            self.assertTrue(d["saglikli"], d)
+            self.assertEqual(d["uzunluk"], 1 + 1 + 3 * 15)
+
+
+class DenetimDesenSinirlari(Ortam):
+    """İkinci inceleme turu: desenler kelime/rakam sınırında başlar, serbest metinlerin üst sınırı var."""
+
+    def test_uzun_metin_karesel_sure_almaz(self):
+        import time
+        bas = time.perf_counter()
+        denetim.kisisel_veriler("a" * 200_000)
+        denetim.kisisel_veriler("a." * 100_000)
+        self.assertLess(time.perf_counter() - bas, 1.0)      # önceden 40.000 karakter ~7 sn sürüyordu
+
+    def test_serbest_metin_ust_siniri(self):
+        with self.assertRaises(KuralHatasi):
+            denetim.mesaj_denetle(self.db, "a" * (denetim.METIN_EN_UZUN + 1))
+        denetim.mesaj_denetle(self.db, "Gerekçem: menü bütçeyi aşıyor. " * 10)
+
+    def test_rakam_ve_kelime_siniri(self):
+        self.assertEqual(denetim.kisisel_veriler("Kitap barkodu 8695012345678"), [])
+        self.assertEqual(denetim.kisisel_veriler("905321234567"), ["telefon numarası"])
+        self.assertEqual(denetim.kisisel_veriler("TR33-0006-1005-1978-6457-8413-26"), ["IBAN"])
+        self.assertEqual(denetim.kaba_ifadeler("Asalak bitkiler üzerine bir seminer düzenleyelim."), [])
+        self.assertTrue(denetim.kaba_ifadeler("SALAK mısın sen?"))

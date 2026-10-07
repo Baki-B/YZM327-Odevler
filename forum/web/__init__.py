@@ -51,7 +51,8 @@ def csrf_token():
 
 
 def sayfa_no():
-    return request.args.get("sayfa", 1, type=int)
+    """1 ile 100.000 arası: çok büyük bir sayı veritabanı sorgusunda taşma hatasına (500) yol açıyordu."""
+    return min(max(request.args.get("sayfa", 1, type=int), 1), 100_000)
 
 
 def kur(app):

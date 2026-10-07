@@ -9,6 +9,7 @@ sys.path.insert(0, _KOK)
 sys.path.insert(0, os.path.join(_KOK, "olcum"))
 
 import denetim_olcumu as olcum  # noqa: E402
+import gecikme_olcumu  # noqa: E402
 import urun_metrikleri  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -39,6 +40,12 @@ class DenetimOlcumu(unittest.TestCase):
         self.assertEqual((m["DP"], m["YP"], m["YN"], m["DN"]), (1, 1, 1, 1))
         self.assertEqual((m["kesinlik"], m["duyarlilik"], m["F1"]), (0.5, 0.5, 0.5))
         self.assertEqual(olcum.ikili_metrikler(["VAR"], ["YOK"])["F1"], 0.0)       # sıfıra bölme yok
+
+
+class Yuzdelik(unittest.TestCase):
+    def test_en_yakin_sira(self):
+        for n, p, beklenen in ((60, 95, 57), (20, 95, 19), (100, 95, 95), (100, 50, 50), (1, 95, 1), (7, 50, 4)):
+            self.assertEqual(gecikme_olcumu.yuzdelik(list(range(1, n + 1)), p), beklenen, (n, p))
 
 
 class UrunMetrikleri(Ortam):

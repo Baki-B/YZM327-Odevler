@@ -51,7 +51,7 @@ def defter_sayfasi():
     sayfa = sayfa_no()
     bloklar, toplam = defter.bloklar(db.defter_klasoru, sayfa, 20, tur)
     aranan = request.args.get("blok", "").strip()
-    return render_template("defter.html", durum=defter.durum(db.defter_klasoru), bloklar=bloklar,
+    return render_template("defter.html", durum=defter.durum(db.defter_klasoru, tam=bool(request.args.get("denetle"))), bloklar=bloklar,
                            sayfalama=sayfa_bilgisi(toplam, sayfa, 20), tur=tur,
                            turler=defter.BLOK_TURLERI,
                            aranan=aranan, bulunan=defter.blok_bul(db.defter_klasoru, aranan) if aranan else None,

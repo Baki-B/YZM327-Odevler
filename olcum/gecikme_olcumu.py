@@ -1,6 +1,9 @@
 """Sayfa gecikmesi ölçümü (p50 / p95 / en kötü), demo verisiyle.
 
-Çalıştırmak için:  python olcum/gecikme_olcumu.py [istek_sayısı] [--defter-blok N]
+Çalıştırmak için:  python olcum/gecikme_olcumu.py [istek_sayısı] [--defter-blok N] [--konu N]
+
+--konu N: ölçümden önce demo konularının N kopyası eklenir (konu sayısı büyüdükçe konu akışının nasıl yavaşladığını görmek
+için; kopyalar mesajsızdır, yalnızca başlık ve açıklamaları vardır).
 
 --defter-blok N: ölçümden önce kayıt defterine N yapay blok eklenir (defter büyüdükçe gecikmenin nasıl değiştiğini
 görmek için). Doğrulama önbelleğinden önce her yazma üç zinciri baştan doğruluyordu: 50.000 blokta oy verme p95 ≈ 645 ms,
@@ -26,9 +29,11 @@ ISINMA = 3
 
 
 def yuzdelik(degerler, p):
-    """En yakın sıra yöntemiyle p. yüzdelik (p95 = sıralı listede %95'teki değer)."""
+    """En yakın sıra yöntemiyle p. yüzdelik: sıralı listede ⌈p·N/100⌉. sıradaki değer (60 değerde p95 = 57. değer).
+    Önceki round(x + 0,5) yazımı Python'un "çifte yuvarlama" kuralı yüzünden bazen bir sonraki sırayı veriyordu."""
     s = sorted(degerler)
-    return s[max(0, min(len(s) - 1, round(p / 100 * len(s) + 0.5) - 1))]
+    sira = -(-p * len(s) // 100)          # tam sayı tavanı
+    return s[min(len(s), max(1, sira)) - 1]
 
 
 def _defteri_buyut(yol, n):
@@ -38,12 +43,27 @@ def _defteri_buyut(yol, n):
                                       for i in range(bas, min(n, bas + 5000))])
 
 
-def _hazirla(klasor, defter_blok=0):
+def _konulari_cogalt(yol, n):
+    db = veritabani.baglan(yol)
+    try:
+        sutunlar = [r[1] for r in db.execute("PRAGMA table_info(konular)") if r[1] != "id"]
+        secim = ", ".join("baslik || ' (kopya ' || :i || ')'" if s == "baslik" else s for s in sutunlar)
+        kaynaklar = [r[0] for r in db.execute("SELECT id FROM konular WHERE silindi = 0")]
+        for i in range(n):
+            db.execute(f"INSERT INTO konular ({', '.join(sutunlar)}) SELECT {secim} FROM konular WHERE id = :k",
+                       {"i": i, "k": kaynaklar[i % len(kaynaklar)]})
+        db.commit()
+    finally:
+        db.close()
+
+
+def _hazirla(klasor, defter_blok=0, konu=0):
     yol = os.path.join(klasor, "olcum.db")
     guvenlik.SIFRE_YONTEMI = "pbkdf2:sha256:1"      # yalnızca demo verisinin yüklenmesini hızlandırır; ölçülmez
     app = create_app({"VERITABANI": yol, "TESTING": True, "SECRET_KEY": "olcum"})
     ornek_veri.gerekirse_yukle(yol)
     _defteri_buyut(yol, defter_blok)
+    _konulari_cogalt(yol, konu)
     db = veritabani.baglan(yol)
     try:
         konu = db.execute("""SELECT konu_id FROM mesajlar GROUP BY konu_id ORDER BY COUNT(*) DESC LIMIT 1""").fetchone()[0]
@@ -57,10 +77,10 @@ def _hazirla(klasor, defter_blok=0):
     return app, konu, mesaj_sayisi, oy, secimler
 
 
-def olc(n=60, defter_blok=0, sadece=None):
+def olc(n=60, defter_blok=0, sadece=None, ek_konu=0):
     """sadece: yalnızca adı bu sözcüklerden birini içeren istekler ölçülür."""
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as klasor:
-        app, konu, mesaj_sayisi, oy, secimler = _hazirla(klasor, defter_blok)
+        app, konu, mesaj_sayisi, oy, secimler = _hazirla(klasor, defter_blok, ek_konu)
         istemci = app.test_client()
         with istemci.session_transaction() as s:
             s["kullanici_id"], s["surum"], s["csrf"] = oy["kullanici_id"], oy["oturum_surumu"], "olcum"
@@ -97,14 +117,19 @@ def olc(n=60, defter_blok=0, sadece=None):
 
 if __name__ == "__main__":
     argumanlar = sys.argv[1:]
-    blok = 0
-    if "--defter-blok" in argumanlar:
-        i = argumanlar.index("--defter-blok")
-        blok = int(argumanlar[i + 1])
+
+    def secenek(ad):
+        if ad not in argumanlar:
+            return 0
+        i = argumanlar.index(ad)
+        deger = int(argumanlar[i + 1])
         del argumanlar[i:i + 2]
+        return deger
+
+    blok, ek_konu = secenek("--defter-blok"), secenek("--konu")
     n = int(argumanlar[0]) if argumanlar else 60
     print(f"Her istek {n} kez (önce {ISINMA} ısınma isteği), milisaniye" + (f"; defterde +{blok} blok" if blok else "")
-          + ":\n")
+          + (f"; +{ek_konu} konu" if ek_konu else "") + ":\n")
     print("| İstek | p50 | p95 | En kötü | Hatalı yanıt |\n|---|---|---|---|---|")
-    for r in olc(n, blok):
+    for r in olc(n, blok, ek_konu=ek_konu):
         print(f"| {r['ad']} | {r['p50']:.1f} | {r['p95']:.1f} | {r['en_kotu']:.1f} | {r['hata']} |")

@@ -233,7 +233,7 @@ def sistem():
     return render_template(
         "yonetim/sistem.html", duyuru=yonetim.site_ayari(db, "duyuru"), kayit_acik=yonetim.site_ayari(db, "kayit_acik") == "1",
         yz_hesaplari=db.execute("SELECT * FROM kullanicilar WHERE yz_mi = 1 ORDER BY takma_ad").fetchall(),
-        defter_durumu=defter.durum(db.defter_klasoru),
+        defter_durumu=defter.durum(db.defter_klasoru, tam=bool(request.args.get("denetle"))),
         tutarlilik=defter.tutarlilik(db) if request.args.get("denetle") else None)
 
 

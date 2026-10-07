@@ -220,7 +220,7 @@ def degisiklik_dogrula(db, veri):
         baslik, metin = (veri.get("baslik") or "").strip(), (veri.get("metin") or "").strip()
         if not 5 <= len(baslik) <= 80 or not 20 <= len(metin) <= 1000:
             raise KuralHatasi("Beyan maddesinin başlığı 5–80, metni 20–1000 karakter olmalı.")
-        kaba = denetim.kaba_ifadeler(metin + baslik)
+        kaba = denetim.kaba_ifadeler(f"{baslik} {metin}")
         if kaba:
             raise KuralHatasi("Beyan maddesi kaba ifade içeremez.")
         veri.update(baslik=baslik, metin=metin)
