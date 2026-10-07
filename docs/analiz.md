@@ -313,7 +313,7 @@ Zamanın çoğu yan paneldeki "öne çıkan kelimeler" hesabındaydı; aynı kel
 ### 8.3 Sürdürülebilirlik (maintainability)
 
 - Tasarım desenleri ve SOLID eşlemesi: `docs/tasarim.md` 8. bölüm (her desen dosya adıyla).
-- 171 otomatik test (~7 sn); ölçüm betikleri; her düzeltmenin önce hatayı üreten testi (`testler/test_duzeltmeler.py`).
+- 172 otomatik test (~7 sn); ölçüm betikleri; her düzeltmenin önce hatayı üreten testi (`testler/test_duzeltmeler.py`).
 - Bağımlılık sürümleri sabit; gizli anahtar kodda değil; ayarlar ortam değişkeniyle (README).
 
 ### 8.4 Uyarlanabilirlik (adaptability) — "hizmeti kesmeden uyum"

@@ -30,7 +30,7 @@ Ya da klasördeki **`baslat.bat`** dosyasına çift tıkla. Tarayıcı kendiliğ
 | `python calistir.py --yonetici Baki` | Bir üyeyi yönetici yapar (ilk yönetici için; sonrası yönetim panelinden) |
 | `python calistir.py --demo` | Sunum kipi: yönetim panelinde "Süreyi ilerlet" düğmesi açılır (24/48 saat beklememek için) |
 | `python calistir.py --demo-verisiz` | Boş veritabanına demo verisini (ve şifresi herkesçe bilinen demo hesaplarını) yüklemez |
-| `python -m unittest discover testler` | 171 otomatik test (~7 sn) |
+| `python -m unittest discover testler` | 172 otomatik test (~7 sn) |
 | `python olcum/denetim_olcumu.py` | Denetim kurallarının kesinlik/duyarlılık ölçümü (temel çizgilerle karşılaştırmalı) |
 | `python olcum/gecikme_olcumu.py` | Sayfaların p50/p95 yanıt süresi (`--defter-blok 50000` ile büyük defterde) |
 | `python olcum/urun_metrikleri.py` | İş, ürün ve koruyucu metrikler |
@@ -184,7 +184,7 @@ forum/
 olcum/               ölçüm betikleri ve etiketli örnekler (gelistirme.csv, test.csv)
 mobil-expo/          Expo Go uygulaması (Expo SDK 57, WebView)
 mobil/               Android uygulaması (Capacitor): capacitor.config.json, android/ projesi, BENIOKU.md
-testler/             171 test: iş kuralları, web, hata düzeltmeleri, desenler, ölçüm
+testler/             172 test: iş kuralları, web, hata düzeltmeleri, desenler, ölçüm
 docs/                analiz.md (problem çerçeveleme), tasarim.md (UML + desenler), rehber.md (ayrıntılar)
 ```
 

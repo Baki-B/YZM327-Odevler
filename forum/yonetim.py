@@ -249,8 +249,8 @@ def pano(db):
     # Son 14 günün etkinliği: gün başına mesaj ve oy
     gunler = [(an - timedelta(days=i)).date() for i in range(13, -1, -1)]
     say = lambda q: {r[0]: r[1] for r in db.execute(q, (gunler[0].isoformat(),))}  # noqa: E731
-    mesaj = say("SELECT substr(olusturma, 1, 10), COUNT(*) FROM mesajlar WHERE yazar_id IS NOT NULL "
-                "AND olusturma >= ? GROUP BY 1")
+    mesaj = say("SELECT substr(olusturma, 1, 10), COUNT(*) FROM mesajlar WHERE yazar_id IS NOT NULL AND tip != 'YZ' "
+                "AND olusturma >= ? GROUP BY 1")     # haftalık sayıyla aynı tanım: yalnızca üyelerin mesajları
     oy = say("SELECT substr(zaman, 1, 10), COUNT(*) FROM oylar WHERE zaman >= ? GROUP BY 1")
     etkinlik = [{"gun": g, "mesaj": mesaj.get(g.isoformat(), 0), "oy": oy.get(g.isoformat(), 0)} for g in gunler]
     tepe = max([e["mesaj"] + e["oy"] for e in etkinlik] + [1])

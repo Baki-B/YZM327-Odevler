@@ -14,7 +14,8 @@ _KLASOR = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [os.path.dirname(_KLASOR), _KLASOR]
 
 from forum import (anlik, ayarlar, defter, denetim, devir, gorevler, gorunum, graf, gundem, guvenlik, kategoriler, konular,  # noqa: E402
-                   kullanicilar, ontoloji, oylama, sonuclar, teklif_turleri, uygunluk, veritabani, yonetim, yonetmelik, yz)
+                   kullanicilar, ontoloji, oylama, sonuclar, teklif_turleri, uygunluk, veritabani, yonetim, yonetmelik, yz,
+                   zaman)
 from forum.metin import site_ici_yol_mu  # noqa: E402
 from forum.hatalar import KuralHatasi, tamsayi  # noqa: E402
 from test_forum import Ortam  # noqa: E402
@@ -855,3 +856,16 @@ class DefterOlceklenmesi(unittest.TestCase):
             self.assertEqual(b.turdeki(("OY", "SONUC")), s.turdeki(("OY", "SONUC")))
             for anahtar in ("3", b.blok(7)["hash"][:10], "zzz"):
                 self.assertEqual(b.bul(anahtar), s.bul(anahtar), anahtar)
+
+
+class PanoSayilari(Ortam):
+    def test_yapay_zeka_ozetleri_uye_mesaji_sayilmaz(self):
+        """Pano, keşfet sayfasıyla aynı tanımı kullanır: sistem ve yapay zeka mesajları üye etkinliği değildir."""
+        ali = self.kisi("ali")
+        k = self.konu(ali)
+        konular.mesaj_yaz(self.db, ali, k, "ARGUMAN", "Menüde her gün çorba olsun.")
+        konular.yz_mesaji(self.db, k, self.yz(), "Özet: 1 kişi 1 mesaj yazdı.")
+        p = yonetim.pano(self.db)
+        bugun = zaman.simdi().date()
+        self.assertEqual(p["sayilar"]["mesaj_hafta"], 1)
+        self.assertEqual(next(e["mesaj"] for e in p["etkinlik"] if e["gun"] == bugun), 1)

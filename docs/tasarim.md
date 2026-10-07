@@ -255,7 +255,7 @@ gösterir; her desenin davranışı testle korunur (`testler/test_duzeltmeler.py
 | **Observer** (TD-38) | `Baglanti.commit` defteri doğrudan çağırıyordu | `veritabani.commit_aboneligi`; `defter._islem_kaydedildi` abone. Bağlantı başına `commit_sonrasi` kuyruğu (bildirim, arka plan işleri) | `CommitGozlemcisi` |
 | **Repository** (TD-51) | Düğüm dosyalarına `sqlite3` erişimi uzlaşma ve onarım mantığına gömülüydü; test için disk gerekiyordu; ölçeklenme düzeltmesi yapılamıyordu | `defter.DugumDeposu` ← `SqliteDugumDeposu` (üretim), `BellekDugumDeposu` (sahte depo, test) | `DefterDeposu`, `DefterOlceklenmesi` |
 | **Facade** (TD-28) | Konu sayfası rotası 9 alt sistemi tek tek çağırıyor, fikir rozeti kuralı rotadaydı | `gorunum.konu_sayfasi()`; kural saf işlev `gorunum.fikir_durumu` | `KonuSayfasiCephesi` |
-| **Dependency Injection** (TD-52) | Testler gerçek scrypt şifre özetiyle çalıştığı için 94 test ~60 sn sürüyordu | `guvenlik.SIFRE_YONTEMI` (testte hızlı yöntem), `zaman.simdi` (testte ileri sarılır), `anlik.KANALLAR` (testte sahte kanal), defter işlevlerine depo listesi | 171 test ~7 sn |
+| **Dependency Injection** (TD-52) | Testler gerçek scrypt şifre özetiyle çalıştığı için 94 test ~60 sn sürüyordu | `guvenlik.SIFRE_YONTEMI` (testte hızlı yöntem), `zaman.simdi` (testte ileri sarılır), `anlik.KANALLAR` (testte sahte kanal), defter işlevlerine depo listesi | 172 test ~7 sn |
 | **Decorator** (TD-26, 27 — fonksiyon düzeyinde) | — | `giris_gerekli`, `yonetici_gerekli` rotayı sarar; `@kaydet`, `@commit_aboneligi` kayıt dekoratörleri | — |
 | **Command** (TD-40, hafif) | — | `commit_sonrasi` ve defter kuyrukları: yapılacak iş nesne olarak kuyruğa alınır, commit'te çalışır, rollback'te silinir | `YanEtkiDayanikliligi` |
 
@@ -449,7 +449,7 @@ classDiagram
 | Veri kaynağı değiştirilebilsin (Repository) | `DugumDeposu`: SQLite dosyası ya da bellek; PostgreSQL için yeni bir gerçekleme yeter |
 | Olaylar birden çok bileşene haber versin (Observer) | `commit_aboneligi`: defter commit olayına abone; bağlantı başına `commit_sonrasi` (bildirimler) |
 | Tek giriş noktası (Facade) | `gorunum.konu_sayfasi` |
-| Her bileşen için birim testi (sahte depo ile) | `BellekDugumDeposu` (sahte depo), `SahteKanal` (sahte bildirim kanalı), sahte zaman; 171 test |
+| Her bileşen için birim testi (sahte depo ile) | `BellekDugumDeposu` (sahte depo), `SahteKanal` (sahte bildirim kanalı), sahte zaman; 172 test |
 
 ### 8.5 Bilerek kullanılmayan desenler (TD-57, TD-58)
 
