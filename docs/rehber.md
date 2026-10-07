@@ -288,7 +288,13 @@ Yapay zeka üyenin tek işi **kısaca özetlemektir**:
 | Her tur bitince | Tur özeti: kaç kişi oy verdi, her fikir yüzde kaç aldı, hangisi kaldı, hangisi elendi |
 | Bir katılımcı isteyince | Konu sayfasındaki "Tartışmanın özetini iste" düğmesiyle güncel tartışma özeti |
 
-Özetler sayılara dayanır, yorum katmaz; internet ya da dış servis gerekmez.
+Özetler sayılara dayanır, yorum katmaz; internet ya da dış servis gerekmez. Oranlar yuvarlanmaz, **kesilir**: %74,9 hiçbir zaman
+"%75" yazılmaz, yoksa okuyan ezici üstünlük sağlandı sanır. Her fikrin "kaldı / elendi / kabul edildi" durumu, turun kaydedilmiş
+kararından okunur.
+
+**Neden büyük dil modeli (ChatGPT benzeri) kullanılmıyor?** Özet oy vermeden önce okunur; modelin uydurduğu tek bir sayı kararı
+etkiler (halüsinasyon). Ayrıca mesajlar dış servise gönderilirse kişisel veri dışarı çıkar, her özet ücretli ve yavaş olur.
+Gerekçe ve ileride insan onaylı bir modelin nasıl ekleneceği [analiz.md](analiz.md) 3. bölümde.
 
 **Yapamadıkları:** oy kullanamaz, fikir yazamaz, konu açamaz, giriş yapamaz, oy devredemez, kendisine oy devredilemez, şikayet gönderemez,
 yönetici olamaz. (Uzmanlık için aday gösterilebilir; 10. bölüm. Bu kısım şimdilik göstermeliktir.)
@@ -432,6 +438,12 @@ mesaj düzenleme, gizleme, oylama açılışı, oy, sonuç, karar, devir, yeni �
 **Kişisel veri deftere yazılmaz:** mesajların yalnızca özeti, oyların yalnızca taahhüdü (makbuzlu özet) yazılır.
 
 Sunumda göstermek için: Yönetim paneli › Sistem › "Bozmayı dene" → kayıt defteri sayfasında düğüm bozuk görünür → "Onar".
+("Bozmayı dene" yalnızca `--demo` sunum kipinde açıktır; gerçek defter geri dönüşsüz bozulmasın.)
+
+**Hız:** Bir düğümün zinciri bir kez baştan doğrulandıktan sonra sonuç, düğümün **sürümüyle** birlikte saklanır. Düğüm
+değişmedikçe zincir yeniden hesaplanmaz; yeni blok eklerken yalnızca son blok okunur. Düğüm dosyasını dışarıdan biri değiştirirse
+sürüm değişir ve bir sonraki okumada tam doğrulama yapılır, kurcalama yine yakalanır. Ölçüm: 50.000 blokluk defterde oy vermek
+bu değişiklikten önce ~645 ms, sonra ~11 ms sürüyor ([analiz.md](analiz.md) 8.2).
 
 ---
 
@@ -443,11 +455,12 @@ Sunumda göstermek için: Yönetim paneli › Sistem › "Bozmayı dene" → kay
 | Devir | A oyunu B'ye devretti |
 | Yanıt | A, B'ye yanıt yazdı |
 | Takip | A, B'yi takip ediyor |
-| Oy benzerliği | A ile B çekişmeli oylamalarda %60+ aynı yönde oy verdi (en az 2 ortak oylama) |
+| Oy benzerliği (yalnızca sunucuda) | A ile B çekişmeli oylamalarda %60+ aynı yönde oy verdi (en az 2 ortak oylama). **Hiçbir yerde gösterilmez:** iki kişinin aynı oyu verdiğini göstermek gizli oyu bozardı |
 
 **Ağ üzerinde hesaplananlar:**
 - **Etki puanı (PageRank):** Kimin mesajları ve görüşü ağda daha çok karşılık buluyor (0–100).
 - **Görüş grupları:** Oy benzerliği bağları üzerinde "etiket yayılımı" ile benzer oy verenler gruplanır (Grup A, Grup B...).
+  Yalnızca **en az 3 kişilik** gruplar gösterilir (k-anonimlik): iki kişilik bir grup, o iki kişinin aynı oyu verdiğini ele verirdi.
 - **Oy gücü ve Gini katsayısı:** Devirlerden sonra kimin kaç oy taşıdığı ve gücün ne kadar yoğunlaştığı (0 = eşit, 1 = tek kişide).
 
 Ağ **yalnızca bilgi içindir**; oylamaların sonucunu etkilemez.
@@ -632,6 +645,17 @@ Başka programların forumu kullanması için JSON arayüzü: `/api/v1`. Belgele
 - Kişisel veri: forumda görünmez, API'de dönmez, deftere yazılmaz; mesajlarda telefon/e-posta/kimlik no engellenir.
 - Oturum çerezi JavaScript'ten okunamaz (HttpOnly).
 - Anlık bildirim anahtarı `instance/vapid_ozel.pem` ve Firebase anahtarı `instance/firebase.json` gizlidir.
+- Oturum anahtarı kodda yazılı değildir: ortam değişkeninden okunur ya da ilk açılışta üretilip yalnızca sunucuyu çalıştıran
+  kullanıcının okuyabildiği bir dosyaya yazılır.
+- Şifre değişince ya da sıfırlanınca **bütün eski oturumlar ve API anahtarları** geçersiz olur (çalınmış bir çerez işe yaramaz).
+- Şifre değiştirme ve kurtarma kodu yenileme de giriş gibi hatalı deneme kilidine tabidir.
+- Bir adresten saatte en fazla 20 yeni üyelik açılabilir (sahte hesap seli).
+- Türkçe büyük/küçük harf ya da Türkçe karakter farkıyla benzer takma ad alınamaz (`Çağlar` varken `çağlar` ya da `Caglar` olmaz).
+- Girişten sonra yalnızca **site içi** bir adrese dönülür (`//kotu.site` ya da `/\t/kotu.site` gibi hilelerle dışarı yönlendirme olmaz).
+- Anlık bildirim abonelik adresleri yalnızca bilinen bildirim servislerine (Google, Mozilla, Apple, Microsoft) gidebilir; sunucu,
+  kullanıcının verdiği keyfi bir adrese istek atmaz (SSRF).
+- Kimlik numarası denetimi resmi sağlama algoritmasıyla yapılır; 11 haneli her sipariş ya da fatura numarası engellenmez.
+- Bağımlılıkların sürümleri `requirements.txt`'de sabittir.
 
 ---
 
@@ -688,22 +712,31 @@ Yönetim blueprint'i girişte tek bir kontrol yapar: yönetici değilsen hiçbir
 `/api/v1` altında JSON konuşan bir arayüz. Kimlik doğrulama **Bearer anahtarıyla** yapılır (çerez gerekmez).
 Aynı iş kuralı katmanını kullanır; yani API'den verilen oy da aynı kurallarla sayılır.
 
-### 25.7 Durum makinesi (state machine)
-Konunun yaşam döngüsü bir **durum makinesidir**: TARTISMA → OYLAMA (tur 1…5) → KARARA_BAGLANDI ya da SONUCSUZ.
+### 25.7 Durum makinesi (state machine) — State deseni
+Konunun yaşam döngüsü bir **durum makinesidir**: TARTISMA → OYLAMA (tur 1…5) → KARARA_BAGLANDI ya da SONUCSUZ; herhangi bir
+durumdan oylamayla KALDIRILDI.
 Her durumda yalnızca belli işlemler yapılabilir (ör. mesaj yalnızca TARTISMA ve OYLAMA'da, fikir yalnızca TARTISMA'da ve 1. turda yazılır).
+Her durum `konu_durumlari.py`'de bir **sınıftır** ve "bu durumda ne yapılabilir?" sorusunu kendisi yanıtlar. Önceden bu sorular
+`if durum == ...` biçiminde onlarca yere dağılmıştı; bir yerde unutulan kontrol, kaldırılmış bir konunun geçmişinin hâlâ
+okunabilmesine yol açıyordu.
 - **Atomik geçiş:** Durum değişikliği `UPDATE ... WHERE durum = 'eski durum'` biçiminde yapılır. Aynı anda iki istek aynı geçişi denerse yalnızca biri başarır; böylece örneğin aynı konu için iki tane 1. tur açılamaz.
 
-### 25.8 Tek teklif mekanizması + türe göre işleyici tablosu
-Beş farklı oylama türü (fikir turu, gizleme, kaldırma, uzmanlık, yönetmelik) **aynı yapıyı** kullanır:
-aç → oy topla → say → sonuçlandır. Değişen tek şey "sonuç çıkınca ne olacak" kısmıdır; o da bir **eşleme tablosuyla** seçilir:
+### 25.8 Tek teklif mekanizması — Strategy + Template Method + Registry
+Altı oylama türü (fikir turu, gizleme, kaldırma, uzmanlık, yönetmelik, yeni kategori) **aynı iskeleti** kullanır:
+aç → oy topla → say → sonuçlandır. İskelet `oylama.sonuclandir`'dadır (**Template Method**); türden türe değişen adımlar
+(seçenekler neler, eşik ne, sonuç çıkınca ne olacak, kime haber verilecek) her türün kendi sınıfındadır (**Strategy**,
+`teklif_turleri.py`). Sınıflar `@kaydet` ile bir kayıt defterine (**Registry**) eklenir; kod, türü adından bulur:
 ```
-KARAR (fikir turu) → eleme kurallarını uygula: karar / sonraki tur / sonuçsuz
-MESAJ_SILME        → mesajları gizle
-KONU_SILME         → konuyu kaldır
-UZMANLIK           → uzmanlığı ver (kontenjan hâlâ uygunsa)
-YONETMELIK         → değişikliği uygula
+KARAR (FikirTuru)            → eleme kurallarını uygula: karar / sonraki tur / sonuçsuz
+MESAJ_SILME (MesajGizleme)   → mesajları gizle
+KONU_SILME (KonuKaldirma)    → konuyu kaldır
+UZMANLIK (Uzmanlik)          → uzmanlığı ver (kontenjan hâlâ uygunsa)
+YONETMELIK (Yonetmelik)      → değişikliği uygula
+KATEGORI (Kategori)          → kategoriyi ekle
 ```
-- **Neden:** Oran hesabı, yeter sayı, çekimser, devir, gizli oy, makbuz kuralları **bir kez** yazılır ve bütün oylamalarda aynen geçerlidir. Yeni bir oylama türü eklemek, tabloya bir satır eklemek demektir.
+- **Neden:** Oran hesabı, yeter sayı, çekimser, devir, gizli oy, makbuz kuralları **bir kez** yazılır ve bütün oylamalarda aynen geçerlidir.
+  Yeni bir oylama türü eklemek, **yeni bir sınıf yazmak** demektir; mevcut koda dokunulmaz (açık/kapalı ilkesi). Önceden aynı iş
+  beş dosyada `if tip == ...` dalı demekti.
 - Eleme kararı (`sonuclar.tur_karari`) veritabanına dokunmayan **saf bir fonksiyondur**: sayım sonucunu alır, "kabul / devam / sonuçsuz" döndürür. Bu yüzden kolayca test edilir.
 
 ### 25.9 Kuralların veri olarak tutulması (yapılandırılabilir kural motoru)
@@ -718,10 +751,16 @@ Kayıt defteri **yalnızca eklenir**, hiçbir blok güncellenmez ya da silinmez.
 - **Kendini onarma:** Bozuk düğüm çoğunluktan yeniden yazılır.
 - Not: Bu, gerçek bir blokzincirin (madencilik, ağ üzerinde düğümler) basitleştirilmiş, tek sunucuda çalışan bir modelidir.
 
-### 25.11 "Kaydedilince yap" düzeni (commit'e bağlı yan etkiler)
+### 25.11 "Kaydedilince yap" düzeni (commit'e bağlı yan etkiler) — Observer ve Memento
 Bir işlem sırasında hem veritabanına yazılıyor hem de dışarıya etki ediliyorsa (deftere blok, telefona bildirim),
 dış etkiler hemen yapılmaz; bir **kuyruğa** eklenir. Veritabanı işlemi başarıyla kaydedilince (commit) kuyruk çalışır;
 işlem geri alınırsa (rollback) kuyruk boşaltılır.
+- Veritabanı bağlantısı defteri **tanımaz**: defter, "işlem kaydedildi" olayına abone olur (**Observer**). Böylece alt katman
+  (veritabanı) üst katmana (defter) bağımlı olmaz.
+- Bir işin içinde yalnızca bir parçayı geri almak gerekirse (ör. zamanlayıcıda tek bir konu hata verdi) **kayıt noktası** (SAVEPOINT)
+  kullanılır; kuyrukların o anki boyu saklanır ve geri dönülünce kuyruklar da o boya kısaltılır (**Memento**).
+- Yan etki başarısız olursa (ör. disk dolu) istek hata vermez; veri zaten kaydedilmiştir, kullanıcı işlemi tekrarlarsa çift kayıt
+  oluşurdu. Hata günlüğe yazılır, eksik defter kaydını tutarlılık denetimi gösterir.
 - **Neden:** Yarıda kalan bir işlem deftere yazılmasın, olmayan bir oylama için telefona bildirim gitmesin.
   Bu, yazılımda "transactional outbox" denen düzene benzer.
 
@@ -770,6 +809,13 @@ Karanlık tema yalnızca bu değişkenleri yeniden tanımlar; hiçbir bileşene 
 - **Zaman enjeksiyonu:** Kodun tamamı saati `zaman.simdi()` üzerinden okur. Testler bu fonksiyonu değiştirip zamanı ileri sarar ("48 saat geçti") ve süre kurallarını saniyeler içinde dener.
 - Web testleri Flask'ın test istemcisiyle gerçek istekler atar (giriş, CSRF, yetki, sayfalar).
 - Eleme kuralları saf fonksiyon olduğu için (25.8) sınır değerleri (%4,9 – %5 – %75) doğrudan denenir.
+- **Sahte nesneler:** kayıt defteri testleri disk yerine bellekte çalışan sahte depoyla (`BellekDugumDeposu`), anlık bildirim
+  testleri gerçek servis yerine sahte kanalla (`SahteKanal`) çalışır. Testlerde şifre özeti hızlı bir yöntemle yapılır
+  (`guvenlik.SIFRE_YONTEMI`); 171 test yaklaşık 7 saniye sürer.
+- **Hata önce test:** yazılım mühendisliği incelemesinde bulunan her hata için önce hatayı yeniden üreten bir test yazıldı, sonra
+  düzeltildi (`testler/test_duzeltmeler.py`).
+- **Ölçüm testleri:** denetim kurallarının etiketli örneklerdeki başarımı ve temel çizgileri geçtiği her çalıştırmada denetlenir
+  (`testler/test_olcum.py`).
 
 ### 25.20 Yerinde veritabanı güncellemesi (migration)
 Uygulama açılırken şema kontrol edilir: eksik tablo ve sütunlar **veri silinmeden** eklenir, kaldırılan sütunlar düşürülür.
@@ -777,11 +823,22 @@ Yönetmelik metinleri koddan tazelenir ama oylamayla değişmiş değerlere doku
 Eski akıştan kalan kayıtlar bir kez yeni akışa uyarlanır: açık konular tartışmaya döner (süreleri baştan başlar), yarım kalan eski oylamalar
 iptal edilir; üyeler, mesajlar ve geçmiş oylamalar olduğu gibi kalır.
 
+### 25.21 Diğer tasarım desenleri
+Yukarıdakilere ek olarak yönetmelik denetimi bir **Chain of Responsibility** (her madde zincirin bir halkası, `denetim.py`),
+anlık bildirim kanalları **Adapter** (Web Push ve Firebase aynı arayüzün arkasında, `anlik.py`), kayıt defterinin düğümleri
+**Repository** (SQLite dosyası ya da test için bellek, `defter.py`), konu sayfası **Facade** (`gorunum.py`) desenidir.
+Her desenin hangi sorunu çözdüğü, sınıf diyagramları ve SOLID ilkeleriyle eşlemesi [tasarim.md](tasarim.md) 8. bölümde.
+
+### 25.22 Ölçüm
+Hiçbir başarım iddiası tahmine dayanmaz; `olcum/` klasöründeki betiklerle ölçülür: denetim kurallarının kesinlik ve duyarlılığı
+(aptal temel çizgilerle karşılaştırmalı), sayfaların p95 yanıt süresi, iş/ürün/koruyucu metrikler. Sonuçlar ve yorumları
+[analiz.md](analiz.md) dosyasında.
+
 ---
 
 ## 26. Teknik yapı
 
-**Kullanılanlar:** Python 3.11, Flask, SQLite, Jinja2 şablonları, düz CSS ve JavaScript (çerçeve yok).
+**Kullanılanlar:** Python 3.11 ve üstü, Flask, SQLite, Jinja2 şablonları, düz CSS ve JavaScript (çerçeve yok).
 Mobil: Expo (React Native WebView) ve Capacitor.
 
 Katmanların ve diğer mimari kararların açıklaması 25. bölümde.
@@ -790,28 +847,34 @@ Katmanların ve diğer mimari kararların açıklaması 25. bölümde.
 | Dosya | Görevi |
 |---|---|
 | `ayarlar.py` | Site adı, renkler, sabitler, yönetmeliğin varsayılan parametreleri |
-| `yonetmelik.py` | Maddeler, parametreler, denetim motoru (D1–D7), yönetmelik değişikliği |
+| `yonetmelik.py` | Maddeler, parametreler (anlamlı aralıklarıyla), yönetmelik değişikliği |
+| `denetim.py` | Denetim maddeleri D1–D7 (Chain of Responsibility); mesaj denetimi |
+| `konu_durumlari.py` | Konunun durumları ve her durumda izin verilen işlemler (State) |
+| `teklif_turleri.py` | Oylama türleri (Strategy + Registry) |
+| `gorunum.py` | Konu sayfasının verisi (Facade) |
+| `metin.py`, `hatalar.py` | Yüzde biçimi, kısaltma, güvenli yönlendirme denetimi; kural hatası ve sayı ayrıştırma |
 | `ontoloji.py` | Konum ve kategori ağaçları, kavramlar, benzerlik |
 | `uygunluk.py` | Kim katılımcı, kim gözlemci; oy ağırlığı |
 | `konular.py` | Konu açma ve düzenleme, fikirler, turların açılması, alt konu, itiraz, mesajlar, gizleme |
-| `oylama.py` | Oylama açma, oy, makbuz, sayım (çift oran, çekimser, yeter sayı), sonuçlandırma |
-| `sonuclar.py` | Oylama bitince ne olacağı (türe göre); **eleme kuralları** |
+| `oylama.py` | Oylama açma, oy, makbuz, sayım (çift oran, çekimser, yeter sayı), sonuçlandırma iskeleti (Template Method) |
+| `sonuclar.py` | Fikir turunun **eleme kuralları** (saf işlev) ve turun kararının anlık görüntüsü (`TurKarari`) |
 | `kararlar.py` | Kabul edilen fikirlerin (kararların) kaydı |
 | `devir.py` | Oy devri |
 | `uzmanlik.py` | Ön şart, kontenjan, başvuru, uzmanlığın verilmesi |
 | `kategoriler.py` | Kategori önerisi, kabul edilince ekleme; kategoriler sayfasının arama, süzme, sıralama listesi |
 | `gundem.py` | Trend konular, öne çıkan kelimeler, kategori nabzı, yakında bitenler, canlı akış |
 | `yz.py` | Yapay zeka üyenin özetleri |
-| `defter.py` | Kayıt defteri |
+| `defter.py` | Kayıt defteri; düğüm depoları (Repository), commit aboneliği (Observer), doğrulama önbelleği |
 | `graf.py` | Üye ağı, PageRank, görüş grupları, Gini |
 | `yonetim.py` | Yönetim paneli işleri |
 | `sikayetler.py` | Şikayet kutusu |
-| `anlik.py` | Anlık bildirim |
+| `anlik.py` | Anlık bildirim kanalları (Adapter) |
 | `kullanicilar.py`, `guvenlik.py`, `bildirimler.py`, `arama.py`, `gunluk.py`, `gorevler.py`, `veritabani.py` | Üyeler, güvenlik, bildirim, arama, günlük, zamanlayıcı, bağlantı |
-| `web/` | Sayfa rotaları ve API |
+| `web/` | Sayfa rotaları ve API; `istek.py` (istek öncesi zincir: kimlik, askı, CSRF, zamanlayıcı, yazma kilidi), `hata_sayfalari.py`, `sablon.py` (şablon filtreleri) |
 | `templates/` | Sayfalar (`panel/` = Panelim, `yonetim/` = yönetim paneli) |
 | `static/` | CSS, JS, simgeler, service worker |
-| `testler/` | 94 otomatik test |
+| `testler/` | 171 otomatik test |
+| `olcum/` | Ölçüm betikleri ve etiketli örnekler ([analiz.md](analiz.md)) |
 
 **Tek teklif mekanizması:** Bütün oylamalar (fikir turları, gizleme, kaldırma, uzmanlık, yönetmelik) aynı "teklif" yapısından geçer;
 sayım ve eşik kuralları tek yerde yazılıdır. Oylama türü değişince sadece "bitince ne olacak" kısmı değişir.
@@ -830,7 +893,15 @@ sayım ve eşik kuralları tek yerde yazılıdır. Oylama türü değişince sad
 | `python calistir.py --sifirla` | Veritabanını ve defteri silip demo verisini baştan yükler (**dikkat: kendi hesapların da gider**) |
 | `python calistir.py --yonetici AD` | Bir üyeyi yönetici yapar |
 | `python calistir.py --demo` | Sunum kipi: yönetim panelinde "Süreyi ilerlet" düğmesi açılır (20. bölüm) |
+| `python calistir.py --demo-verisiz` | Boş veritabanına demo verisini (ve şifresi herkesçe bilinen demo hesaplarını) yüklemez |
 | `python -m unittest discover testler` | Testleri çalıştırır |
+| `python olcum/denetim_olcumu.py` | Denetim kurallarını etiketli örneklerle ölçer |
+| `python olcum/gecikme_olcumu.py` | Sayfaların yanıt süresini (p50, p95) ölçer; `--defter-blok 50000` ile büyük defterde |
+| `python olcum/urun_metrikleri.py [veritabanı]` | İş, ürün ve koruyucu metrikleri hesaplar |
+
+**Ortam değişkenleri:** `FORUM_VERITABANI` (veritabanı yolu), `FORUM_GIZLI_ANAHTAR` (oturum anahtarı; verilmezse ilk açılışta
+üretilip yalnızca sunucuyu çalıştıran kullanıcının okuyabildiği bir dosyada saklanır), `FORUM_HTTPS=1` (HTTPS arkasında yayınlanıyorsa
+güvenli çerez), `FORUM_ANLIK_ILETISIM` (Web Push iletişim adresi), `FORUM_SIFRE_YONTEMI` (şifre özeti yöntemi; varsayılan scrypt).
 
 **İsteğe bağlı:** `pip install pywebpush` → anlık bildirim.
 

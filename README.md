@@ -7,7 +7,11 @@ Mesajlar silinmez, karara katılmayan itiraz konusu açar ve her olay kayıt def
 
 Yazılım Mühendisliğine Giriş dersi ödevi.
 
-Uygulamanın bütün ayrıntıları ve kullanılan mimariler sade bir dille [docs/rehber.md](docs/rehber.md) dosyasında.
+| Belge | İçinde |
+|---|---|
+| [docs/analiz.md](docs/analiz.md) | **Problem çerçeveleme ve gereksinim analizi:** YZ gerekli mi?, tek sayfalık kanvas, iş/ürün/koruyucu metrikler, ölçülmüş temel çizgi ve hata analizi, kısıtlar, paydaşlar, ön-otopsi, ölçülmüş gecikme ve ölçeklenme |
+| [docs/tasarim.md](docs/tasarim.md) | UML diyagramları; **SOLID ilkeleri ve tasarım desenlerinin** (State, Strategy, Template Method, Registry, Chain of Responsibility, Adapter, Memento, Observer, Repository, Facade…) dosya dosya karşılığı ve sınıf diyagramları |
+| [docs/rehber.md](docs/rehber.md) | Uygulamanın bütün ayrıntıları ve kullanılan mimariler, sade bir dille |
 
 ## Kurulum ve çalıştırma
 
@@ -25,7 +29,14 @@ Ya da klasördeki **`baslat.bat`** dosyasına çift tıkla. Tarayıcı kendiliğ
 | `python calistir.py --ag` | Aynı Wi-Fi'daki telefondan erişim (ekrana yazılan adres) |
 | `python calistir.py --yonetici Baki` | Bir üyeyi yönetici yapar (ilk yönetici için; sonrası yönetim panelinden) |
 | `python calistir.py --demo` | Sunum kipi: yönetim panelinde "Süreyi ilerlet" düğmesi açılır (24/48 saat beklememek için) |
-| `python -m unittest discover testler` | 94 otomatik test |
+| `python calistir.py --demo-verisiz` | Boş veritabanına demo verisini (ve şifresi herkesçe bilinen demo hesaplarını) yüklemez |
+| `python -m unittest discover testler` | 171 otomatik test (~7 sn) |
+| `python olcum/denetim_olcumu.py` | Denetim kurallarının kesinlik/duyarlılık ölçümü (temel çizgilerle karşılaştırmalı) |
+| `python olcum/gecikme_olcumu.py` | Sayfaların p50/p95 yanıt süresi (`--defter-blok 50000` ile büyük defterde) |
+| `python olcum/urun_metrikleri.py` | İş, ürün ve koruyucu metrikler |
+
+**Ortam değişkenleri:** `FORUM_VERITABANI`, `FORUM_GIZLI_ANAHTAR` (oturum anahtarı; verilmezse üretilip yalnızca sahibinin
+okuyabildiği dosyada saklanır), `FORUM_HTTPS=1` (HTTPS arkasında güvenli çerez), `FORUM_ANLIK_ILETISIM`, `FORUM_SIFRE_YONTEMI`.
 
 **Site adı:** `forum/ayarlar.py` içindeki `SITE_ADI` değiştirilerek tek yerden değiştirilir.
 **Arayüz ("Sade akış"):** kenar menüsü yok; üç bölüm var: Konular (Akış, Keşfet, Kategoriler), Oylamalar (gündem, kararlar),
@@ -60,7 +71,8 @@ oylamayla verilir (3/4), şikayet edene sonuç bildirilir.
 **Anlık bildirim:** her bildirim, bildirimleri açmış cihazlara da gider (Panelim › Bildirimler › Bu cihazda aç). Tarayıcı için
 `pip install pywebpush` yeter (HTTPS ya da localhost gerekir); Android uygulaması için Firebase ayarı `mobil/BENIOKU.md`'de.
 **Karanlık tema:** cihaz koyu moddaysa kendiliğinden açılır; hesap menüsündeki Görünüm'den Otomatik / Açık / Koyu seçilir.
-**Yapay zeka üye:** yalnızca kısa özet yazar (tartışma özeti, tur özeti). Oy kullanmaz; dış servis gerektirmez.
+**Yapay zeka üye:** yalnızca kısa özet yazar (tartışma özeti, tur özeti). Oy kullanmaz; dış servis gerektirmez. Özetler bilinçli
+olarak kural tabanlıdır: her sayı veritabanından gelir (gerekçe: [analiz.md](docs/analiz.md) 3. bölüm, "YZ gerekli mi?").
 
 ### Demo hesapları (şifre hepsinde `forum1234`)
 
@@ -96,7 +108,9 @@ Tam karşılık tablosu sitede **Nasıl işler? → Ödev gereksinimleri** böl�
 | Dağıtık defter | 3 düğümlü hash zinciri, uzlaşma, kurcalama tespiti ve onarım, oy makbuzu |
 | Bilirkişi (uzman) entegrasyonu | Uzmanlık: ön şart + kontenjan + alanın üyelerinin oylaması; yönetici atayamaz |
 | Yapay zeka entegrasyonu | YZ üye tartışmayı ve tur sonuçlarını kısaca özetler |
-| İnsanları grafta tut | Üye ağı: devir, yanıt, takip, oy benzerliği; PageRank, Gini, görüş grupları |
+| İnsanları grafta tut | Üye ağı: devir, yanıt, takip; PageRank, Gini; oy benzerliğinden en az 3 kişilik görüş grupları (gizli oy korunur) |
+| Problem çerçeveleme analizi (ders) | `docs/analiz.md`: YZ gerekli mi?, kanvas, metrikler, ölçülmüş temel çizgi, kısıtlar, paydaşlar, ön-otopsi |
+| SOLID ve GoF desenleri (ders) | `docs/tasarim.md` 8. bölüm: her ilke ve desen, önceki sorunu, dosyası ve testiyle |
 
 ## Fikir oylaması
 
@@ -143,28 +157,35 @@ Sunumda beklememek için forumu `python calistir.py --demo` ile başlat; yöneti
 
 ```
 forum/
-  ayarlar.py      site adı, sabitler, yönetmeliğin varsayılan parametreleri
-  yonetmelik.py   maddeler, oylamayla değişen parametreler, ontoloji tabanlı denetim motoru
-  ontoloji.py     konum ve kategori hiyerarşileri, kavram terimleri, benzerlik ölçümü
-  uygunluk.py     kim katılımcı, kim gözlemci; oyu kaç sayılır
-  konular.py      konu açma/düzenleme, fikirler, turların açılması, alt konu, itiraz, mesajlar, toplu gizleme
-  oylama.py       teklif, oy + makbuz, sayım (çift oran, çekimser, yeter sayı), sonuçlandırma
-  sonuclar.py     oylama sonuçlanınca ne olur (teklif türüne göre); eleme kuralları
-  kararlar.py     kabul edilen fikirlerin kaydı
-  devir.py        oy devri          uzmanlik.py   ön şart, kontenjan, başvuru
-  graf.py         üye ağı: takip, PageRank, Gini, görüş grupları
-  defter.py       dağıtık kayıt defteri: hash zinciri, 3 düğüm, uzlaşma, onarım, tutarlılık
-  yz.py           yapay zeka üyenin özetleri
-  yonetim.py      yönetim paneli: pano sayıları, yetki, askı, kategoriler, site ayarları, toplu bildirim, yedek
-  sikayetler.py   şikayet kutusu        anlik.py  anlık bildirim (Web Push ve Firebase)
-  kategoriler.py  kategori önerisi ve kategoriler sayfası      gundem.py  trendler, öne çıkan kelimeler, kategori nabzı
-  kullanicilar.py, guvenlik.py, bildirimler.py, arama.py, gorevler.py, veritabani.py
-  web/            HTTP katmanı (Flask blueprint'leri + REST API; yonetim_sayfalari.py = /yonetim)
-  templates/      sayfalar; panel/ = Panelim, yonetim/ = yönetim paneli     static/  CSS, JS, ağ çizimi, PWA dosyaları
-mobil-expo/       Expo Go uygulaması (Expo SDK 57, WebView)
-mobil/            Android uygulaması (Capacitor): capacitor.config.json, android/ projesi, BENIOKU.md
-testler/          94 test
-docs/tasarim.md   UML diyagramları (kullanım durumu, durum, sıralı, varlık-ilişki, katmanlar)
+  ayarlar.py         site adı, sabitler, yönetmeliğin varsayılan parametreleri ve anlamlı aralıkları
+  yonetmelik.py      maddeler, oylamayla değişen parametreler
+  denetim.py         yönetmelik denetimi D1–D7: her madde zincirin bir halkası (Chain of Responsibility)
+  ontoloji.py        konum ve kategori hiyerarşileri, kavram terimleri, benzerlik ölçümü
+  uygunluk.py        kim katılımcı, kim gözlemci; oyu kaç sayılır
+  konular.py         konu açma/düzenleme, fikirler, turların açılması, alt konu, itiraz, mesajlar, toplu gizleme
+  konu_durumlari.py  konunun durumları ve her durumda izin verilenler (State)
+  oylama.py          teklif, oy + makbuz, sayım (çift oran, çekimser, yeter sayı), sonuçlandırma iskeleti (Template Method)
+  teklif_turleri.py  altı oylama türü (Strategy + Registry)
+  sonuclar.py        fikir turunun eleme kuralları (saf işlev) ve turun kararı (anlık görüntü, Memento)
+  kararlar.py        kabul edilen fikirlerin kaydı
+  devir.py           oy devri            uzmanlik.py   ön şart, kontenjan, başvuru
+  graf.py            üye ağı: takip, PageRank, Gini, görüş grupları (en az 3 kişilik)
+  defter.py          dağıtık kayıt defteri: hash zinciri, 3 düğüm, uzlaşma, onarım, tutarlılık;
+                     düğüm depoları (Repository), commit aboneliği (Observer), doğrulama önbelleği
+  yz.py              yapay zeka üyenin kural tabanlı özetleri
+  gorunum.py         konu sayfasının verisi (Facade)
+  metin.py           yüzde biçimi, kısaltma, güvenli yönlendirme      hatalar.py  kural hatası, sayı ayrıştırma
+  yonetim.py         yönetim paneli: pano sayıları, yetki, askı, kategoriler, site ayarları, toplu bildirim, yedek
+  sikayetler.py      şikayet kutusu      anlik.py  anlık bildirim kanalları: Web Push ve Firebase (Adapter)
+  kategoriler.py     kategori önerisi ve kategoriler sayfası      gundem.py  trendler, öne çıkan kelimeler, kategori nabzı
+  kullanicilar.py, guvenlik.py, bildirimler.py, arama.py, gorevler.py, veritabani.py (kayıt noktası, Memento)
+  web/               HTTP katmanı: istek.py (istek öncesi zincir), hata_sayfalari.py, sablon.py, Flask blueprint'leri, REST API
+  templates/         sayfalar; panel/ = Panelim, yonetim/ = yönetim paneli     static/  CSS, JS, ağ çizimi, PWA dosyaları
+olcum/               ölçüm betikleri ve etiketli örnekler (gelistirme.csv, test.csv)
+mobil-expo/          Expo Go uygulaması (Expo SDK 57, WebView)
+mobil/               Android uygulaması (Capacitor): capacitor.config.json, android/ projesi, BENIOKU.md
+testler/             171 test: iş kuralları, web, hata düzeltmeleri, desenler, ölçüm
+docs/                analiz.md (problem çerçeveleme), tasarim.md (UML + desenler), rehber.md (ayrıntılar)
 ```
 
 **Güvenlik:**
@@ -174,3 +195,12 @@ docs/tasarim.md   UML diyagramları (kullanım durumu, durum, sıralı, varlık-
 - İçerik güvenlik politikası (CSP) ve diğer güvenlik başlıkları gönderilir.
 - SQL sorguları parametrelidir; şablonlar otomatik kaçış kullanır.
 - API'de kişisel veri döndürülmez.
+- Şifre değişince eski oturumlar ve API anahtarları geçersiz olur; girişten sonra yalnızca site içi adrese dönülür; anlık
+  bildirim adresleri yalnızca bilinen bildirim servislerine gidebilir. Ayrıntılar: `docs/rehber.md` 24. bölüm.
+
+## YZ kullanım beyanı
+
+Bu ödevin yazılım mühendisliği revizyonunda (SOLID/GoF incelemesi, hata düzeltmeleri, desenlerin uygulanması, ölçüm betikleri ve
+`docs/analiz.md`, `docs/tasarim.md` belgelerinin taslakları) bir YZ kodlama asistanı (Claude Code) kullanıldı. Asistanın
+önerdiği her değişiklik otomatik testlerle doğrulandı; bulunan her hata için önce hatayı yeniden üreten bir test yazıldı.
+Belgelerdeki sayılar `olcum/` betikleriyle ölçülmüştür.
