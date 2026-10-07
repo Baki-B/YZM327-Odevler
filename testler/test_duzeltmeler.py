@@ -13,7 +13,7 @@ from pathlib import Path
 _KLASOR = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [os.path.dirname(_KLASOR), _KLASOR]
 
-from forum import (anlik, ayarlar, defter, denetim, devir, gorevler, graf, gundem, guvenlik, kategoriler, konular,  # noqa: E402
+from forum import (anlik, ayarlar, defter, denetim, devir, gorevler, gorunum, graf, gundem, guvenlik, kategoriler, konular,  # noqa: E402
                    kullanicilar, oylama, sonuclar, teklif_turleri, uygunluk, veritabani, yonetim, yonetmelik, yz)
 from forum.metin import site_ici_yol_mu  # noqa: E402
 from forum.hatalar import KuralHatasi, tamsayi  # noqa: E402
@@ -685,3 +685,47 @@ class CommitGozlemcisi(Ortam):
         finally:
             veritabani._COMMIT_ABONELERI.remove(abone)
             veritabani._COMMIT_ABONELERI.remove(bozuk)
+
+
+class KonuSayfasiCephesi(WebOrtam):
+    """Facade: konu sayfasının bütün verisi tek işlevden gelir; fikir rozeti kuralı Flask olmadan sınanır."""
+
+    def test_fikir_durumu(self):
+        f, ikinci_tur = {"id": 5, "gizli": 0}, {"durum": "OYLAMA", "tur": 2}
+        self.assertEqual(gorunum.fikir_durumu(f, ikinci_tur, {6}, None), gorunum.ELENDI)
+        self.assertEqual(gorunum.fikir_durumu(f, ikinci_tur, {5}, None), "")
+        self.assertEqual(gorunum.fikir_durumu(dict(f, gizli=1), ikinci_tur, set(), None), "")
+        self.assertEqual(gorunum.fikir_durumu(f, {"durum": "OYLAMA", "tur": 1}, set(), None), "")
+        self.assertEqual(gorunum.fikir_durumu(f, {"durum": "KARARA_BAGLANDI", "tur": 2}, set(), 5), gorunum.KAZANDI)
+
+    def test_konu_sayfasi_verisi_kisiye_gore(self):
+        ali, ayse = self.kisi("ali"), self.kisi("ayse")
+        k = self.konu(ali)
+        konular.fikir_yaz(self.db, ali, k, "Menüye her gün bir baklagil yemeği eklensin.")
+        sablon, v = gorunum.konu_sayfasi(self.db, ali, k)
+        self.assertEqual(sablon, "konu.html")
+        self.assertTrue(v["sahibi"])
+        self.assertIsNotNone(v["benim_fikrim"])
+        self.assertFalse(v["fikir_yazilabilir"])              # kişi başı bir fikir
+        self.assertEqual([f["fikir_durumu"] for f in v["fikirler"]], [""])
+        _, v = gorunum.konu_sayfasi(self.db, ayse, k)
+        self.assertTrue(v["fikir_yazilabilir"])
+        _, v = gorunum.konu_sayfasi(self.db, None, k)
+        self.assertFalse(v["katilimci"])
+        self.assertIsNone(v["benim_fikrim"])
+
+    def test_kaldirilan_konu_ayri_sablon(self):
+        k = self.konu(self.kisi("ali"))
+        self.db.execute("UPDATE konular SET silindi = 1 WHERE id = ?", (k,))
+        sablon, v = gorunum.konu_sayfasi(self.db, None, k)
+        self.assertEqual((sablon, set(v)), ("konu_silindi.html", {"konu", "zincir"}))
+
+    def test_sayfa_ziyaretci_ve_uye_icin_acilir(self):
+        ali = self.kisi("ali")
+        k = self.konu(ali)
+        self.db.commit()
+        self.assertEqual(self.istemci.get(f"/konu/{k}").status_code, 200)
+        self.giris(ali)
+        cevap = self.istemci.get(f"/konu/{k}")
+        self.assertEqual(cevap.status_code, 200)
+        self.assertIn("Yemekhane menüsü", cevap.get_data(as_text=True))
