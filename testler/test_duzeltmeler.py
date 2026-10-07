@@ -14,7 +14,7 @@ _KLASOR = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [os.path.dirname(_KLASOR), _KLASOR]
 
 from forum import (anlik, ayarlar, defter, denetim, devir, gorevler, gorunum, graf, gundem, guvenlik, kategoriler, konular,  # noqa: E402
-                   kullanicilar, oylama, sonuclar, teklif_turleri, uygunluk, veritabani, yonetim, yonetmelik, yz)
+                   kullanicilar, ontoloji, oylama, sonuclar, teklif_turleri, uygunluk, veritabani, yonetim, yonetmelik, yz)
 from forum.metin import site_ici_yol_mu  # noqa: E402
 from forum.hatalar import KuralHatasi, tamsayi  # noqa: E402
 from test_forum import Ortam  # noqa: E402
@@ -729,3 +729,64 @@ class KonuSayfasiCephesi(WebOrtam):
         cevap = self.istemci.get(f"/konu/{k}")
         self.assertEqual(cevap.status_code, 200)
         self.assertIn("Yemekhane menüsü", cevap.get_data(as_text=True))
+
+
+class SablonFiltreleri(unittest.TestCase):
+    """Saf şablon filtreleri Flask olmadan sınanır; zaman sabitlenir."""
+
+    def setUp(self):
+        from datetime import datetime
+        from forum import zaman
+        self.zaman, self.gercek = zaman, zaman.simdi
+        zaman.simdi = lambda: datetime(2026, 3, 10, 12, 0, 0)
+
+    def tearDown(self):
+        self.zaman.simdi = self.gercek
+
+    def test_tarih_ve_gun(self):
+        from forum.web import sablon
+        self.assertEqual(sablon.tarih("2026-03-01 09:05:00"), "01.03.2026 09:05")
+        self.assertEqual(sablon.gun("2026-03-01 09:05:00"), "01.03.2026")
+        self.assertEqual(sablon.tarih(None), "")
+
+    def test_kalan(self):
+        from forum.web import sablon
+        self.assertEqual(sablon.kalan("2026-03-10 11:00:00"), "süresi doldu")
+        self.assertEqual(sablon.kalan("2026-03-10 12:30:00"), "30 dk kaldı")
+        self.assertEqual(sablon.kalan("2026-03-10 15:10:00"), "3 saat 10 dk kaldı")
+        self.assertEqual(sablon.kalan("2026-03-12 14:00:00"), "2 gün 2 saat kaldı")
+
+    def test_once(self):
+        from forum.web import sablon
+        self.assertEqual(sablon.once("2026-03-10 11:59:30"), "az önce")
+        self.assertEqual(sablon.once("2026-03-10 11:15:00"), "45 dk önce")
+        self.assertEqual(sablon.once("2026-03-10 07:00:00"), "5 saat önce")
+        self.assertEqual(sablon.once("2026-03-07 12:00:00"), "3 gün önce")
+        self.assertEqual(sablon.once("2025-12-01 12:00:00"), "01.12.2025")
+        self.assertEqual(sablon.once(""), "")
+
+
+class DenetimKuralIyilestirmeleri(Ortam):
+    """olcum/ hata analizinde bulunan, dil kuralına dayanan iyileştirmeler."""
+
+    def test_unsuz_yumusamasi(self):
+        for metin in ("Sen ahmağın tekisin.", "Salağa bak.", "Bu dangalağın yorumu."):
+            self.assertTrue(denetim.kaba_ifadeler(metin), metin)
+        self.assertFalse(denetim.kaba_ifadeler("Salatalık ve domates menüye eklensin."))
+
+    def test_iban_ve_parantezli_telefon(self):
+        self.assertIn("IBAN", denetim.kisisel_veriler("IBAN: TR33 0006 1005 1978 6457 8413 26"))
+        self.assertIn("telefon numarası", denetim.kisisel_veriler("Telefonum 0 (532) 123-45-67."))
+        self.assertEqual(denetim.kisisel_veriler("Kampüs santrali 0312 212 34 56 numarasında."), [])
+
+    def test_kategori_onerisi_ana_alan_duzeyinde_toplanir(self):
+        """Siyaset (meclis) + Yerel Yönetim (belediye) iki eşleşme; Biyoloji (canlı) bir. Önceden sözlük sırası kazanıyordu."""
+        kid, _ = ontoloji.en_uygun_kategori(self.db, "Belediye meclis toplantıları internetten canlı yayınlansın.")
+        self.assertEqual(ontoloji.atalar(self.db, "kategoriler", kid)[0], self.kategori("Siyaset"))
+
+    def test_ayni_kavram_iki_alt_kategoride_bir_kez_sayilir(self):
+        eslesme = ontoloji.kategori_eslesmeleri(self.db, "Bisiklet yolları kampüse kadar uzatılsın.")
+        self.assertEqual(sum("kampus" in t for t in eslesme.values()), 2)        # Üniversite ve Kampüs Yaşamı
+        puan = ontoloji.alan_puanlari(self.db, eslesme)
+        self.assertEqual(puan[self.kategori("Eğitim")], (1, 1))
+        self.assertEqual(puan[self.kategori("Siyaset")], (1, 1))

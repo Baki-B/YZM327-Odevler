@@ -19,9 +19,20 @@ from .metin import yuzde
 
 KABA_IFADELER = ["aptal", "salak", "gerizekal", "geri zekal", "cahil", "ahmak", "beyinsiz", "serefsiz",
                  "haysiyetsiz", "mankafa", "dangalak", "embesil"]
+_YUMUSAMA = {"k": "g", "p": "b", "t": "d", "c": "c"}
+
+
+def _yumusamis(kok):
+    """Türkçe ünsüz yumuşaması: ünlüyle başlayan ek alınca sondaki p, ç, t, k → b, c, d, ğ (ahmak → ahmağın).
+    Katlanmış metinde ğ, g olur. Ölçümde (olcum/) "ahmağın", "salağa" biçimleri bu yüzden kaçıyordu."""
+    return kok[:-1] + _YUMUSAMA[kok[-1]] if kok[-1] in _YUMUSAMA else kok
+
+
+KABA_KOKLER = sorted(set(KABA_IFADELER) | {_yumusamis(k) for k in KABA_IFADELER})
 KISISEL_VERI_DESENLERI = {
-    "telefon numarası": re.compile(r"(\+90|0)?\s?5\d{2}[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}"),
+    "telefon numarası": re.compile(r"(\+90|0)?\s?\(?5\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}"),
     "e-posta adresi": re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"),
+    "IBAN": re.compile(r"\bTR\s?\d{2}(\s?\d{4}){5}\s?\d{2}\b", re.IGNORECASE),
 }
 _ON_BIR_HANE = re.compile(r"(?<!\d)[1-9]\d{10}(?!\d)")
 
@@ -37,7 +48,7 @@ def tc_kimlik_gecerli_mi(no):
 
 def kaba_ifadeler(metin):
     katli = ontoloji.katla(metin)
-    return [k for k in KABA_IFADELER if k in katli]
+    return [k for k in KABA_KOKLER if k in katli]
 
 
 def kisisel_veriler(metin):

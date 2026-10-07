@@ -327,11 +327,32 @@ def kategori_iliskisi(db, metin, kategori_id):
     return terimler, eslesme
 
 
+def alan_puanlari(db, eslesme):
+    """{ana alan id: (eşleşen farklı kavram sayısı, bunlardan alt kategori düzeyinde olanların sayısı)}.
+    Aynı kavram iki alt kategoride geçse de (ör. "kampus": Üniversite ve Kampüs Yaşamı) bir kez sayılır."""
+    alanlar = {}
+    for kid, terimler in eslesme.items():
+        yol = atalar(db, "kategoriler", kid)
+        tum, alt = alanlar.setdefault(yol[0], (set(), set()))
+        tum.update(terimler)
+        if len(yol) > 1:
+            alt.update(terimler)
+    return {kok: (len(tum), len(alt)) for kok, (tum, alt) in alanlar.items()}
+
+
 def en_uygun_kategori(db, metin):
+    """Metne en uygun kategori. Önce ana alan seçilir: alt kategorileriyle birlikte en çok farklı kavramı eşleşen alan;
+    eşitlikte alt kategori düzeyinde (daha belirgin) eşleşmesi çok olan. Sonra o alanın içinde en çok eşleşen, eşitlikte
+    en derindeki kategori döner.
+    Önceden her kategori tek başına yarışıyordu: "belediye meclis toplantıları canlı yayınlansın" metninde Siyaset (meclis)
+    ve Yerel Yönetim (belediye) birer eşleşmeyle Biyoloji'ye (canlı) eşit kalıyor, kazananı sözlük sırası belirliyordu."""
     eslesme = kategori_eslesmeleri(db, metin)
     if not eslesme:
         return None, []
-    kid = max(eslesme, key=lambda k: (len(eslesme[k]), dugum(db, "kategoriler", k)["ust_id"] is not None))
+    puanlar = alan_puanlari(db, eslesme)
+    kok = max(puanlar, key=puanlar.get)
+    kid = max((k for k in eslesme if atalar(db, "kategoriler", k)[0] == kok),
+              key=lambda k: (len(eslesme[k]), len(atalar(db, "kategoriler", k))))
     return kid, eslesme[kid]
 
 

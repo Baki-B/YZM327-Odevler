@@ -1,0 +1,86 @@
+madde,etiket,metin
+D1,VAR,Bu öneriyi savunan herkes aptal.
+D1,VAR,"SALAK mısın sen, okumadın mı?"
+D1,VAR,Geri zekalı gibi davranmayı bırak.
+D1,VAR,Bu fikri yazan kişi tam bir dangalak.
+D1,VAR,"Sen ne anlarsın bu işten, cahil herif."
+D1,VAR,Mankafa yorumlar okumaktan bıktım.
+D1,VAR,"Beyinsizce bir öneri, yazanı da öyle."
+D1,VAR,ŞEREFSİZ olan bu kararı savunur.
+D1,VAR,Sen ahmağın tekisin.
+D1,VAR,s.a.l.a.k gibi yazma.
+D1,VAR,Bu öneriyi yazan kişi tam bir öküz.
+D1,VAR,"Kafasız mısın, oku şunu."
+D1,VAR,Embesil yorumlarınızı kendinize saklayın.
+D1,VAR,Haysiyetsiz yöneticiler bu kararı aldı.
+D1,YOK,Cahiliye dönemi şiiri üzerine bir okuma grubu kuralım.
+D1,YOK,Bilgi eksikliğini gidermek için ders notlarını paylaşalım.
+D1,YOK,Aptallar Gemisi adlı kitabı kulüpte tartışalım.
+D1,YOK,Bu fikre katılmıyorum çünkü maliyeti çok yüksek.
+D1,YOK,Menüdeki salata çok tuzlu olmuş.
+D1,YOK,Cahit Sıtkı'nın şiirlerini okuyalım.
+D1,YOK,Yanlış bilgi yayan paylaşımlara kaynak isteyelim.
+D1,YOK,Geri dönüşüm kutuları zekice yerleştirilmiş.
+D1,YOK,Ahmak ıslatan denen çiseleyen yağmur başladı.
+D1,YOK,Lütfen kişilere değil fikirlere yönelik yazalım.
+D1,YOK,Bu karar bence yanlış ama saygı duyuyorum.
+D1,YOK,Tartışmada kimse kimseye hakaret etmesin.
+D1,YOK,Okul servisleri sabah çok geç geliyor.
+D1,YOK,"Bu teori yeterince sınanmamış, yeni deney gerekli."
+D2,VAR,Bana 0532 123 45 67 numarasından ulaşabilirsiniz.
+D2,VAR,İletişim: +90 555 444 33 22
+D2,VAR,"Mail adresim ali.veli@example.com, yazın."
+D2,VAR,"T.C. kimlik numaram 10000000146, başvuruya ekledim."
+D2,VAR,05321234567 numaralı hattı arayın.
+D2,VAR,Sorumlu kişi: ayse_k@okul.edu.tr
+D2,VAR,"IBAN numaram TR33 0006 1005 1978 6457 8413 26, bağış için."
+D2,VAR,Ev adresim Bağdat Caddesi No: 12 Daire 5 Kadıköy.
+D2,VAR,Ahmet Yılmaz'ın kimlik numarası 28741056384.
+D2,VAR,Telefonum 0 (532) 123-45-67.
+D2,YOK,"Sipariş numaram 12345678901, kargo gelmedi."
+D2,YOK,Fatura no 98765432109 için iade istiyorum.
+D2,YOK,Toplantı 2026 yılında 15:30'da yapılacak.
+D2,YOK,Bütçe 5.000.000 TL olarak belirlendi.
+D2,YOK,Konuyu e-posta ile değil forumda tartışalım.
+D2,YOK,Otobüs hattı 500T her 15 dakikada geçiyor.
+D2,YOK,Kütüphane 08:00-22:00 arası açık.
+D2,YOK,Etkinlik için @kulup hesabını takip edin.
+D2,YOK,"Sınav 5 Haziran'da, 553 kişi girecek."
+D2,YOK,Proje deposu github.com/agora adresinde.
+D2,YOK,Firma vergi numarası 1234567890 ile kayıtlı.
+D2,YOK,Kampüs santrali 0312 212 34 56 numarasında.
+D3,Bilim,Kampüste bir gökyüzü gözlem gecesi düzenleyelim; teleskop kulübü ekipman getirebilir.
+D3,Bilim,Laboratuvar deneylerinde atık kimyasalların toplanması için yeni kurallar gerekli.
+D3,Bilim,Genetik testlerin ticari kullanımı bilimsel açıdan ne kadar güvenilir?
+D3,Bilim,İklim değişikliği nedeniyle kampüse daha fazla ağaç dikilsin.
+D3,Bilim,Popüler bilim makalelerini okuyup tartışan bir grup kuralım.
+D3,Sağlık,Yemekhanede vegan ve vejetaryen seçenekler artırılsın.
+D3,Sağlık,Sınav haftasında öğrencilerin stres ve kaygı düzeyi için psikolojik danışma saatleri uzatılsın.
+D3,Sağlık,Spor salonunun açılış saatleri sabah 7'ye çekilsin.
+D3,Sağlık,Kantinde satılan enerji içeceklerinin kafein uyarısı olsun.
+D3,Sağlık,Kampüs sağlık merkezine haftada bir gün diş hekimi gelsin.
+D3,Siyaset,Belediye meclis toplantıları internetten canlı yayınlansın.
+D3,Siyaset,Mahallemizdeki park için muhtarlığa ortak dilekçe verelim.
+D3,Siyaset,Gece otobüs seferleri artırılsın; son sefer çok erken.
+D3,Siyaset,Seçimlerde gençlerin temsil oranı nasıl artırılır?
+D3,Siyaset,Öğrenci kartıyla metroda indirim tüm hatlarda geçerli olsun.
+D3,Eğitim,Final haftasında kütüphane 24 saat açık kalsın.
+D3,Eğitim,Lise son sınıflar için YKS deneme sınavları ücretsiz olsun.
+D3,Eğitim,Akran mentor programıyla birinci sınıflara ders desteği verelim.
+D3,Eğitim,Ödev teslim tarihleri aynı haftaya yığılmasın.
+D3,Eğitim,Yurt odalarında sessiz çalışma saatleri belirlensin.
+D3,Teknoloji,"Okulun web sitesi mobilde çok yavaş açılıyor, yazılım ekibi baksın."
+D3,Teknoloji,Yapay zeka araçlarının ödevlerde kullanımına dair kurallar yazılsın.
+D3,Teknoloji,Bilgisayar laboratuvarındaki eski işlemciler yenilensin.
+D3,Teknoloji,Python ile veri analizi atölyesi açalım.
+D3,Teknoloji,Kampüs Wi-Fi bağlantısı akşamları kopuyor.
+D3,Ekonomi,Yemekhane fiyatlarına yapılan zam geri alınsın.
+D3,Ekonomi,Öğrencilere burs başvurusu için rehber hazırlayalım.
+D3,Ekonomi,Staj ve mülakat hazırlığı için kariyer günleri düzenlensin.
+D3,Ekonomi,Kira artışları öğrencileri yurtlara mecbur bırakıyor.
+D3,Ekonomi,Kampüste kurulan girişim şirketlerine yatırımcı buluşması yapalım.
+D3,Kültür ve Sanat,Bahar şenliğinde yerel müzik gruplarına sahne verilsin.
+D3,Kültür ve Sanat,Ayda bir kampüste açık hava film gösterimi yapılsın.
+D3,Kültür ve Sanat,Okuma kulübü bu ay hangi romanı okusun?
+D3,Kültür ve Sanat,Fakültede öğrenci resim sergisi açalım.
+D3,Kültür ve Sanat,Koro çalışmaları için prova salonu ayrılsın.
