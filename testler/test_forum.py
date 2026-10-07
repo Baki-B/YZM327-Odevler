@@ -1222,7 +1222,16 @@ class SikayetVeBildirim(Ortam):
         with self.assertRaises(KuralHatasi):                                  # dış bağlantı olmaz
             yonetim.toplu_bildirim(self.db, self.yonetici, "HEPSI", "Tıkla kazan", "https://ornek.com")
 
+    def sahte_kanal(self, kod, gecerli=True):
+        """Bağımlılığı tersine çevirme: gerçek push servisi yerine kanal sözlüğüne sahte bir kanal konur."""
+        kanal = SahteKanal(kod, gecerli)
+        gercek = anlik.KANALLAR[kod]
+        anlik.KANALLAR[kod] = kanal
+        self.addCleanup(anlik.KANALLAR.__setitem__, kod, gercek)
+        return kanal
+
     def test_anlik_bildirim_islem_kaydedilince_gider(self):
+        self.sahte_kanal("WEB")
         gonderilen = []
         gercek = anlik._gonder
         anlik._gonder = lambda yol, isler: gonderilen.extend(isler)
@@ -1244,16 +1253,40 @@ class SikayetVeBildirim(Ortam):
             anlik.abone_ol(self.db, self.a, "WEB", {"endpoint": "http://guvensiz", "keys": {}})
 
     def test_gecersiz_abonelik_silinir(self):
+        kanal = self.sahte_kanal("FCM", gecerli=False)                        # uygulama kaldırılmış
         anlik.abone_ol(self.db, self.a, "FCM", {"token": "t" * 40})
         self.db.commit()
-        gercek = anlik._fcm_gonder
-        anlik._fcm_gonder = lambda db, abonelik, yuk: False                  # uygulama kaldırılmış
-        try:
-            anlik._gonder(self.yol, [(dict(anlik.abonelikler(self.db, self.a["id"])[0]), "{}")])
-        finally:
-            anlik._fcm_gonder = gercek
+        anlik._gonder(self.yol, [(dict(anlik.abonelikler(self.db, self.a["id"])[0]), "{}")])
+        self.assertEqual(len(kanal.gonderilen), 1)
         self.assertEqual(anlik.abonelikler(self.db, self.a["id"]), [])
 
+    def test_kapali_kanala_abone_olunmaz_ve_gonderilmez(self):
+        kanal = self.sahte_kanal("FCM")
+        anlik.abone_ol(self.db, self.a, "FCM", {"token": "t" * 40})
+        self.db.commit()
+        kanal.acik = False                                                    # sunucuda kanal sonradan kapandı
+        with self.assertRaises(KuralHatasi):
+            anlik.abone_ol(self.db, self.b, "FCM", {"token": "u" * 40})
+        anlik._gonder(self.yol, [(dict(anlik.abonelikler(self.db, self.a["id"])[0]), "{}")])
+        self.assertEqual(kanal.gonderilen, [])                                # denenmez, abonelik silinmez
+        self.assertEqual(len(anlik.abonelikler(self.db, self.a["id"])), 1)
+
+
+class SahteKanal(anlik.AnlikKanal):
+    """Test ikizi: AnlikKanal sözleşmesine uyar, ağa çıkmadan gönderilenleri kaydeder."""
+
+    def __init__(self, kod, gecerli=True):
+        self.kod, self.gecerli, self.acik, self.gonderilen = kod, gecerli, True, []
+
+    def etkin(self, klasor):
+        return self.acik
+
+    def abonelik_coz(self, veri):
+        return (anlik.WebPushKanali() if self.kod == "WEB" else anlik.FcmKanali()).abonelik_coz(veri)
+
+    def gonder(self, klasor, abonelik, yuk):
+        self.gonderilen.append((abonelik, yuk))
+        return self.gecerli
 
 if __name__ == "__main__":
     unittest.main()

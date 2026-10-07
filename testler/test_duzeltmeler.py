@@ -420,6 +420,10 @@ class OylamaYarislari(Ortam):
 
 class AnlikAbonelikAdresi(Ortam):
     def test_yalnizca_push_servisleri(self):
+        from test_forum import SahteKanal
+        gercek = anlik.KANALLAR["WEB"]
+        anlik.KANALLAR["WEB"] = SahteKanal("WEB")                         # pywebpush kurulu olmasa da adres denetlenir
+        self.addCleanup(anlik.KANALLAR.__setitem__, "WEB", gercek)
         ali = self.kisi("ali")
         anahtarlar = {"p256dh": "x" * 20, "auth": "y" * 10}
         for kotu in ("https://10.0.0.5:8443/x", "https://localhost/x", "https://169.254.169.254/latest",
