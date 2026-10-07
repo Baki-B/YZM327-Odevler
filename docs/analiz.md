@@ -55,7 +55,7 @@ YZ yalnızca üç *destek* işinde aday. Bu ayrım bütün belgenin omurgası: *
 | D1 Saygın dil (`denetim.py`) | Metin yayımlansın mı | İkili sınıflandırma | Metin → kaba ifade VAR/YOK | Kural engeller; yazan düzeltir; kaçanı topluluk gizler |
 | D2 Kişisel veri | Metin yayımlansın mı | İkili sınıflandırma (desen tanıma) | Metin → kişisel veri VAR/YOK | Kural engeller |
 | D3 Kategoriye uygunluk | Konu doğru alanda mı | Çok sınıflı sınıflandırma (7 ana alan) | Başlık + açıklama → kategori | Konu sahibi (yalnızca uyarı) |
-| D5 Benzer konu | Aynı konu açık mı | Benzerlik / sıralama | Başlık → en benzer konu ve oranı | Konu sahibi (uyarı) |
+| D5 Benzer konu | Aynı konu zaten açılmış mı (sonuçsuz kapananlar hariç) | Benzerlik / sıralama | Başlık → en benzer konu ve oranı | Konu sahibi (uyarı) |
 | Yapay zeka özeti (`yz.py`) | Okumadan oy verene ne gösterilir | Üretim (generation) | Mesajlar + sayım → kısa metin | Okur; özet oy vermez |
 | Görüş grupları (`graf.py`) | — (yalnızca görselleştirme) | Kümeleme (etiket yayılımı) | Etkileşim grafı → gruplar | Kimse; karar yok |
 
@@ -68,16 +68,18 @@ kalite çıtası yüksek, gereksiz özet tartışmayı kirletir; bu yüzden yeni
 
 ## 3. YZ gerekli mi? (H2-7, H2-8, H2-9)
 
-H2-7'deki beş koşul ve H2-9'daki karar ağacı her bileşen için ayrı ayrı uygulandı. ✓ koşul sağlanıyor, ✗ sağlanmıyor.
+H2-7'deki beş koşul (öğrenilecek örüntü, kural yazmanın zorluğu, mevcut veri, cevabın tahmin olarak ifade edilebilmesi,
+gelecek verinin geçmişe benzemesi), aynı slayttaki "ML daha da parlar" ölçütlerinden ikisi (hatanın ucuz olması, örüntünün
+değişmesi) ve H2-9'daki karar ağacı her bileşen için ayrı ayrı uygulandı. ✓ sağlanıyor, ✗ sağlanmıyor.
 
-| Bileşen | Öğrenilecek örüntü | Kural yazmak zor | Veri var | Hata ucuz | Örüntü değişiyor | Karar ağacının sonucu |
-|---|---|---|---|---|---|---|
-| Sayım ve eleme | ✗ (kural yönetmelikte) | ✗ | — | ✗ (kararı belirler) | ✗ | **Kural yazın.** H2-12'deki "harf notu" durumu: model, bilinen kuralın bozuk kopyası olur. Açıklama yasal/etik zorunluluk (H2-8). |
-| D1 kaba ifade | ✓ | kısmen | ✗ (etiketli forum mesajı yok) | kısmen | ✓ (argo değişir) | **Önce veri toplayın** → bugün kural; topluluğun gizleme oylamaları ve şikayetler etiket olarak birikir (H2-13: insan kararı = yeni etiket). |
-| D2 kişisel veri | kısmen | ✗ (biçimler belli: telefon, e-posta, kimlik no, IBAN) | ✗ | ✗ (KVKK) | ✗ | **Kural yazın.** Adres gibi serbest biçimler kuralla yakalanmıyor (6. bölüm); ileride ad-varlık tanıma (NER) modeli adayı. |
-| D3 kategori | ✓ | kısmen | ✗ | ✓ (yalnızca uyarı) | ✓ (yeni kategoriler) | **Kural (ontoloji)**; yeni kategoriler topluluk tarafından *kavramlarıyla* eklendiği için kural kendiliğinden uyarlanır. |
-| YZ özeti — sayılar | ✗ | ✗ | — | ✗ (oyu etkiler) | ✗ | **Kural yazın.** Kim kaç mesaj yazdı, fikir yüzde kaç aldı: veritabanında hazır. |
-| YZ özeti — içerik | ✓ | ✓ | ✓ (mesajlar) | ✗ | ✓ | **İnsan onaylı ML** (H2-9 en sağ alt dal). Bugün uygulanmadı; aşağıda tasarımı var. |
+| Bileşen | Örüntü | Kural zor | Veri var | Tahmin olarak ifade | Yeni veri benzer | *Hata ucuz* | *Örüntü değişir* | Karar ağacının sonucu |
+|---|---|---|---|---|---|---|---|---|
+| Sayım ve eleme | ✗ (kural yönetmelikte) | ✗ | — | ✗ (sonuç hesaplanır, tahmin edilmez) | — | ✗ (kararı belirler) | ✗ | **Kural yazın.** H2-12'deki "harf notu" durumu: model, bilinen kuralın bozuk kopyası olur. Açıklama yasal/etik zorunluluk (H2-8). |
+| D1 kaba ifade | ✓ | kısmen | ✗ (etiketli forum mesajı yok) | ✓ (VAR/YOK) | kısmen (argo değişir) | kısmen | ✓ | **Önce veri toplayın** → bugün kural; topluluğun gizleme oylamaları ve şikayetler etiket olarak birikir (H2-13: insan kararı = yeni etiket). |
+| D2 kişisel veri | kısmen | ✗ (biçimler belli: telefon, e-posta, kimlik no, IBAN) | ✗ | ✓ | ✓ | ✗ (KVKK) | ✗ | **Kural yazın.** Adres gibi serbest biçimler kuralla yakalanmıyor (6. bölüm); ileride ad-varlık tanıma (NER) modeli adayı. |
+| D3 kategori | ✓ | kısmen | ✗ | ✓ (7 sınıftan biri) | kısmen (yeni kategoriler) | ✓ (yalnızca uyarı) | ✓ | **Kural (ontoloji)**; yeni kategoriler topluluk tarafından *kavramlarıyla* eklendiği için kural kendiliğinden uyarlanır. |
+| YZ özeti — sayılar | ✗ | ✗ | — | ✗ (sayılar hesaplanır) | — | ✗ (oyu etkiler) | ✗ | **Kural yazın.** Kim kaç mesaj yazdı, fikir yüzde kaç aldı: veritabanında hazır. |
+| YZ özeti — içerik | ✓ | ✓ | ✓ (mesajlar) | üretim (H2-18 notu) | ✓ | ✗ | ✓ | **İnsan onaylı ML** (H2-9 en sağ alt dal). Bugün uygulanmadı; aşağıda tasarımı var. |
 
 **Neden büyük dil modeli (BDM / LLM) ile özet yazılmadı?** H2-10'daki yelpazenin solundan başlandı; sağa geçmeyi
 gerektiren ölçülmüş bir eksik yok. Ayrıca dört somut engel var:
@@ -106,7 +108,7 @@ gerektiren ölçülmüş bir eksik yok. Ayrıca dört somut engel var:
 |---|---|
 | **1. İş hedefi ve değer** | Topluluk kararlarının adil (azınlık korunur, tek kişi baskın olmaz), şeffaf (sayım ve kayıt herkesçe denetlenir) ve zamanında (en fazla 7 gün: 24 saat tartışma + 48 saatlik 1. tur + 4 × 24 saatlik tur) alınması. İş metriği: kapanan konuların karara bağlanma oranı. |
 | **2. Karar ve eylem** | Kararı üyeler oyla verir. Sistem, kararı *hazırlar*: içerik denetimi yazana anında geri bildirim verir (günde mesaj sayısı kadar), özet her tur sonunda bir kez yazılır. |
-| **3. ML görevi** | Çekirdekte yok. Destek görevleri: D1/D2 ikili sınıflandırma, D3 7 sınıflı sınıflandırma, D5 benzerlik, özet = üretim. Etiket tanımları: `olcum/gelistirme.csv` başlığı ve 6. bölüm. |
+| **3. ML görevi** | Çekirdekte yok. Destek görevleri: D1/D2 ikili sınıflandırma, D3 7 sınıflı sınıflandırma, D5 benzerlik, özet = üretim. Etiket tanımları: 6.2. |
 | **4. Veri** | Etiketli veri yok (yeni ürün). Ölçüm için elle etiketlenmiş 85 + 43 örnek. Gelecekte etiket kaynağı: topluluğun gizleme oylamaları, şikayetler, kategori değişiklikleri. Kişisel veri: ad soyad, doğum tarihi, adres yalnızca kayıtta; görünen takma ad; deftere yalnızca özet ve taahhüt. |
 | **5. Metrikler** | Model: D1 kesinlik (yanlış engel pahalı), D2 duyarlılık (kaçan kişisel veri pahalı), D3 makro F1. Ürün: katılım oranı, karar süresi. Koruyucu: oy gücü Gini, defter tutarsızlığı = 0, YZ sayı sadakati = %100, p95 gecikme. (5. bölüm) |
 | **6. Baseline** | Çoğunluk sınıfı ve rastgele (ölçüldü); bugünkü kural (ölçüldü); mevcut çözüm = insan (topluluğun gizleme oylaması, ölçülmedi). (6. bölüm) |
@@ -166,7 +168,7 @@ Denetim kurallarının bir olasılık eşiği yok; ama **ciddiyet** (Engeller / 
 
 | Boyut | Gereksinim | Durum |
 |---|---|---|
-| Gecikme | p95 < 200 ms (sunucu tarafı) | Ölçüldü: en yavaş sayfa p95 16 ms (demo), 1.000 konuda konu akışı en kötü 151 ms (8. bölüm) |
+| Gecikme | p95 < 200 ms (sunucu tarafı) | Ölçüldü: en yavaş sayfa p95 15,5 ms (demo), 1.000 konuda konu akışı p95 51,5 ms (8. bölüm) |
 | Maliyet | İstek başına dış servis ücreti 0 | Dış API yok |
 | Açıklanabilirlik | Her engel/uyarı nedenini söyler; her sayım tablosu herkese açık | Denetim raporu madde madde gerekçe yazar; oylama sayfası sayım tablosunu gösterir |
 | Mahremiyet | Kişisel veri modele/dışarıya gitmez | Kural tabanlı, yerel; deftere yalnızca özet |
@@ -191,11 +193,19 @@ Denetim kurallarının bir olasılık eşiği yok; ama **ciddiyet** (Engeller / 
 
 - Örnekler `olcum/gelistirme.csv` (D1: 28, D2: 22, D3: 35) ve `olcum/test.csv` (D1: 12, D2: 10, D3: 21). Etiketler kurallar
   çalıştırılmadan **önce** elle yazıldı. Örnekler gerçekçi ama küçük; sonuçlar kesin başarım değil, bir referans noktası.
-- **Test kümesi kutsaldır (H2-55):** Hata analizi yalnızca geliştirme kümesinde yapıldı; test kümesi kurallar değiştirilmeden önce
-  yazıldı ve iyileştirmeden önce ölçüldü. *Dürüstlük notu:* yeni D3 kodundaki bir hata (aynı kavramın iki alt kategoride iki kez
-  sayılması) test kümesindeki bir örnekte fark edildi ve düzeltildi; test kümesindeki D3 sayısı bu yüzden bir miktar iyimserdir.
-- Ölçüm koda bağlandı: `testler/test_olcum.py`, kuralların temel çizgileri geçtiğini ve test kümesindeki başarımın aşağıdaki
-  değerlerin altına düşmediğini her test çalıştırmasında denetler (koruyucu).
+- **Etiket tanımları:** D1 VAR = metin bir *kişiyi* aşağılayan ya da ona hakaret eden bir ifade içeriyor (fikre yönelik sert eleştiri
+  VAR değildir). D2 VAR = metinde belirli bir kişiye ulaşmayı ya da onu tanımlamayı sağlayan bilgi var (telefon, e-posta, T.C. kimlik
+  no, IBAN, açık adres); kurum santrali, ders kodu, sipariş/ürün numarası YOK'tur. D3 = metnin asıl konusu olan ana alan (7 ana kategoriden biri).
+- **Test kümesi kutsaldır (H2-55):** Test kümesi kurallar değiştirilmeden önce yazıldı ve iyileştirmeden önce ölçüldü; kurallardaki
+  düzeltmeler geliştirme kümesindeki hatalardan çıkarıldı. **Dürüstlük notu:** (1) iyileştirmeden önceki test ölçümünün hata listesi
+  ekrana yazdırıldığı için test kümesindeki hatalar düzeltmeler yapılırken görülmüştü; ünsüz yumuşaması düzeltmesi geliştirme
+  kümesindeki "ahmağın" örneğinden çıktı ama test kümesindeki "salağa", "dangalağın" örneklerini de düzeltiyor. (2) Yeni D3 kodundaki
+  bir hata (aynı kavramın iki alt kategoride iki kez sayılması) test kümesindeki bir örnekte fark edilip düzeltildi. (3) Test kümesi
+  ile düzeltmeler aynı commit'te olduğu için sıralama git geçmişinden doğrulanamaz. Bu yüzden test kümesindeki artış **iyimserdir**;
+  dürüst bir sonraki adım, kurallar artık değişmeyecekken yeni ve hiç görülmemiş bir test kümesi yazıp bir kez ölçmektir.
+  6.4'teki "bilerek düzeltilmeyen" tablosunda test kümesinden gelen örnekler yalnızca belgelendi, kurallara yansıtılmadı.
+- Ölçüm koda bağlandı: `testler/test_olcum.py`, kuralların temel çizgileri geçtiğini ve test kümesinde 11. bölümdeki yayın
+  ölçütlerinin altına düşülmediğini her test çalıştırmasında denetler (koruyucu).
 
 ### 6.3 Sonuçlar — test kümesi (`python olcum/denetim_olcumu.py`)
 
@@ -233,9 +243,18 @@ Kuralın yanıldığı örnekler tek tek okundu. Belirli cümleleri ezberleyen d
 | "Sen ahmağın tekisin." → kaçtı | Türkçe **ünsüz yumuşaması**: *ahmak* ek alınca *ahmağ-* olur; kök listede yok | Her kökün yumuşamış biçimi de aranır (`denetim._yumusamis`). H2-41'deki "Türkçe tuzağı"nın (İ/I) kardeşi; İ/I zaten `ontoloji.tr_kucuk` ile çözülüydü. |
 | "IBAN numaram TR33 0006 …" → kaçtı | IBAN deseni yoktu | IBAN deseni eklendi (KVKK kapsamında kişisel veri) |
 | "Telefonum 0 (532) 123-45-67." → kaçtı | Parantezli yazım | Desen parantezi kabul ediyor |
-| "Belediye meclis toplantıları internetten **canlı** yayınlansın." → Bilim | Her alt kategori tek başına yarışıyordu: Siyaset (meclis) ve Yerel Yönetim (belediye) birer eşleşmeyle Biyoloji'ye (canlı) eşit kaldı, kazananı sözlük sırası belirledi | Eşleşmeler önce **ana alan** düzeyinde toplanıyor (`ontoloji.alan_puanlari`) |
+| "Belediye meclis toplantıları internetten **canlı** yayınlansın." → Bilim | Her alt kategori tek başına yarışıyordu: Siyaset (meclis) ve Yerel Yönetim (belediye) birer eşleşmeyle Biyoloji'ye (canlı) eşit kaldı, kazananı sözlük sırası belirledi | Eşleşmeler önce **ana alan** düzeyinde toplanıyor (`ontoloji.alan_puanlari`). Tam eşitlikte (aynı sayıda kavram, aynı sayıda alt kategori eşleşmesi) kazananı hâlâ kategori sırası belirler; D3 yalnızca uyarı olduğu için kabul edildi |
 
-Bilerek düzeltilmeyen hatalar (kuralın sınırı; düzeltmek ezberlemek olurdu):
+İkinci inceleme turunda (bağımsız gözden geçirme) bulunan ve düzeltilenler — ölçüm kümelerinde örnekleri yoktu, ölçüm sonucu değişmedi:
+
+| Durum | Düzeltme |
+|---|---|
+| "**Asalak** bitkiler üzerine seminer" → yanlış engel ("salak" kelimenin içinde) | Kökler kelime başında aranıyor (Türkçe sondan eklemeli) |
+| "Kitap barkodu 8695012345678" → telefon sanılıyordu | Telefon deseni rakam sınırında başlayıp bitiyor |
+| 40.000 karakterlik bir gerekçe ~7 sn sürüyordu (e-posta deseni karesel) | Desen kelime sınırında başlıyor; serbest metinlere 5.000 karakter sınırı |
+
+Bilerek düzeltilmeyen hatalar (kuralın sınırı; düzeltmek ezberlemek olurdu). Test kümesinden gelenler ("mal mısın", ürün kodu,
+"Aptallık", "Öğrencilere ücretsiz terapi"…) yalnızca belgelendi:
 
 | Örnek | Neden | Ne yapılmalı |
 |---|---|---|
@@ -267,10 +286,10 @@ Bilerek düzeltilmeyen hatalar (kuralın sınırı; düzeltmek ezberlemek olurdu
 
 | Gereksinim | Nasıl sağlanıyor | Kanıt |
 |---|---|---|
-| Aynı anda gelen oylar ve tur kapanışı tutarlı | Yazan istekler `BEGIN IMMEDIATE` ile sıralanır; oy, tur hâlâ açıksa yazılır (koşullu INSERT); fikir tekliği kısmi tekil indeksle | 8 iş parçacığıyla eşzamanlı test (`OylamaYarislari`); düzeltmeden önce aynı test 7–8 fikir üretiyordu |
+| Aynı anda gelen istekler tutarlı | Yazan istekler `BEGIN IMMEDIATE` ile sıralanır; oy yalnızca tur hâlâ açıksa yazılır (koşullu INSERT); fikir tekliği kısmi tekil indeksle | Kişi başı tek fikir kuralı 8 iş parçacığıyla eşzamanlı sınanır (`OylamaYarislari.test_ayni_anda_gelen_fikirler`; düzeltmeden önce aynı test 7–8 fikir üretiyordu). Kapanmış tura oy verilmemesi tek iş parçacığıyla sınanır (`test_suresi_dolmus_oylamaya_oy_verilmez`); oy ile kapanışın eşzamanlı yarışı için ayrı bir test yok |
 | Bir işin hatası diğerlerini durdurmaz | Zamanlayıcı her konuyu ayrı kayıt noktasında (SAVEPOINT, Memento) işler | `ZamanlayiciYalitimi` |
 | Yan etki hatası isteği bozmaz | Commit sonrası defter yazımı/bildirim hatası günlüğe yazılır, kullanıcı işlemi tekrarlamaz | `YanEtkiDayanikliligi` |
-| Kayıtların kurcalanmadığı | 3 düğüm, çoğunluk, onarım; veritabanı–defter tutarlılık denetimi | `DefterDeposu`, `DefterOlceklenmesi` (dışarıdan kurcalama önbelleğe rağmen yakalanır) |
+| Kayıtların kurcalanmadığı | 3 düğüm, çoğunluk, onarım; veritabanı–defter tutarlılık denetimi; birden çok süreç aynı anda yazsa da zincir bölünmez (süreçler arası kilit) | `DefterDeposu`, `DefterOlceklenmesi`, `DefterDayanikliligi` (SQLite ile ya da ham bayt olarak yapılan kurcalama önbelleğe rağmen yakalanır; 3 süreç × 15 yazma) |
 | Sessiz model hatası | Denetim kuralları ölçülüyor ve ölçüm testte korunuyor | `test_olcum.py` |
 | Yedek ve kurtarma | Yönetim panelinden tutarlı veritabanı yedeği (`yonetim.yedek_al`) | **RPO** = son alınan yedek (elle); **RTO** ≈ dakikalar (dosyayı geri koy). Sınır: defter düğümleri yedeğe dahil değil; yedek dosyası gizli oy ve kişisel veri içerir → şifreli saklanmalı (yapılmadı, 10. bölüm) |
 
@@ -280,40 +299,51 @@ Bilerek düzeltilmeyen hatalar (kuralın sınırı; düzeltmek ezberlemek olurdu
 
 | İstek | p50 | p95 | En kötü |
 |---|---|---|---|
-| Konu akışı | 11,5 | 16,2 | 17,4 |
-| Konu sayfası (27 mesaj) | 8,6 | 9,6 | 10,0 |
-| Oylama sayfası | 3,9 | 4,2 | 4,5 |
-| Kayıt defteri | 4,7 | 5,2 | 6,2 |
-| Üye ağı | 4,8 | 5,0 | 5,8 |
-| API: konu listesi | 2,3 | 2,5 | 2,6 |
-| Oy verme (commit + 3 düğüme yazım) | 7,8 | 9,4 | 12,3 |
+| Konu akışı | 10,9 | 15,5 | 15,6 |
+| Konu sayfası (27 mesaj) | 8,9 | 10,5 | 14,8 |
+| Oylama sayfası | 3,8 | 4,3 | 5,0 |
+| Gündem | 4,6 | 5,1 | 5,8 |
+| Kayıt defteri | 4,6 | 5,7 | 6,0 |
+| Üye ağı | 4,8 | 5,3 | 7,6 |
+| API: konu listesi | 2,2 | 2,4 | 2,6 |
+| Oy verme (commit + 3 düğüme yazım) | 7,4 | 10,1 | 10,3 |
 
 **Defter büyüyünce (bulundu ve düzeltildi).** `--defter-blok` ile defter yapay olarak büyütüldü. Önceden her yazma ve her defter
 sayfası üç düğümün bütün zincirini baştan okuyup SHA-256 ile yeniden doğruluyordu (O(n)):
 
 | Defterdeki blok | Oy verme p95 — önce | Oy verme p95 — şimdi | Defter sayfası p95 — önce | şimdi |
 |---|---|---|---|---|
-| ~600 (demo) | 18,6 | 9,4 | 14,1 | 5,2 |
-| +10.000 | 148,3 | 8,1 | 272,1 | 5,8 |
-| +50.000 | **645,2** | **11,4** | **1.145,5** | **8,5** |
+| ~600 (demo) | 18,6 | 10,1 | 14,1 | 5,7 |
+| +10.000 | 148,3 | 9,3 | 272,1 | 5,7 |
+| +50.000 | **645,2** | **9,5** | **1.145,5** | **11,7** |
 
-Düzeltme (`defter.py`): düğüm başına tam doğrulamanın sonucu, düğümün **sürümüyle** (SQLite dosya başlığındaki değişiklik sayacı)
-birlikte saklanır; sürüm değişmedikçe zincir yeniden doğrulanmaz, yazma yalnızca son bloğu okur. Dışarıdan yapılan her değişiklik
-sürümü değiştirdiği için kurcalama yine yakalanır (testli). Repository deseni sayesinde değişiklik tek dosyada kaldı.
+"Önce" sütunları düzeltmeden önceki kodla (commit `a266e48`) aynı komutla ölçüldü; o sürümde p95 formülündeki bir yuvarlama hatası
+(ikinci inceleme turunda düzeltildi) değerleri bir sıra yukarıdan okuyordu, büyüklük sırası değişmez. "Şimdi" sütunları:
+`python olcum/gecikme_olcumu.py 60` ve `python olcum/gecikme_olcumu.py 30 --defter-blok N`.
 
-**Konu sayısı büyüyünce.** 1.019 konuda (1.000 kopya eklenerek, 10 istek): konu akışı p50 77 → **51 ms** (en kötü 151 ms).
-Zamanın çoğu yan paneldeki "öne çıkan kelimeler" hesabındaydı; aynı kelimenin binlerce kez yeniden katlanması kaldırıldı.
+Düzeltme (`defter.py`): düğüm başına tam doğrulamanın sonucu, düğümün **sürümüyle** birlikte saklanır; sürüm değişmedikçe zincir
+yeniden doğrulanmaz, yazma yalnızca son bloğu okur. Sürüm; SQLite dosya başlığındaki değişiklik sayacı, dosyanın kimliği, boyu,
+değişiklik ve durum değişim zamanı (ctime) ile WAL dosyasından oluşur: dosyayı SQLite ile ya da ham bayt olarak değiştirmek
+sürümü değiştirir (testli). Sürümün göremeyeceği değişikliklere (disk bozulması; Windows'ta zamanı geri alınmış ham bayt değişikliği)
+karşı bir doğrulama sonucu en fazla 10 dakika kullanılır ve "denetle" istekleri ile onarım önbelleği hiç kullanmaz.
+Repository deseni sayesinde değişiklik tek dosyada kaldı.
+
+**Konu sayısı büyüyünce.** `python olcum/gecikme_olcumu.py 30 --konu 1000` (1.019 konu): konu akışı p50 **48,7 ms**, p95 **51,5 ms**.
+Düzeltmeden önce aynı ölçüm (1.000 kopya, 10 istek) p50 77 ms, en kötü 176 ms veriyordu. Zamanın çoğu yan paneldeki
+"öne çıkan kelimeler" hesabındaydı; aynı kelimenin binlerce kez yeniden katlanması kaldırıldı.
 
 **Bilinen sınırlar:**
 - Öne çıkan kelimeler hâlâ son 7 günün bütün metnini her istekte işliyor (O(metin)). Sonraki adım: konu/mesaj yazılınca artımlı sayım.
 - Sunucu yeniden başlayınca her düğüm bir kez tam doğrulanır (50.000 blokta yaklaşık yarım saniye, yalnızca ilk istekte).
 - SQLite tek yazar: yazan istekler sıraya girer. Bir oy ~10 ms → saniyede ~100 yazma. Daha fazlası için PostgreSQL ve
   defterin ayrı bir hizmete taşınması gerekir (Repository arayüzü buna hazır).
+- Birden çok sunucu süreci (ör. birden çok WSGI işçisi) çalışırsa defter yazmaları süreçler arası kilitle doğru sıralanır; ama bir
+  süreç ötekinin yazdığı düğümü yeniden doğrulamak zorunda kalır, önbelleğin hız kazancı azalır. Önerilen dağıtım tek süreç, çok iş parçacığıdır.
 
 ### 8.3 Sürdürülebilirlik (maintainability)
 
 - Tasarım desenleri ve SOLID eşlemesi: `docs/tasarim.md` 8. bölüm (her desen dosya adıyla).
-- 172 otomatik test (~7 sn); ölçüm betikleri; her düzeltmenin önce hatayı üreten testi (`testler/test_duzeltmeler.py`).
+- 181 otomatik test (~7 sn); ölçüm betikleri; her düzeltmenin önce hatayı üreten testi (`testler/test_duzeltmeler.py`).
 - Bağımlılık sürümleri sabit; gizli anahtar kodda değil; ayarlar ortam değişkeniyle (README).
 
 ### 8.4 Uyarlanabilirlik (adaptability) — "hizmeti kesmeden uyum"
@@ -323,7 +353,7 @@ Zamanın çoğu yan paneldeki "öne çıkan kelimeler" hesabındaydı; aynı kel
 | Eşik, süre, ağırlık, yeter sayı | Hayır: yönetmelik oylamasıyla (parametreler veritabanında, anlamlı aralıklarla sınırlı) |
 | Denetim maddesinin sertliği (Engeller / Uyarır / Kapalı) | Hayır: oylamayla |
 | Yeni kategori ve kavramları | Hayır: üyeler önerir, oylar; D3 yeni kavramları hemen kullanır |
-| Yeni oylama türü | Bir sınıf (`teklif_turleri.py`'de `@kaydet`), mevcut kod değişmez (OCP) |
+| Yeni oylama türü | Bir sınıf (`teklif_turleri.py`'de `@kaydet`) + `ayarlar.TEKLIF_TIPLERI`'nde bir yapılandırma satırı (ad, eşik, süre); mevcut kod değişmez (OCP) |
 | Yeni denetim maddesi | Bir halka sınıfı (`denetim.py`) + madde metni |
 | Yeni bildirim kanalı | Bir Adapter sınıfı (`anlik.py`) |
 | Defter deposu (ör. PostgreSQL) | Bir `DugumDeposu` gerçeklemesi |
@@ -338,7 +368,7 @@ Zamanın çoğu yan paneldeki "öne çıkan kelimeler" hesabındaydı; aynı kel
 | Azınlık | Fikrinin elenmemesi, karara itiraz | Çoğunluk kararı ↔ azınlık koruması | Herkes bir fikir; itiraz konusu; korunan maddeler 3/4 |
 | Gözlemci (kural dışı kalan) | Okumak, izlemek | Katılım kuralı ↔ şeffaflık | Gözlemci her şeyi okur, oy veremez |
 | Uzman | Bilgisinin ağırlığı | Uzmanlık ↔ eşitlik | Oy 10 sayılır ama çift oran: kalabalığı tek başına yenemez; kontenjan |
-| Yönetici | Siteyi işletmek | Yönetim ↔ karar yetkisi | Yönetici yalnızca yönetir; kararı etkileyen işlem hiç tanımlı değil |
+| Yönetici | Siteyi işletmek | Yönetim ↔ karar yetkisi | Yönetici yalnızca yönetir; normal çalışmada kararı etkileyen işlem tanımlı değil. Tek istisna sunum kipi (`--demo`): "Süreyi ilerlet" beklemeyi kısaltır, sayım kurallarını değiştirmez, günlüğe yazılır |
 | Veri sahibi (KVKK) | Kişisel verinin korunması | Denetlenebilirlik ↔ mahremiyet | Deftere yalnızca özet/taahhüt; gizli oy; küçük görüş grupları gösterilmez (k-anonimlik ≥ 3) |
 | Geliştirici / bakım | Değiştirilebilir kod | Özellik hızı ↔ kalite | Desenler, testler, ölçümler |
 | Ders / değerlendirici | Analiz, desen, ölçüm | — | Bu belge ve `docs/tasarim.md` |
@@ -360,6 +390,7 @@ O = olasılık, E = etki (Y yüksek, O orta, D düşük).
 | G | Yedek dosyası sızdı (gizli oylar + kişisel veri) | D | Y | Yedeği yalnızca yönetici indirir | **Açık risk**: yedek şifrelenmiyor |
 | H | Tek fikir + çok çekimser oyla zayıf bir fikir "tek kalan" olarak karar oldu | O | O | Ödev şartnamesindeki kural; yeter sayı ve itiraz konusu dengeler | Bilerek korundu; izlenecek metrik: tek kalanla kabul edilen kararların oranı |
 | I | Forum demo şifreleriyle yayına alındı | O | Y | Ağa açılırken uyarı; `--demo-verisiz` | Uygulandı |
+| J | Çok uzun bir gerekçeyle sunucu saniyelerce kilitlendi (hizmet reddi) | O | O | Desenler kelime/rakam sınırında başlar; serbest metinlere 5.000 karakter sınırı | **Bulundu ve düzeltildi** (ikinci inceleme turu) |
 
 ---
 
@@ -368,9 +399,10 @@ O = olasılık, E = etki (Y yüksek, O orta, D düşük).
 Agora şu koşullarda yayına alınır; biri bozulursa yayın durur:
 
 1. Bütün otomatik testler geçer (`python -m unittest discover testler`).
-2. Denetim, test kümesinde: D1 F1 ≥ 0,80, D2 duyarlılık ≥ 0,80, D3 doğruluk ≥ 0,85 — ve her biri temel çizgileri geçer
-   (`testler/test_olcum.py` bunu her çalıştırmada denetler).
-3. Sunucu tarafı p95 < 200 ms: demo verisinde, 1.000 konuda ve 50.000 bloklu defterde.
+2. Denetim, test kümesinde (5.3'teki öncelikli metriklerle): D1 kesinlik ≥ 0,80 ve F1 ≥ 0,80, D2 duyarlılık ≥ 0,80,
+   D3 makro F1 ≥ 0,85 — ve her biri temel çizgileri geçer (`testler/test_olcum.py` bu eşikleri her çalıştırmada denetler).
+3. Sunucu tarafı p95 < 200 ms: demo verisinde (`gecikme_olcumu.py 60`), 1.000 konuda (`--konu 1000`) ve 50.000 bloklu defterde
+   (`--defter-blok 50000`).
 4. Defter–veritabanı tutarsızlığı 0.
 
 **Bir kuralı modelle değiştirme ölçütü:** model, *aynı test kümesinde* kuralı en az +0,10 F1 farkla geçmeli, p95 < 200 ms'yi
@@ -385,7 +417,7 @@ maliyeti değmez.
 |---|---|---|
 | BDM ile içerik özeti | 3. bölüm: halüsinasyon, KVKK, maliyet; ölçülmüş eksik yok | Etiketli onay verisi birikince, insan onaylı |
 | ML tabanlı denetim | Etiketli veri yok | Gizleme oylaması/şikayet verisi birkaç yüz örneğe ulaşınca; bugünkü kural temel çizgi olur |
-| Çok süreçli dağıtım | SQLite tek yazar; defter kilidi süreç içi | Saniyede ~100 yazmayı aşan kullanımda |
+| Çok süreçli dağıtım | SQLite tek yazar; defter yazmaları süreçler arası kilitle doğru ama önbellek kazancı azalır | Saniyede ~100 yazmayı aşan kullanımda |
 | Yedeğin şifrelenmesi | Kapsam | Gerçek kullanıma geçmeden önce |
 | Kimlik doğrulama (Sybil'e karşı) | Ödev kapsamı dışı | Gerçek kullanıma geçmeden önce |
 | Göç kodundaki eski sütunlar | Eski veritabanlarıyla uyum | Bütün kurulumlar yeni şemaya geçince |

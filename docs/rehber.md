@@ -28,7 +28,7 @@ Dört ana fikir her şeyin temelidir:
 | **Ziyaretçi** (giriş yapmamış) | Her şeyi okur. Yazamaz, oy veremez. |
 | **Üye** | Konu açar, mesaj yazar, fikir verir, oy verir, oyunu devreder, şikayet eder. |
 | **Katılımcı / gözlemci** | Aynı üye, bir konuda *katılımcı*, başka bir konuda *gözlemci* olabilir. Konunun katılım kuralını (il/ilçe, yaş) sağlıyorsa katılımcıdır; sağlamıyorsa o konuyu yalnızca okur. |
-| **Uzman** | Belli bir alanda (ör. Sağlık) uzmanlığı oylamayla kabul edilmiş üye. O alandaki fikir oylamalarında oyu 10 sayılır. |
+| **Uzman** | Belli bir alanda (ör. Sağlık) uzmanlığı oylamayla kabul edilmiş üye. O alandaki konulara bağlı oylamalarda (fikir, mesaj gizleme, konu kaldırma) oyu 10 sayılır. |
 | **Yapay zeka üye** | Sistemin açtığı özel hesap (ör. `Bilge`). Yalnızca kısa özet yazar. Oy kullanmaz, giriş yapamaz. |
 | **Yönetici** | Yalnızca siteyi yönetir (askı, şikayet kutusu, kategoriler, duyurular). Kararları etkileyemez; oyu herkes gibi 1'dir. |
 | **Askıdaki üye** | Yöneticinin belli bir süre için askıya aldığı üye. Okur ama yazamaz, oy veremez. |
@@ -271,7 +271,7 @@ Diğer kurallar:
 - **Yönetici uzman atayamaz**, uzmanlığı geri de alamaz.
 - **Yapay zeka hesapları da uzman olabilir**, ama aynı şartlarla: aynı ön şartı sağlamalı, kontenjanda yer olmalı ve alanın üyeleri oylamalı.
   Yapay zeka kendi başvuramaz; bir üye onu **aday gösterir** (yapay zekanın profil sayfasından).
-- Uzman ne kazanır: kendi alanındaki **fikir oylamalarında** oyu 10 sayılır. Karşılığında gerekçe yazmak zorundadır ve oyu herkese açıktır.
+- Uzman ne kazanır: kendi alanındaki konulara bağlı oylamalarda (**fikir, mesaj gizleme, konu kaldırma**) oyu 10 sayılır. Karşılığında gerekçe yazmak zorundadır ve oyu herkese açıktır.
 - Başvuru: **Panelim › Uzmanlık**. Sayfa, seçilen alan için ön şartların ve kontenjanın durumunu gösterir.
 
 ---
@@ -328,10 +328,10 @@ Forumun kurallarıdır. **Meclis › Yönetmelik** sayfasında görülür. İki 
 | Madde | Ne kontrol eder | Varsayılan |
 |---|---|---|
 | D1 Saygılı dil | Hakaret listesindeki kelimeler | Engeller |
-| D2 Kişisel veri | Telefon numarası, T.C. kimlik no, e-posta | Engeller |
+| D2 Kişisel veri | Telefon numarası, T.C. kimlik no (resmi sağlamayla), e-posta, IBAN | Engeller |
 | D3 Kategoriye uygunluk | Metin seçilen kategorinin kavramlarını içeriyor mu? İçermiyorsa daha uygun kategori önerir | Uyarır |
 | D4 Konum tutarlılığı | Metinde "Ankara" geçiyor ama katılım herkese açıksa uyarır | Uyarır |
-| D5 Benzer konu | Aynı konuda açık bir konu var mı? (kelime benzerliği) | Uyarır |
+| D5 Benzer konu | Aynı konuda başka bir konu var mı? Sonuçsuz kapananlar hariç; karara bağlananlar da sayılır (kelime benzerliği) | Uyarır |
 | D6 Alt konu ilişkisi | Alt konu, üst konuyla aynı alanda mı? | Uyarır |
 | D7 Açıklık | Açıklama en az 40 karakter mi? | Uyarır |
 
@@ -442,7 +442,9 @@ Sunumda göstermek için: Yönetim paneli › Sistem › "Bozmayı dene" → kay
 
 **Hız:** Bir düğümün zinciri bir kez baştan doğrulandıktan sonra sonuç, düğümün **sürümüyle** birlikte saklanır. Düğüm
 değişmedikçe zincir yeniden hesaplanmaz; yeni blok eklerken yalnızca son blok okunur. Düğüm dosyasını dışarıdan biri değiştirirse
-sürüm değişir ve bir sonraki okumada tam doğrulama yapılır, kurcalama yine yakalanır. Ölçüm: 50.000 blokluk defterde oy vermek
+(SQLite ile ya da ham bayt olarak) sürüm değişir ve bir sonraki okumada tam doğrulama yapılır, kurcalama yine yakalanır. Sürümün
+göremeyeceği bozulmalara (ör. disk hatası) karşı bir doğrulama sonucu en fazla 10 dakika kullanılır; kayıt defteri sayfasındaki
+"Denetle" ve onarım önbelleği hiç kullanmaz. Birden çok sunucu süreci aynı anda yazsa da yazmalar bir kilitle sıraya girer, zincir bölünmez. Ölçüm: 50.000 blokluk defterde oy vermek
 bu değişiklikten önce ~645 ms, sonra ~11 ms sürüyor ([analiz.md](analiz.md) 8.2).
 
 ---
@@ -557,8 +559,8 @@ Askıdaki üye okur ama yazamaz, oy veremez, konu açamaz; eski oyları ve mesaj
 
 **İlk yöneticiyi atamak:** `python calistir.py --yonetici TAKMA_AD`. Sonrası panelden.
 
-**Sunum kipi (`--demo`):** Sunumda 24–48 saat beklenemeyeceği için sunucu `python calistir.py --demo` ile başlatılırsa Konular ve Oylamalar
-sayfalarında **"Süreyi ilerlet"** düğmesi çıkar. Bu düğme yalnızca beklemeyi kısaltır: o ana kadarki oylarla, aynı kurallarla sayım yapılır;
+**Sunum kipi (`--demo`):** Sunumda 24–48 saat beklenemeyeceği için sunucu `python calistir.py --demo` ile başlatılırsa yönetim panelinin
+Konular ve Oylamalar sayfalarında **"Süreyi ilerlet"** düğmesi çıkar. Bu düğme yalnızca beklemeyi kısaltır: o ana kadarki oylarla, aynı kurallarla sayım yapılır;
 her kullanımı günlüğe yazılır. Normal çalıştırmada bu düğme yoktur ve adresi de çalışmaz.
 
 ---
@@ -584,7 +586,7 @@ her kullanımı günlüğe yazılır. Normal çalıştırmada bu düğme yoktur 
 Nasıl hesaplanır (`gundem.py`):
 | Gösterge | Hesap |
 |---|---|
-| Trend konular | Son 24 saatte (az etkinlik varsa son 3 gün) puan = mesaj + 2 × fikir + 0,5 × oy (yeni açılan konuya +3) |
+| Trend konular | Son 24 saatte (az etkinlik varsa 3 güne, o da yetmezse 14 güne genişler) puan = mesaj + 2 × fikir + 0,5 × oy (yeni açılan konuya +3) |
 | Öne çıkan kelimeler | Son 7 günün mesajlarında **en çok farklı konuda** geçen kelimeler; sık kelimeler (ve, ama, olsun...) sayılmaz. Tıklayınca arar |
 | Kategorilerin nabzı | Her ana kategoride bu haftaki mesaj sayısı, son 7 günün çizgisi ve geçen haftaya göre değişim (↑/↓ %) |
 | Yakında bitenler | Bitişi en yakın oylamalar ve oylamaya geçecek tartışmalar |
@@ -735,7 +737,8 @@ YONETMELIK (Yonetmelik)      → değişikliği uygula
 KATEGORI (Kategori)          → kategoriyi ekle
 ```
 - **Neden:** Oran hesabı, yeter sayı, çekimser, devir, gizli oy, makbuz kuralları **bir kez** yazılır ve bütün oylamalarda aynen geçerlidir.
-  Yeni bir oylama türü eklemek, **yeni bir sınıf yazmak** demektir; mevcut koda dokunulmaz (açık/kapalı ilkesi). Önceden aynı iş
+  Yeni bir oylama türü eklemek, **yeni bir sınıf yazmak** ve `ayarlar.TEKLIF_TIPLERI`'ne bir yapılandırma satırı (ad, eşik, süre)
+  eklemek demektir; mevcut koda dokunulmaz (açık/kapalı ilkesi). Önceden aynı iş
   beş dosyada `if tip == ...` dalı demekti.
 - Eleme kararı (`sonuclar.tur_karari`) veritabanına dokunmayan **saf bir fonksiyondur**: sayım sonucunu alır, "kabul / devam / sonuçsuz" döndürür. Bu yüzden kolayca test edilir.
 
@@ -794,7 +797,8 @@ Expo Go / Android uygulaması  ──(WebView)──►  Agora sunucusu  ◄─�
 Yetki üç düzeyde kontrol edilir: giriş gerekli mi (`giris_gerekli`), yönetici mi (`yonetici_gerekli`), bu konuda katılımcı mı
 (uygunluk). Askıdaki üyenin yazma istekleri en başta, tek bir noktada durdurulur.
 - **Yetkilerin ayrılması:** Yönetici rolü yalnızca *yönetim* yetkisi taşır; *karar* yetkisi yalnızca oylamalardadır. Yönetim panelinde
-  kararları etkileyen bir işlem **hiç tanımlı değildir** (gizlenmiş değil, yoktur).
+  kararları etkileyen bir işlem **normal çalışmada tanımlı değildir** (gizlenmiş değil, yoktur). Tek istisna sunum kipindeki
+  (`--demo`) "Süreyi ilerlet": beklemeyi kısaltır, sayım kurallarını değiştirmez, günlüğe yazılır.
 
 ### 25.17 Katmanlı güvenlik (derinlemesine savunma)
 Tek bir önleme güvenilmez; her katmanda ayrı önlem vardır: şifre hash'i, giriş kilidi, CSRF, CSP başlıkları, parametreli SQL,
@@ -811,7 +815,7 @@ Karanlık tema yalnızca bu değişkenleri yeniden tanımlar; hiçbir bileşene 
 - Eleme kuralları saf fonksiyon olduğu için (25.8) sınır değerleri (%4,9 – %5 – %75) doğrudan denenir.
 - **Sahte nesneler:** kayıt defteri testleri disk yerine bellekte çalışan sahte depoyla (`BellekDugumDeposu`), anlık bildirim
   testleri gerçek servis yerine sahte kanalla (`SahteKanal`) çalışır. Testlerde şifre özeti hızlı bir yöntemle yapılır
-  (`guvenlik.SIFRE_YONTEMI`); 172 test yaklaşık 7 saniye sürer.
+  (`guvenlik.SIFRE_YONTEMI`); 181 test yaklaşık 7 saniye sürer.
 - **Hata önce test:** yazılım mühendisliği incelemesinde bulunan her hata için önce hatayı yeniden üreten bir test yazıldı, sonra
   düzeltildi (`testler/test_duzeltmeler.py`).
 - **Ölçüm testleri:** denetim kurallarının etiketli örneklerdeki başarımı ve temel çizgileri geçtiği her çalıştırmada denetlenir
@@ -873,10 +877,10 @@ Katmanların ve diğer mimari kararların açıklaması 25. bölümde.
 | `web/` | Sayfa rotaları ve API; `istek.py` (istek öncesi zincir: kimlik, askı, CSRF, zamanlayıcı, yazma kilidi), `hata_sayfalari.py`, `sablon.py` (şablon filtreleri) |
 | `templates/` | Sayfalar (`panel/` = Panelim, `yonetim/` = yönetim paneli) |
 | `static/` | CSS, JS, simgeler, service worker |
-| `testler/` | 172 otomatik test |
+| `testler/` | 181 otomatik test |
 | `olcum/` | Ölçüm betikleri ve etiketli örnekler ([analiz.md](analiz.md)) |
 
-**Tek teklif mekanizması:** Bütün oylamalar (fikir turları, gizleme, kaldırma, uzmanlık, yönetmelik) aynı "teklif" yapısından geçer;
+**Tek teklif mekanizması:** Bütün oylamalar (fikir turları, gizleme, kaldırma, uzmanlık, yönetmelik, yeni kategori) aynı "teklif" yapısından geçer;
 sayım ve eşik kuralları tek yerde yazılıdır. Oylama türü değişince sadece "bitince ne olacak" kısmı değişir.
 
 **Veritabanı güncellemesi:** Yeni sütunlar/tablolar mevcut veritabanına veri silinmeden eklenir; yönetmelik metinleri her açılışta koddan tazelenir (değerlere dokunulmaz).
@@ -924,8 +928,8 @@ kategori nabzı ve etkinlik grafikleri dolu görünür. Bir konunun yolculuğunu
 |---|---|
 | Final projesi hangi dille yapılsın? | Beş turun tamamı: uzman ağırlığı yüzünden 1. turda elenen fikir, 3. turda %10 altı, 5. turda karar |
 | Farklı teknoloji deneyen gruplara ek puan | Yukarıdaki karara açılmış **itiraz konusu** |
-| Kütüphanede gece açık okuma salonu | 2. turda **ezici üstünlük** (%79) |
-| Kulüp toplantıları hafta sonu yapılsın mı? | İlk turda **ezici üstünlük** (%79) |
+| Kütüphanede gece açık okuma salonu | 2. turda **ezici üstünlük** (%78,5) |
+| Kulüp toplantıları hafta sonu yapılsın mı? | İlk turda **ezici üstünlük** (%78,5) |
 | Yemekhanede etsiz menü | **2. tur sürüyor**; çekimser oy, elenen fikir, tabanı dolmuş şikayet |
 | Öğrenci bursları · Plastik bardak | **1. tur sürüyor** |
 | Mahallelere gençlik meclisi | Günün en çok konuşulan konusu (trendlerde 1.) |

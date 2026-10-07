@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS uzmanliklar (
     kaynak       TEXT NOT NULL,                       -- TOPLULUK (oylamayla)
     belge        TEXT
 );
--- Sosyal graf kenarı: takip. (Diğer kenarlar: devirler, yanıtlar, faydalı işaretleri, oy benzerliği.)
+-- Sosyal graf kenarı: takip. (Diğer kenarlar: devirler, yanıtlar; oy benzerliği yalnızca sunucuda hesaplanır, gösterilmez.)
 CREATE TABLE IF NOT EXISTS takipler (
     takip_eden_id    INTEGER NOT NULL REFERENCES kullanicilar(id),
     takip_edilen_id  INTEGER NOT NULL REFERENCES kullanicilar(id),

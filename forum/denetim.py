@@ -24,7 +24,7 @@ _YUMUSAMA = {"k": "g", "p": "b", "t": "d", "c": "c"}
 
 def _yumusamis(kok):
     """Türkçe ünsüz yumuşaması: ünlüyle başlayan ek alınca sondaki p, ç, t, k → b, c, d, ğ (ahmak → ahmağın).
-    Katlanmış metinde ğ, g olur. Ölçümde (olcum/) "ahmağın", "salağa" biçimleri bu yüzden kaçıyordu."""
+    Katlanmış metinde ğ, g olur. Ölçümün geliştirme kümesindeki "ahmağın" örneği bu yüzden kaçıyordu (olcum/)."""
     return kok[:-1] + _YUMUSAMA[kok[-1]] if kok[-1] in _YUMUSAMA else kok
 
 

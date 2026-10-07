@@ -96,7 +96,7 @@ sequenceDiagram
   T->>S: tur_karari() — saf işlev: KABUL / DEVAM / SONUÇSUZ
   O->>T: sonuc_bildirimi(), uygula()
   T->>S: tur_uygula() — karar kaydı ya da sonraki tur
-  T->>Y: tur_ozeti() — sayılar kararın kendisinden
+  S->>Y: tur_ozeti() — sayılar kararın kendisinden
   Z->>V: RELEASE (hata olursa ROLLBACK TO + kuyruklar hatıraya döner)
   Z->>V: COMMIT → defter aboneleri
 ```
@@ -116,6 +116,7 @@ erDiagram
   KULLANICILAR ||--o{ ANLIK_ABONELIKLER : "cihaz kaydeder"
   KULLANICILAR ||--o{ GUNLUK : "işlem yapar"
   KULLANICILAR ||--o{ SIKAYETLER : "şikayet eder / inceler"
+  KULLANICILAR ||--o{ TEKLIFLER : "oylama açar"
   KATEGORILER ||--o{ KATEGORILER : "alt kategori"
   KATEGORILER ||--o{ KONULAR : "alan"
   KATEGORILER ||--o{ UZMANLIKLAR : "alan"
@@ -127,19 +128,20 @@ erDiagram
   KONULAR ||--o{ MESAJLAR : "içerir"
   KONULAR ||--o{ TEKLIFLER : "oylanır"
   KONULAR ||--o{ SIKAYETLER : "şikayet edilir"
+  KONULAR ||--o{ KARARLAR : "karara bağlanır"
   MESAJLAR ||--o{ MESAJLAR : "yanıt"
   MESAJLAR ||--o{ MESAJ_SURUMLERI : "eski sürümler"
-  MESAJLAR ||--o| SECENEKLER : "fikir seçeneği"
+  MESAJLAR ||--o{ SECENEKLER : "her turda bir seçenek"
   TEKLIFLER ||--o{ SECENEKLER : "içerir"
   TEKLIFLER ||--o{ OYLAR : "toplar"
   TEKLIFLER ||--o| KARARLAR : "kabul edilen fikir"
   TEKLIFLER ||--o{ SIKAYETLER : "oylamaya alınır"
   SECENEKLER ||--o| KARARLAR : "kazanan"
-  PARAMETRELER }o--|| YONETMELIK_MADDELERI : "metinde kullanılır"
 ```
 
-İlişkisi olmayan tablolar: `giris_denemeleri` (hız sınırı ve giriş kilidi; anahtar = takma ad ya da adres), `site_ayarlari`
-(duyuru, yeni üyelik açık mı, şema sürümü), `arama` (tam metin arama dizini, FTS). Kayıt defteri düğümleri (A.db, B.db, C.db)
+Yabancı anahtarı olmayan tablolar: `giris_denemeleri` (hız sınırı ve giriş kilidi; anahtar = takma ad ya da adres), `site_ayarlari`
+(duyuru, yeni üyelik açık mı, kategori ağacının sürümü), `arama` (tam metin arama dizini, FTS), `parametreler` ve
+`yonetmelik_maddeleri` (aralarındaki bağ yalnızca mantıksaldır: madde metnindeki `{KOD}` yer tutucuları parametrenin güncel değeriyle doldurulur). Kayıt defteri düğümleri (A.db, B.db, C.db)
 veritabanının dışında, ayrı dosyalardadır.
 
 ## 5. Katmanlar
@@ -180,10 +182,10 @@ Kesikli oklar: altyapı katmanı (veritabanı) üst katmanı **çağırmaz**; ol
 |---|---|
 | Konular | Konu akışı, kategori çipleri, durum filtresi (açılır menü), bekleyen oylar şeridi, arama |
 | Oylamalar | Gündem (süren oylamalar), kararlar arşivi |
-| Meclis | Nasıl işler?, yönetmelik, kayıt defteri, üye ağı, şeffaflık günlüğü, API, yönetim (yalnızca yönetici) |
+| Meclis | Nasıl işler?, yönetmelik, kayıt defteri, üye ağı, şeffaflık günlüğü, API |
 | Avatar menüsü | Panelim, bildirimler, herkese açık profil, yönetim paneli (yöneticilere), çıkış |
 | Panelim (`/profil`) | Solda bölüm menüsü: özet, bildirimler, hesap bilgileri, oy devri, uzmanlık, güvenlik, uygulama ve API |
-| Yönetim paneli (`/yonetim`) | Solda bölüm menüsü: pano, üyeler, konular, oylamalar, kategoriler, sistem, günlük; kullanıcı sayfalarında yönetici düğmesi yok |
+| Yönetim paneli (`/yonetim`) | Solda bölüm menüsü: pano, üyeler, şikayetler, konular, oylamalar, toplu bildirim, kategoriler, sistem, günlük; kullanıcı sayfalarında yönetici düğmesi yok |
 | Telefon / mobil uygulama | Üst çubukta logo, arama, bildirim ve avatar; ana bölümler alttaki sekme çubuğunda (ortada yeni konu düğmesi) |
 
 **Giriş katmanı:** `/` adresi ziyaretçiye tanıtım sayfasını (tapınak çizimi, canlı sayılar, bir konunun 4 adımda karara
@@ -215,9 +217,9 @@ Konu sayfasının sağ sütunu da beş kutudan üçe indi (senin durumun + oy a�
 | Ezici üstünlük (%75) ve "tek kalan" kısa yolları | Belli olmuş bir sonucu beş tur beklemeye gerek yok. |
 | Oran = ağırlıklı pay ile kişi payının küçüğü | Uzman ağırlığı kalabalığı tek başına yenemez; kalabalık da uzmanları yok sayamaz. |
 | Çekimser paydada sayılır | Nötr oy da çoğunluğun sağlanıp sağlanmadığını etkiler. |
-| Her oylama tek bir "teklif" mekanizmasından geçer | Fikir turları, gizleme, kaldırma, uzmanlık ve yönetmelik aynı sayım kurallarını paylaşır; kod tekrarı olmaz. |
+| Her oylama tek bir "teklif" mekanizmasından geçer | Fikir turları, gizleme, kaldırma, uzmanlık, yönetmelik ve yeni kategori aynı sayım kurallarını paylaşır; kod tekrarı olmaz. |
 | Uzmanlık: ön şart + kontenjan + alanın oylaması | Uzmanlık emekle ve alanın onayıyla kazanılır; kontenjan, bir kliğin birbirini uzman yapmasını önler. |
-| Yönetici yalnızca yönetir | Karar yetkisi yalnızca oylamalardadır; yönetim panelinde kararı etkileyen işlem tanımlı değildir. |
+| Yönetici yalnızca yönetir | Karar yetkisi yalnızca oylamalardadır; normal çalışmada yönetim panelinde kararı etkileyen işlem tanımlı değildir. Tek istisna sunum kipindeki (`--demo`) "Süreyi ilerlet": beklemeyi kısaltır, sayım kurallarını değiştirmez, günlüğe yazılır. |
 | Şikayet tabanı (3 üye) | Tek kişinin şikayeti yöneticiyi meşgul etmez; taban dolunca da kararı yine oylama verir. |
 | Eşikler veritabanında | Topluluk kendi kurallarını oylayabilir. Korunan maddeler 3/4 ister (anayasa gibi). |
 | Defter yalnızca commit sonrası yazılır | Geri alınan işlemler deftere girmez; veritabanı ve defter tutarlı kalır. |
@@ -228,15 +230,15 @@ Konu sayfasının sağ sütunu da beş kutudan üçe indi (senin durumun + oy a�
 
 Atıflar *Yazılım Tasarım Desenleri* slaytlarına (TD-numara). Bir desen ancak kodda somut bir sorunu çözdüğü yerde kullanıldı
 (TD-3: "desen bir amaç değil, araçtır"; TD-57: YAGNI ve KISS). Her satırdaki "önce" sütunu, desenin hangi sorunu çözdüğünü
-gösterir; her desenin davranışı testle korunur (`testler/test_duzeltmeler.py` içindeki sınıf adları).
+gösterir; her desenin davranışı testle korunur (test sınıfı adları; aksi yazılmadıkça `testler/test_duzeltmeler.py` içinde).
 
 ### 8.1 SOLID (TD-9…12)
 
 | İlke | Önce (ihlal) | Şimdi | Nerede |
 |---|---|---|---|
 | **S** — Tek sorumluluk | `web/__init__.kur()` 150 satırda kimlik, CSRF, zamanlayıcı, hata sayfaları ve şablon filtrelerini birlikte yapıyordu. Yönetmelik modülü hem maddeleri hem denetim motorunu taşıyordu. Konu sayfası rotası iş kuralı içeriyordu. | Her biri kendi modülünde | `web/istek.py`, `web/hata_sayfalari.py`, `web/sablon.py`, `denetim.py`, `gorunum.py`, `metin.py`, `hatalar.py` |
-| **O** — Açık/kapalı | Yeni oylama türü 5 dosyada `if tip == …` dalı demekti; yeni bildirim kanalı `if tur == 'WEB'` dalı | Yeni tür = yeni sınıf + `@kaydet`; yeni denetim maddesi = yeni halka; yeni kanal = yeni adaptör; yeni depo = yeni `DugumDeposu` | `teklif_turleri.py`, `denetim.py`, `anlik.py`, `defter.py` |
-| **L** — Liskov | Web Push kanalı, `pywebpush` kurulu değilken abone kabul edip her bildirimde hata veriyordu (alt tür sözleşmeyi bozuyordu) | Kapalı kanal abone kabul etmez. Bütün teklif türleri şablon yöntemde aynı biçimde kullanılır. SQLite ve bellek depoları aynı sonucu verir | `AnlikAbonelikAdresi`, `TeklifTurleri`, `DefterOlceklenmesi.test_sorgu_islemleri_iki_depoda_ayni` |
+| **O** — Açık/kapalı | Yeni oylama türü 5 dosyada `if tip == …` dalı demekti; yeni bildirim kanalı `if tur == 'WEB'` dalı | Yeni tür = yeni sınıf + `@kaydet` + `ayarlar.TEKLIF_TIPLERI`'nde bir yapılandırma satırı; yeni denetim maddesi = yeni halka; yeni kanal = yeni adaptör; yeni depo = yeni `DugumDeposu` | `teklif_turleri.py`, `denetim.py`, `anlik.py`, `defter.py` |
+| **L** — Liskov | Web Push kanalı, `pywebpush` kurulu değilken abone kabul edip her bildirimde hata veriyordu (alt tür sözleşmeyi bozuyordu) | Kapalı kanal abone kabul etmez. Bütün teklif türleri şablon yöntemde aynı biçimde kullanılır. SQLite ve bellek depoları aynı sonucu verir | `test_forum.py: test_kapali_kanala_abone_olunmaz_ve_gonderilmez`, `TeklifTurleri`, `DefterOlceklenmesi.test_sorgu_islemleri_iki_depoda_ayni` |
 | **I** — Arayüz ayrımı | — | Arayüzler küçük: `AnlikKanal` 3 yöntem, `DenetimKurali` 1 soyut yöntem (`kontrol`), `DugumDeposu` 5 soyut yöntem (sorgular varsayılanlı) | `anlik.py`, `denetim.py`, `defter.py` |
 | **D** — Bağımlılığın tersine çevrilmesi | Veritabanı bağlantısı (altyapı) defter modülünü (üst katman) içe aktarıyordu. Şifre özeti yöntemi sabitti; zaman `datetime.now()` ile her yerden okunuyordu | Defter commit olayına abone (Observer); şifre yöntemi enjekte edilir (`FORUM_SIFRE_YONTEMI`); zaman tek kaynaktan (`zaman.simdi`); kanallar ve depolar dışarıdan verilir | `veritabani.commit_aboneligi`, `guvenlik.SIFRE_YONTEMI`, `zaman.py`, `anlik.KANALLAR`, `defter._depolar` |
 
@@ -255,7 +257,7 @@ gösterir; her desenin davranışı testle korunur (`testler/test_duzeltmeler.py
 | **Observer** (TD-38) | `Baglanti.commit` defteri doğrudan çağırıyordu | `veritabani.commit_aboneligi`; `defter._islem_kaydedildi` abone. Bağlantı başına `commit_sonrasi` kuyruğu (bildirim, arka plan işleri) | `CommitGozlemcisi` |
 | **Repository** (TD-51) | Düğüm dosyalarına `sqlite3` erişimi uzlaşma ve onarım mantığına gömülüydü; test için disk gerekiyordu; ölçeklenme düzeltmesi yapılamıyordu | `defter.DugumDeposu` ← `SqliteDugumDeposu` (üretim), `BellekDugumDeposu` (sahte depo, test) | `DefterDeposu`, `DefterOlceklenmesi` |
 | **Facade** (TD-28) | Konu sayfası rotası 9 alt sistemi tek tek çağırıyor, fikir rozeti kuralı rotadaydı | `gorunum.konu_sayfasi()`; kural saf işlev `gorunum.fikir_durumu` | `KonuSayfasiCephesi` |
-| **Dependency Injection** (TD-52) | Testler gerçek scrypt şifre özetiyle çalıştığı için 94 test ~60 sn sürüyordu | `guvenlik.SIFRE_YONTEMI` (testte hızlı yöntem), `zaman.simdi` (testte ileri sarılır), `anlik.KANALLAR` (testte sahte kanal), defter işlevlerine depo listesi | 172 test ~7 sn |
+| **Dependency Injection** (TD-52) | Testler gerçek scrypt şifre özetiyle çalıştığı için 94 test ~60 sn sürüyordu | `guvenlik.SIFRE_YONTEMI` (testte hızlı yöntem), `zaman.simdi` (testte ileri sarılır), `anlik.KANALLAR` (testte sahte kanal), defter işlevlerine depo listesi | 181 test ~7 sn |
 | **Decorator** (TD-26, 27 — fonksiyon düzeyinde) | — | `giris_gerekli`, `yonetici_gerekli` rotayı sarar; `@kaydet`, `@commit_aboneligi` kayıt dekoratörleri | — |
 | **Command** (TD-40, hafif) | — | `commit_sonrasi` ve defter kuyrukları: yapılacak iş nesne olarak kuyruğa alınır, commit'te çalışır, rollback'te silinir | `YanEtkiDayanikliligi` |
 
@@ -281,13 +283,14 @@ classDiagram
   KonuDurumu <|-- KararaBaglandi
   KonuDurumu <|-- Sonucsuz
   KonuDurumu <|-- Kaldirildi
-  class konular {
+  class konu_durumlari {
     <<modül>>
     durumu(konu) KonuDurumu
     yazilabilir_olmali(konu)
     okunabilir_olmali(konu)
   }
-  konular ..> KonuDurumu : sorar
+  konu_durumlari ..> KonuDurumu : satırdan durum nesnesi
+  konular ..> konu_durumlari : izin sorar
 ```
 
 **Strategy + Template Method + Registry — oylama türleri**
@@ -449,7 +452,7 @@ classDiagram
 | Veri kaynağı değiştirilebilsin (Repository) | `DugumDeposu`: SQLite dosyası ya da bellek; PostgreSQL için yeni bir gerçekleme yeter |
 | Olaylar birden çok bileşene haber versin (Observer) | `commit_aboneligi`: defter commit olayına abone; bağlantı başına `commit_sonrasi` (bildirimler) |
 | Tek giriş noktası (Facade) | `gorunum.konu_sayfasi` |
-| Her bileşen için birim testi (sahte depo ile) | `BellekDugumDeposu` (sahte depo), `SahteKanal` (sahte bildirim kanalı), sahte zaman; 172 test |
+| Her bileşen için birim testi (sahte depo ile) | `BellekDugumDeposu` (sahte depo), `SahteKanal` (sahte bildirim kanalı), sahte zaman; 181 test |
 
 ### 8.5 Bilerek kullanılmayan desenler (TD-57, TD-58)
 
@@ -479,7 +482,7 @@ classDiagram
 
 - **Singleton:** modül zaten tek bir nesnedir.
 - **Strategy:** tek yöntemli bir strateji için fonksiyon yeter (`zaman.simdi` testte bir fonksiyonla değiştirilir). `TeklifTuru` sınıf
-  oldu çünkü 15 kancası ve ortak varsayılanları var.
+  oldu çünkü 17 yöntemi var (4'ü soyut, 13'ü varsayılanı olan kanca).
 - **Command:** kapanış (closure) ya da herhangi bir çağrılabilir nesne komuttur (`commit_sonrasi` listesi).
 - **Observer:** ayrı bir gözlemci arayüzü yerine fonksiyon listesi yeter (`commit_aboneligi`).
 - **Factory / Registry:** sınıflar birinci sınıf nesnedir; sözlükte saklanıp koddan seçilir (`TURLER`, `KANALLAR`).

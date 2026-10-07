@@ -345,7 +345,8 @@ def en_uygun_kategori(db, metin):
     eşitlikte alt kategori düzeyinde (daha belirgin) eşleşmesi çok olan. Sonra o alanın içinde en çok eşleşen, eşitlikte
     en derindeki kategori döner.
     Önceden her kategori tek başına yarışıyordu: "belediye meclis toplantıları canlı yayınlansın" metninde Siyaset (meclis)
-    ve Yerel Yönetim (belediye) birer eşleşmeyle Biyoloji'ye (canlı) eşit kalıyor, kazananı sözlük sırası belirliyordu."""
+    ve Yerel Yönetim (belediye) birer eşleşmeyle Biyoloji'ye (canlı) eşit kalıyor, kazananı sözlük sırası belirliyordu.
+    Tam eşitlikte (aynı iki puan) kazananı hâlâ kategori sırası belirler; D3 yalnızca uyarı verdiği için kabul edildi."""
     eslesme = kategori_eslesmeleri(db, metin)
     if not eslesme:
         return None, []

@@ -30,7 +30,7 @@ Ya da klasördeki **`baslat.bat`** dosyasına çift tıkla. Tarayıcı kendiliğ
 | `python calistir.py --yonetici Baki` | Bir üyeyi yönetici yapar (ilk yönetici için; sonrası yönetim panelinden) |
 | `python calistir.py --demo` | Sunum kipi: yönetim panelinde "Süreyi ilerlet" düğmesi açılır (24/48 saat beklememek için) |
 | `python calistir.py --demo-verisiz` | Boş veritabanına demo verisini (ve şifresi herkesçe bilinen demo hesaplarını) yüklemez |
-| `python -m unittest discover testler` | 172 otomatik test (~7 sn) |
+| `python -m unittest discover testler` | 181 otomatik test (~7 sn) |
 | `python olcum/denetim_olcumu.py` | Denetim kurallarının kesinlik/duyarlılık ölçümü (temel çizgilerle karşılaştırmalı) |
 | `python olcum/gecikme_olcumu.py` | Sayfaların p50/p95 yanıt süresi (`--defter-blok 50000` ile büyük defterde) |
 | `python olcum/urun_metrikleri.py` | İş, ürün ve koruyucu metrikler |
@@ -57,7 +57,7 @@ bildirimler, hesap bilgileri ve adres, oy devri, uzmanlık, güvenlik (şifre, k
 gerekenler), üyeler (arama, yönetici yapma, askıya alma), şikayetler, konular ve oylamalar (yalnızca izleme),
 kategoriler (ekleme, ad ve renk değiştirme), sistem (site duyurusu, yeni üyeliği açma/kapama, yapay zeka hesapları, kayıt
 defteri denemesi, veritabanı yedeği) ve süzülebilir günlük. **Yönetici yalnızca siteyi yönetir:** içerik silemez, uzman atayamaz,
-oylamaların süresine ve sonucuna dokunamaz; oyu herkes gibi 1'dir. Her işlemi şeffaflık günlüğüne, yetki ve askı işlemleri
+oylamaların süresine ve sonucuna dokunamaz (tek istisna: sunum kipindeki "Süreyi ilerlet", yalnızca beklemeyi kısaltır); oyu herkes gibi 1'dir. Her işlemi şeffaflık günlüğüne, yetki ve askı işlemleri
 kayıt defterine de yazılır.
 **Expo Go uygulaması (`mobil-expo/`):** telefona Expo Go'yu kur, `python calistir.py --ag` ile forumu, `mobil-expo`
 klasöründe `npx expo start` ile Expo'yu başlat, QR kodu okut (Expo SDK 57). Adımlar `mobil-expo/BENIOKU.md` dosyasında.
@@ -83,6 +83,7 @@ olarak kural tabanlıdır: her sayı veritabanından gelir (gerekçe: [analiz.md
 | `mehmet` · `burak` | İstanbul › Beşiktaş · İstanbul › Kartal |
 | `zeynep` | Ankara (İstanbul konularında gözlemci) |
 | `can`, `selin` | İzmir |
+| `ece` · `onur` · `defne` · `mert` | İzmir › Konak · Ankara › Keçiören · İstanbul › Beşiktaş · Bursa |
 | `dr.deniz` | **Uzman: Sağlık** |
 | `kaan.hoca` | **Uzman: Teknoloji › Yazılım** |
 | `Bilge` | **Yapay zeka üye** (giriş yapamaz) |
@@ -143,9 +144,9 @@ Tam karşılık tablosu sitede **Nasıl işler? → Ödev gereksinimleri** böl�
 Sunumda beklememek için forumu `python calistir.py --demo` ile başlat; yönetim panelinde "Süreyi ilerlet" düğmesi açılır.
 
 1. **Konular:** Üstte kategori çipleri ve durum filtresi; listede her aşamada bir konu var (tartışmada, oylamada, karara bağlanmış, sonuçsuz).
-2. **"Final projesi":** Beş turun tamamı. Oylamalar sayfasından turlara tek tek bak: 2. turda oy alamayan fikir, 3. turda %10 altındaki fikir elendi; 5. turda Python kazandı. Uzman oyu açık ve gerekçeli.
+2. **"Final projesi":** Beş turun tamamı. Oylamalar sayfasından turlara tek tek bak: 1. turda %5 altında kalan fikir (%4,5), 3. turda %10 altındaki fikir (%9) elendi; 5. turda Python kazandı. Uzman oyu açık ve gerekçeli.
 3. **"Farklı teknoloji deneyen gruplara ek puan":** Yukarıdaki karara açılmış **itiraz konusu**.
-4. **"Kulüp toplantıları":** İlk turda %80 → **ezici üstünlük**, hemen karar.
+4. **"Kulüp toplantıları":** İlk turda %78,5 → **ezici üstünlük** (eşik %75), hemen karar.
 5. **"Yemekhane":** 2. tur sürüyor. `burak` ile gir, oy ver, makbuzu al. Elenen fikir üstü çizili duruyor; Bilge'nin özetleri tartışmanın içinde.
 6. **"Final sınavları":** Yeter sayı olmadığı için **sonuçsuz**.
 7. `zeynep` ile gir → İstanbul konusunda **gözlemci**; `ayse` ile gir → birkaç mesajı işaretle → **toplu gizleme oylaması** (3/4).
@@ -184,7 +185,7 @@ forum/
 olcum/               ölçüm betikleri ve etiketli örnekler (gelistirme.csv, test.csv)
 mobil-expo/          Expo Go uygulaması (Expo SDK 57, WebView)
 mobil/               Android uygulaması (Capacitor): capacitor.config.json, android/ projesi, BENIOKU.md
-testler/             172 test: iş kuralları, web, hata düzeltmeleri, desenler, ölçüm
+testler/             181 test: iş kuralları, web, hata düzeltmeleri, desenler, ölçüm
 docs/                analiz.md (problem çerçeveleme), tasarim.md (UML + desenler), rehber.md (ayrıntılar)
 ```
 

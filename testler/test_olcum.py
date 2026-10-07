@@ -1,5 +1,5 @@
-"""Ölçüm düzeneğinin testleri: denetim kuralları "aptal" temel çizgileri açık farkla geçmeli ve kayıtlı başarımın
-altına düşmemeli (koruyucu metrik). Eşikler docs/analiz.md'deki ölçülmüş değerlerdir."""
+"""Ölçüm düzeneğinin testleri: denetim kuralları "aptal" temel çizgileri açık farkla geçmeli ve yayın ölçütünün
+altına düşmemeli (koruyucu metrik). Eşikler docs/analiz.md 11. bölümdedir."""
 import os
 import sys
 import unittest
@@ -29,11 +29,14 @@ class DenetimOlcumu(unittest.TestCase):
             d3 = s["D3"]
             self.assertGreater(d3["Kural (ontoloji kavramları)"]["makro_F1"], 3 * d3["Rastgele"]["makro_F1"], kume)
 
-    def test_test_kumesinde_kayitli_basarim_korunur(self):
+    def test_test_kumesinde_yayin_olcutu_korunur(self):
+        """docs/analiz.md 11. bölüm: D1 kesinlik ve F1, D2 duyarlılık, D3 makro F1 (5.3'teki öncelikli metrikler)."""
         s = self.sonuc["test"]
-        self.assertGreaterEqual(s["D1"]["Kural (anahtar kelime/desen)"]["F1"], 0.83)
-        self.assertGreaterEqual(s["D2"]["Kural (anahtar kelime/desen)"]["F1"], 0.80)
-        self.assertGreaterEqual(s["D3"]["Kural (ontoloji kavramları)"]["dogruluk"], 0.85)
+        d1 = s["D1"]["Kural (anahtar kelime/desen)"]
+        self.assertGreaterEqual(d1["kesinlik"], 0.80)
+        self.assertGreaterEqual(d1["F1"], 0.80)
+        self.assertGreaterEqual(s["D2"]["Kural (anahtar kelime/desen)"]["duyarlilik"], 0.80)
+        self.assertGreaterEqual(s["D3"]["Kural (ontoloji kavramları)"]["makro_F1"], 0.85)
 
     def test_metrik_hesabi(self):
         m = olcum.ikili_metrikler(["VAR", "VAR", "YOK", "YOK"], ["VAR", "YOK", "VAR", "YOK"])
