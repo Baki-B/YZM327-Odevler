@@ -53,8 +53,7 @@ def defter_sayfasi():
     aranan = request.args.get("blok", "").strip()
     return render_template("defter.html", durum=defter.durum(db.defter_klasoru), bloklar=bloklar,
                            sayfalama=sayfa_bilgisi(toplam, sayfa, 20), tur=tur,
-                           turler=["KONU", "KONU_DUZENLEME", "KONU_DURUM", "MESAJ", "MESAJ_DUZENLEME", "GIZLEME", "TEKLIF",
-                                   "OY", "SONUC", "KARAR", "DEVIR", "UYE", "UZMANLIK", "YONETIM"],
+                           turler=defter.BLOK_TURLERI,
                            aranan=aranan, bulunan=defter.blok_bul(db.defter_klasoru, aranan) if aranan else None,
                            tutarlilik=defter.tutarlilik(db) if request.args.get("denetle") else None)
 

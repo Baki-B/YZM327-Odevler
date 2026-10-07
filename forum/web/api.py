@@ -151,7 +151,7 @@ def denetim():
     db = db_al()
     v = _veri()
     ust_id = v.get("ust_id") or v.get("ust")
-    rapor = konular.denetim_onizleme(db, v, int(ust_id) if ust_id else None)
+    rapor = konular.denetim_onizleme(db, v, ust_id)
     return jsonify(rapor)
 
 

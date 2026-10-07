@@ -9,7 +9,7 @@ import tempfile
 from datetime import timedelta
 
 from . import ayarlar, bildirimler, defter, gunluk, kategoriler, ontoloji, sikayetler, zaman
-from .hatalar import KuralHatasi
+from .hatalar import KuralHatasi, tamsayi
 
 # Yönetim işlemlerinin günlükteki eylem adları (panodaki "son yönetim işlemleri" bunları süzer)
 YONETIM_EYLEMLERI = ("YETKI", "ASKI", "ASKI_BITTI", "KATEGORI", "SITE_AYARI", "YZ", "SURE", "SIKAYET",
@@ -190,13 +190,9 @@ def _renk(renk):
 
 def kategori_ekle(db, yonetici, ad, ust_id=None, renk=None):
     ad = kategoriler.kategori_adi(ad)
-    ust_id = int(ust_id) if ust_id else None
-    if ust_id:
-        ust = ontoloji.dugum(db, "kategoriler", ust_id)
-        if not ust or ust["ust_id"] is not None:
-            raise KuralHatasi("Alt kategori yalnızca bir ana kategorinin altına eklenebilir.")
-    kardes = db.execute("SELECT 1 FROM kategoriler WHERE ad = ? COLLATE NOCASE AND ust_id IS ?", (ad, ust_id)).fetchone()
-    if kardes:
+    ust = kategoriler.ust_kategori(db, ust_id)      # topluluk önerisiyle aynı kural (ör. Genel'in alt kategorisi olmaz)
+    ust_id = ust["id"] if ust else None
+    if kategoriler.kardes_var_mi(db, ad, ust_id):
         raise KuralHatasi("Bu adda bir kategori zaten var.")
     yeni = db.execute("INSERT INTO kategoriler (ad, ust_id, renk, kaynak, olusturma) VALUES (?, ?, ?, 'YONETICI', ?)",
                       (ad, ust_id, None if ust_id else _renk(renk), zaman.simdi_metin())).lastrowid
@@ -206,10 +202,14 @@ def kategori_ekle(db, yonetici, ad, ust_id=None, renk=None):
 
 
 def kategori_duzenle(db, yonetici, kategori_id, ad, renk=None):
-    d = ontoloji.dugum(db, "kategoriler", int(kategori_id))
+    d = ontoloji.dugum(db, "kategoriler", tamsayi(kategori_id, "Kategori bulunamadı."))
     if not d:
         raise KuralHatasi("Kategori bulunamadı.")
     ad = kategoriler.kategori_adi(ad)
+    if d["ad"] == ayarlar.GENEL_KATEGORI and ad != d["ad"]:
+        raise KuralHatasi("Genel kategorinin adı değiştirilemez; her konuya açık olması bu ada bağlıdır.")
+    if kategoriler.kardes_var_mi(db, ad, d["ust_id"], haric_id=d["id"]):
+        raise KuralHatasi("Bu adda bir kategori zaten var.")
     eski = ontoloji.yol_metni(db, "kategoriler", d["id"])
     db.execute("UPDATE kategoriler SET ad = ?, renk = ? WHERE id = ?",
                (ad, _renk(renk) if d["ust_id"] is None else None, d["id"]))
@@ -293,14 +293,16 @@ def toplu_bildirim_alicilari(db, hedef, konum_id=None, kategori_id=None):
     if hedef == "YONETICI":
         return [k["id"] for k in insanlar if k["yonetici_mi"]]
     if hedef == "KONUM":
-        if not konum_id or not ontoloji.dugum(db, "konumlar", int(konum_id)):
+        konum_id = tamsayi(konum_id, "İl ya da ilçe seç.")
+        if not konum_id or not ontoloji.dugum(db, "konumlar", konum_id):
             raise KuralHatasi("İl ya da ilçe seç.")
         return [k["id"] for k in insanlar
-                if k["konum_id"] and ontoloji.altinda_mi(db, "konumlar", k["konum_id"], int(konum_id))]
+                if k["konum_id"] and ontoloji.altinda_mi(db, "konumlar", k["konum_id"], konum_id)]
     if hedef == "UZMAN":
-        if not kategori_id or not ontoloji.dugum(db, "kategoriler", int(kategori_id)):
+        kategori_id = tamsayi(kategori_id, "Alan seç.")
+        if not kategori_id or not ontoloji.dugum(db, "kategoriler", kategori_id):
             raise KuralHatasi("Alan seç.")
-        alanlar = ontoloji.alt_agac(db, "kategoriler", int(kategori_id))
+        alanlar = ontoloji.alt_agac(db, "kategoriler", kategori_id)
         return sorted({r["kullanici_id"] for r in db.execute(
             "SELECT kullanici_id, kategori_id FROM uzmanliklar WHERE baslangic <= ? AND bitis > ?", (simdi, simdi))
             if r["kategori_id"] in alanlar})
@@ -321,9 +323,9 @@ def toplu_bildirim(db, yonetici, hedef, metin, baglanti="", konum_id=None, kateg
         bildirimler.gonder(db, kid, metin, baglanti or "/bildirimler")
     kime = BILDIRIM_HEDEFLERI[hedef].lower()
     if hedef == "KONUM":
-        kime = f"{ontoloji.yol_metni(db, 'konumlar', int(konum_id))} üyeleri"
+        kime = f"{ontoloji.yol_metni(db, 'konumlar', tamsayi(konum_id))} üyeleri"
     elif hedef == "UZMAN":
-        kime = f"{ontoloji.yol_metni(db, 'kategoriler', int(kategori_id))} uzmanları"
+        kime = f"{ontoloji.yol_metni(db, 'kategoriler', tamsayi(kategori_id))} uzmanları"
     gunluk.kaydet(db, yonetici["id"], "TOPLU_BILDIRIM", f"{len(alicilar)} kişiye ({kime}) bildirim gönderildi: {metin[:80]}")
     return len(alicilar)
 

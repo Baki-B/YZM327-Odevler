@@ -8,7 +8,7 @@ import json
 from datetime import timedelta
 
 from . import ayarlar, bildirimler, defter, gunluk, ontoloji, oylama, yonetmelik, zaman
-from .hatalar import KuralHatasi
+from .hatalar import KuralHatasi, tamsayi
 
 MAX_KAVRAM = 15
 SIRALAMALAR = {"populer": "En çok konu", "etkin": "Son etkinlik", "ad": "Ada göre", "yeni": "En yeni"}
@@ -23,17 +23,18 @@ def kategori_adi(ad):
     return ad
 
 
-def _kardes_var_mi(db, ad, ust_id):
-    return db.execute("SELECT 1 FROM kategoriler WHERE ad = ? COLLATE NOCASE AND ust_id IS ?", (ad, ust_id)).fetchone()
+def kardes_var_mi(db, ad, ust_id, haric_id=None):
+    """Aynı üst kategori altında aynı adda (büyük/küçük harf fark etmeden) başka bir kategori var mı?"""
+    return db.execute("SELECT 1 FROM kategoriler WHERE ad = ? COLLATE NOCASE AND ust_id IS ? AND id IS NOT ?",
+                      (ad, ust_id, haric_id)).fetchone()
 
 
-def _ust_kategori(db, ust_id):
+def ust_kategori(db, ust_id):
+    """Alt kategori eklenecek üst kategoriyi doğrular. Topluluk önerisi de yönetici eklemesi de bu kuralı kullanır."""
+    ust_id = tamsayi(ust_id, "Alt kategori yalnızca bir ana kategorinin altına eklenebilir.")
     if not ust_id:
         return None
-    try:
-        ust = ontoloji.dugum(db, "kategoriler", int(ust_id))
-    except (TypeError, ValueError):
-        ust = None
+    ust = ontoloji.dugum(db, "kategoriler", ust_id)
     if not ust or ust["ust_id"] is not None:
         raise KuralHatasi("Alt kategori yalnızca bir ana kategorinin altına eklenebilir.")
     if ust["ad"] == ayarlar.GENEL_KATEGORI:
@@ -61,9 +62,9 @@ def oner(db, kullanici, ad, ust_id, kavramlar, gerekce):
     if kullanici["yz_mi"]:
         raise KuralHatasi("Yapay zeka hesapları kategori öneremez.")
     ad = kategori_adi(ad)
-    ust = _ust_kategori(db, ust_id)
+    ust = ust_kategori(db, ust_id)
     ust_id = ust["id"] if ust else None
-    if _kardes_var_mi(db, ad, ust_id):
+    if kardes_var_mi(db, ad, ust_id):
         raise KuralHatasi(f"“{ad}” adında bir kategori zaten var.")
     for t in oylama_suren_oneriler(db):
         veri = json.loads(t["veri"])
@@ -98,7 +99,7 @@ def ekle(db, teklif):
     """Kabul edilen öneriyi kategori olarak ekler (o arada aynı adda kategori açıldıysa eklemez)."""
     veri = json.loads(teklif["veri"])
     ust_id = veri.get("ust_id")
-    if _kardes_var_mi(db, veri["ad"], ust_id) or (ust_id and not ontoloji.dugum(db, "kategoriler", ust_id)):
+    if kardes_var_mi(db, veri["ad"], ust_id) or (ust_id and not ontoloji.dugum(db, "kategoriler", ust_id)):
         return None
     yeni = db.execute("INSERT INTO kategoriler (ad, ust_id, kaynak, kavramlar, olusturma) VALUES (?, ?, 'TOPLULUK', ?, ?)",
                       (veri["ad"], ust_id, ",".join(veri.get("kavramlar") or []) or None, zaman.simdi_metin())).lastrowid

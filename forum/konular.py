@@ -12,7 +12,7 @@ import json
 from datetime import timedelta
 
 from . import (arama, ayarlar, bildirimler, defter, gunluk, oylama, ontoloji, uygunluk, yonetmelik, zaman)
-from .hatalar import KuralHatasi
+from .hatalar import KuralHatasi, tamsayi
 
 MAX_TOPLU_GIZLEME = 20
 FIKIR_UZUNLUGU = (10, 600)
@@ -55,15 +55,6 @@ def durum_degistir(db, konu_id, durum):
     defter.ekle(db, "KONU_DURUM", {"konu": konu_id, "durum": durum})
 
 
-def _sayi(deger):
-    if deger in (None, ""):
-        return None
-    try:
-        return int(deger)
-    except (TypeError, ValueError):
-        raise KuralHatasi("Sayı bekleniyordu.")
-
-
 def _kisalt(metin, n):
     metin = " ".join(metin.split())
     return metin if len(metin) <= n else metin[: n - 1] + "…"
@@ -77,8 +68,8 @@ def _alanlari_dogrula(db, form, ust=None):
         raise KuralHatasi("Başlık 5–150 karakter olmalı.")
     if not 10 <= len(aciklama) <= 5000:
         raise KuralHatasi("Açıklama 10–5000 karakter olmalı.")
-    kategori_id, konum_id = _sayi(form.get("kategori_id")), _sayi(form.get("konum_id"))
-    min_yas, max_yas = _sayi(form.get("min_yas")), _sayi(form.get("max_yas"))
+    kategori_id, konum_id = tamsayi(form.get("kategori_id")), tamsayi(form.get("konum_id"))
+    min_yas, max_yas = tamsayi(form.get("min_yas")), tamsayi(form.get("max_yas"))
     if not kategori_id or not ontoloji.dugum(db, "kategoriler", kategori_id):
         raise KuralHatasi("Geçerli bir kategori seç.")
     if konum_id and not ontoloji.dugum(db, "konumlar", konum_id):
@@ -109,6 +100,7 @@ def _sahibin_uygunlugu(db, sahip, alanlar, ust_id):
 
 def denetim_onizleme(db, form, ust_id=None):
     """Konuyu göndermeden önce yönetmelik denetimini çalıştırır (formdaki "Denetle" düğmesi)."""
+    ust_id = tamsayi(ust_id, "Geçersiz üst konu.")
     ust = konu_getir(db, ust_id) if ust_id else None
     alanlar = _alanlari_dogrula(db, form, ust)
     return yonetmelik.denetle(db, alanlar["baslik"], alanlar["aciklama"], alanlar["kategori_id"],
@@ -128,6 +120,7 @@ def konu_ac(db, sahip, form, ust_id=None, itiraz_id=None):
     """Konu hemen tartışmaya açılır. ust_id: alt konu. itiraz_id: karara bağlanmış bir konunun sonucuna itiraz."""
     if sahip["yz_mi"]:
         raise KuralHatasi("Yapay zeka hesapları konu açamaz.")
+    ust_id, itiraz_id = tamsayi(ust_id, "Geçersiz üst konu."), tamsayi(itiraz_id, "Geçersiz itiraz konusu.")
     ust = None
     if ust_id:
         ust = konu_getir(db, ust_id)
@@ -347,7 +340,7 @@ def mesaj_yaz(db, kullanici, konu_id, tip, icerik, ust_mesaj_id=None):
     if not 2 <= len(icerik) <= 5000:
         raise KuralHatasi("Mesaj 2–5000 karakter olmalı.")
     yonetmelik.mesaj_denetle(db, icerik)
-    ust_mesaj_id = _sayi(ust_mesaj_id)
+    ust_mesaj_id = tamsayi(ust_mesaj_id)
     ust = None
     if ust_mesaj_id:
         ust = mesaj_getir(db, ust_mesaj_id)
@@ -414,7 +407,7 @@ def mesaj_silme_teklifi(db, kullanici, mesaj_idleri, neden, aciklama, katilim_de
     """Bir ya da birden fazla mesajın ("tartışmanın bir kısmı") gizlenmesini oylamaya sunar."""
     if isinstance(mesaj_idleri, (int, str)):
         mesaj_idleri = [mesaj_idleri]
-    idler = sorted({int(x) for x in mesaj_idleri if str(x).strip().isdigit()})
+    idler = sorted({tamsayi(x, "Geçersiz mesaj numarası.") for x in mesaj_idleri if str(x).strip()})
     if not idler:
         raise KuralHatasi("Gizlenmesini istediğin en az bir mesajı seç.")
     if len(idler) > MAX_TOPLU_GIZLEME:

@@ -13,13 +13,23 @@ log = logging.getLogger(__name__)
 
 
 def tick(db):
+    """Süresi dolan işleri yürütür. Her iş kendi kayıt noktasında çalışır: biri hata verirse yalnızca o iş geri alınır
+    ve günlüğe yazılır; diğerleri ve (tick her istekte çalıştığı için) sitenin geri kalanı etkilenmez."""
     simdi = zaman.simdi_metin()
     for k in db.execute("SELECT id FROM konular WHERE durum = 'TARTISMA' AND silindi = 0 AND tartisma_bitis <= ?",
                         (simdi,)).fetchall():
-        konular.oylamayi_baslat(db, k["id"])
+        _yalitilmis(db, f"#{k['id']} konusunun oylaması başlatılamadı", konular.oylamayi_baslat, k["id"])
     for t in db.execute("SELECT id FROM teklifler WHERE durum = 'ACIK' AND bitis <= ? ORDER BY id",
                         (simdi,)).fetchall():
-        oylama.sonuclandir(db, t["id"])
+        _yalitilmis(db, f"#{t['id']} numaralı oylama sonuçlandırılamadı", oylama.sonuclandir, t["id"])
+
+
+def _yalitilmis(db, hata_metni, is_, *argumanlar):
+    try:
+        with db.kayit_noktasi("zamanlayici"):
+            is_(db, *argumanlar)
+    except Exception:
+        log.exception(hata_metni)
 
 
 def arka_plan_baslat(yol, aralik=30):

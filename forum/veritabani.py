@@ -8,6 +8,8 @@ Bağlantı nesnesi iki iş daha yapar:
 import logging
 import os
 import sqlite3
+from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
 
@@ -16,6 +18,15 @@ from . import zaman
 SEMA = Path(__file__).with_name("schema.sql")
 SURUM = 2
 log = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class KuyrukHatirasi:
+    """Memento: bağlantının işlem sonrası kuyruklarının bir andaki boyu. Kayıt noktasına geri dönülünce
+    kuyruklar bu boya kısaltılır; böylece geri alınan bloğun deftere ya da telefona gidecek yan etkileri de silinir."""
+    defter: int
+    commit_sonrasi: int
+    anlik: object          # None (kuyruk yoktu) ya da boyu
 
 
 class Baglanti(sqlite3.Connection):
@@ -30,19 +41,67 @@ class Baglanti(sqlite3.Connection):
 
     def commit(self):
         super().commit()
+        # Veri artık kalıcı. Yan etkilerden biri başarısız olsa bile istek hata vermez (kullanıcı işlemini tekrar
+        # denerse çift kayıt oluşurdu); hata günlüğe yazılır, eksik defter kaydını tutarlılık denetimi gösterir.
         if self.defter_kuyrugu and self.defter_klasoru:
             from . import defter
             kuyruk, self.defter_kuyrugu = self.defter_kuyrugu, []
-            defter.dugumlere_yaz(self.defter_klasoru, kuyruk)
+            try:
+                defter.dugumlere_yaz(self.defter_klasoru, kuyruk)
+            except Exception:
+                log.exception("Kayıt defterine %d blok yazılamadı", len(kuyruk))
         isler, self.commit_sonrasi = self.commit_sonrasi, []
         for is_ in isler:
-            is_()
+            try:
+                is_()
+            except Exception:
+                log.exception("İşlem sonrası iş başarısız")
 
     def rollback(self):
         super().rollback()
         self.defter_kuyrugu = []
         self.commit_sonrasi = []
         self.anlik_kuyrugu = None
+
+    def __exit__(self, tur, deger, iz):
+        """`with db:` da kendi commit/rollback'imizden geçsin (yoksa sqlite3 yan etki kuyruklarını atlardı)."""
+        if tur is None:
+            self.commit()
+        else:
+            self.rollback()
+        return False
+
+    # --- Kayıt noktası (SAVEPOINT) ---
+
+    def hatira(self):
+        return KuyrukHatirasi(len(self.defter_kuyrugu), len(self.commit_sonrasi),
+                              None if self.anlik_kuyrugu is None else len(self.anlik_kuyrugu))
+
+    def hatiraya_don(self, h):
+        del self.defter_kuyrugu[h.defter:]
+        del self.commit_sonrasi[h.commit_sonrasi:]
+        if h.anlik is None:
+            self.anlik_kuyrugu = None
+        elif self.anlik_kuyrugu is not None:
+            del self.anlik_kuyrugu[h.anlik:]
+        self.onbellek.clear()      # geri alınan bloğun okuduğu/yazdığı önbellek değerleri de geçersiz
+
+    @contextmanager
+    def kayit_noktasi(self, ad="nokta"):
+        """Blok hata verirse yalnızca o bloğun veritabanı değişiklikleri ve kuyruğa eklediği yan etkiler geri alınır;
+        dış işlem (transaction) sürer. Zamanlayıcı her konuyu ve oylamayı ayrı bir kayıt noktasında işler."""
+        if not self.in_transaction:
+            self.execute("BEGIN")
+        h = self.hatira()
+        self.execute(f"SAVEPOINT {ad}")
+        try:
+            yield
+        except BaseException:
+            self.execute(f"ROLLBACK TO {ad}")
+            self.execute(f"RELEASE {ad}")
+            self.hatiraya_don(h)
+            raise
+        self.execute(f"RELEASE {ad}")
 
 
 def defter_klasoru(yol):

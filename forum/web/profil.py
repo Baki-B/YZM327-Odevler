@@ -135,7 +135,7 @@ def devir_ekle():
     f = request.form
     kapsam = f.get("kapsam")
     kapsam_id = {"KATEGORI": f.get("kategori_id"), "KONU": f.get("konu_id")}.get(kapsam, 0)
-    devir.devir_ekle(db, g.kullanici, f.get("alan", ""), kapsam, int(kapsam_id or 0))
+    devir.devir_ekle(db, g.kullanici, f.get("alan", ""), kapsam, kapsam_id)
     db.commit()
     flash("Oy devrin kaydedildi. Bir oylamada kendin oy verirsen o oylama için devir geçersiz olur.", "basari")
     return redirect(url_for("profil.devir_sayfasi"))

@@ -22,6 +22,9 @@ from . import ayarlar, zaman
 
 _KILIT = threading.Lock()
 BASLANGIC_HASH = "0" * 64
+# Deftere yazılabilen blok türleri (tek doğruluk kaynağı: defter sayfasındaki süzgeç de buradan gelir).
+BLOK_TURLERI = ("KONU", "KONU_DUZENLEME", "KONU_DURUM", "MESAJ", "MESAJ_DUZENLEME", "GIZLEME", "TEKLIF", "OY", "SONUC",
+                "KARAR", "DEVIR", "DEVIR_GERI", "UYE", "UZMANLIK", "KATEGORI", "YONETIM")
 BASLANGIC_ZAMANI = "2026-01-01 00:00:00"
 
 
@@ -35,6 +38,8 @@ def blok_hash(no, zaman_, tur, veri, onceki):
 
 def ekle(db, tur, veri):
     """Kaydı işlem kuyruğuna ekler; veritabanı commit edilince düğümlere yazılır."""
+    if tur not in BLOK_TURLERI:
+        raise ValueError(f"Bilinmeyen defter bloğu türü: {tur}")
     if db.defter_klasoru:
         db.defter_kuyrugu.append((tur, json.dumps(veri, ensure_ascii=False, sort_keys=True), zaman.simdi_metin()))
 
