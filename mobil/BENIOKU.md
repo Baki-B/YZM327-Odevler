@@ -16,8 +16,10 @@ Uygulamaya özel olanlar:
 
 Uygulama varsayılan olarak Agora'nın web sitesini (<https://baki-b.github.io/YZM327-Odevler/>) açar; sunucu gerekmez.
 `main` dalına her gönderimde GitHub Actions (`.github/workflows/android.yml`) APK'yı derleyip **Releases** sayfasına
-koyar: [Agora.apk](https://github.com/Baki-B/YZM327-Odevler/releases/latest/download/Agora.apk). Telefonda bu
-bağlantıyı açıp dosyayı indir ve kur (Android "bilinmeyen kaynaklardan yükleme" izni ister).
+koyar ve sitede de yayınlar: [Agora.apk](https://baki-b.github.io/YZM327-Odevler/Agora.apk). Telefonda bu bağlantıyı
+Chrome ile açıp dosyayı indir ve aç. Chrome "zararlı olabilir" derse *Yine de indir*; Android izin isterse *bu kaynaktan
+yüklemeye izin ver*; Play Protect uyarırsa *Ayrıntılar › Yine de yükle*. Her APK aynı anahtarla imzalanır, yeni sürüm
+eskisinin üstüne kurulur.
 
 ## Kendin derlemek
 

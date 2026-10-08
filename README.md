@@ -61,7 +61,7 @@ GitHub Pages yalnızca dosya sunar, Python çalıştırmaz. Bu yüzden Agora'nı
 
 | Yol | Nasıl |
 |---|---|
-| **Android uygulaması** | [Agora.apk](https://github.com/Baki-B/YZM327-Odevler/releases/latest/download/Agora.apk) dosyasını telefonda indirip kur. Uygulama siteyi tam ekran açar. APK her `main` gönderiminde GitHub Actions ile yeniden derlenir. |
+| **Android uygulaması** | [Agora.apk](https://baki-b.github.io/YZM327-Odevler/Agora.apk) dosyasını telefonda Chrome ile indirip aç ([Releases](https://github.com/Baki-B/YZM327-Odevler/releases/latest) sayfasında da var). Chrome "zararlı olabilir" derse *Yine de indir*; Android izin isterse *bu kaynaktan yüklemeye izin ver*; Play Protect uyarırsa *Ayrıntılar › Yine de yükle*. Uygulama siteyi tam ekran açar. |
 | **Ana ekrana ekle** (Android ve iPhone) | QR kodu okut ya da siteyi aç; Chrome'da ⋮ menüsünden, Safari'de paylaş düğmesinden "Ana ekrana ekle". Uygulama gibi açılır, internetsiz de çalışır. |
 | **Expo Go** | `mobil-expo/` klasörü. Expo Go'da **"Sunucusuz demoyu aç"** düğmesi siteyi açar; kendi sunucuna bağlanmak da mümkün. Adımlar `mobil-expo/BENIOKU.md` dosyasında. |
 
