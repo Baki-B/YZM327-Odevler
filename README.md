@@ -59,7 +59,8 @@ Ya da klasördeki **`baslat.bat`** dosyasına çift tıkla. Tarayıcı kendiliğ
 | `python calistir.py --demo` | Sunum kipi: yönetim panelinde "Süreyi ilerlet" düğmesi açılır (24/48 saat beklememek için) |
 | `python calistir.py --demo-verisiz` | Boş veritabanına demo verisini (ve şifresi herkesçe bilinen demo hesaplarını) yüklemez |
 | `python -m unittest discover testler` | 181 otomatik test (~7 sn) |
-| `python olcum/denetim_olcumu.py` | Denetim kurallarının kesinlik/duyarlılık ölçümü (temel çizgilerle karşılaştırmalı) |
+| `python -m pytest` ya da `uv run pytest` | Aynı testler pytest ile (ayarlar `pyproject.toml`'da) |
+| `python olcum/denetim_olcumu.py` | Denetim kurallarının kesinlik/duyarlılık ölçümü (temel çizgilerle karşılaştırmalı; geliştirme, test ve görülmemiş son küme) |
 | `python olcum/gecikme_olcumu.py` | Sayfaların p50/p95 yanıt süresi (`--defter-blok 50000` ile büyük defterde) |
 | `python olcum/urun_metrikleri.py` | İş, ürün ve koruyucu metrikler |
 

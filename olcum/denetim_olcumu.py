@@ -10,6 +10,8 @@ Bu betik kural tabanlı denetimi iki "aptal" temel çizgiyle aynı örnekler üz
   * gelistirme.csv — hata analizi bu kümede yapılır; kurallar bu kümedeki hatalara bakılarak iyileştirilir.
   * test.csv — kurallar değiştirilmeden ÖNCE yazıldı ve kurallar ona bakılarak ayarlanmaz ("test seti kutsaldır").
     Bir iyileştirmenin gerçek etkisi bu kümedeki değişimdir; geliştirme kümesindeki artış iyimserdir.
+  * son_test.csv — kurallar dondurulduktan sonra yazıldı ve ölçülmeden önce commit edildi; bir kez ölçüldü
+    (docs/analiz.md 6.5). Kurallar bu kümeye bakılarak hiç değiştirilmez.
 Örnek sayıları küçüktür; sonuçlar kesin başarım değil, bir referans noktasıdır.
 """
 import csv
@@ -27,7 +29,7 @@ from forum import denetim, ontoloji, veritabani  # noqa: E402
 VAR, YOK, HICBIRI = "VAR", "YOK", "(eşleşme yok)"
 
 
-KUMELER = ("gelistirme", "test")
+KUMELER = ("gelistirme", "test", "son_test")
 
 
 def ornekler(madde=None, kume="gelistirme"):

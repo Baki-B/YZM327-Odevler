@@ -202,7 +202,8 @@ Denetim kurallarının bir olasılık eşiği yok; ama **ciddiyet** (Engeller / 
   kümesindeki "ahmağın" örneğinden çıktı ama test kümesindeki "salağa", "dangalağın" örneklerini de düzeltiyor. (2) Yeni D3 kodundaki
   bir hata (aynı kavramın iki alt kategoride iki kez sayılması) test kümesindeki bir örnekte fark edilip düzeltildi. (3) Test kümesi
   ile düzeltmeler aynı commit'te olduğu için sıralama git geçmişinden doğrulanamaz. Bu yüzden test kümesindeki artış **iyimserdir**;
-  dürüst bir sonraki adım, kurallar artık değişmeyecekken yeni ve hiç görülmemiş bir test kümesi yazıp bir kez ölçmektir.
+  dürüst bir sonraki adım, kurallar artık değişmeyecekken yeni ve hiç görülmemiş bir test kümesi yazıp bir kez ölçmektir
+  (yapıldı: 6.5).
   6.4'teki "bilerek düzeltilmeyen" tablosunda test kümesinden gelen örnekler yalnızca belgelendi, kurallara yansıtılmadı.
 - Ölçüm koda bağlandı: `testler/test_olcum.py`, kuralların temel çizgileri geçtiğini ve test kümesinde 11. bölümdeki yayın
   ölçütlerinin altına düşülmediğini her test çalıştırmasında denetler (koruyucu).
@@ -264,6 +265,37 @@ Bilerek düzeltilmeyen hatalar (kuralın sınırı; düzeltmek ezberlemek olurdu
 | "Ürün kodu 11111111110" → yanlış engel | 11 haneli rastgele bir sayı %1 olasılıkla T.C. kimlik sağlamasını tutar | Kabul edilen bedel (YN çok daha pahalı) |
 | "Öğrencilere burs başvurusu…" → Eğitim | "öğrenci" kelimesi Eğitim'in iki kavramına (ogren, ogrenci) birden uyuyor | Ontoloji verisinde kavram tekrarı temizlenmeli |
 | "Satranç **kulübü** için oda ayrılsın" → kavram eşleşmez | Ünsüz yumuşaması (kulüp → kulübü) ontoloji eşleşmesinde de var; ama D1'deki gibi her kökü yumuşatmak "kent" → "kend" gibi sık kelimelerle (kendi) yanlış eşleşme üretir | Yumuşayan kavramlar ontolojide tek tek, yumuşamış biçimleriyle yazılmalı |
+
+### 6.5 Son ölçüm: hiç görülmemiş küme (kurallar donduruldu)
+
+6.2'deki dürüstlük notunun önerdiği adım uygulandı. Kurallar artık değişmeyecekken `olcum/son_test.csv` (D1: 13, D2: 11, D3: 14
+örnek) yazıldı ve **ölçülmeden önce commit edildi** (`dfa996e`). Sıralama bu kez git geçmişinden doğrulanabilir. Sonra
+bir kez ölçüldü (`python olcum/denetim_olcumu.py`):
+
+| Madde | Öncelikli metrik | Test kümesi (iyimser) | **Son küme** | Çoğunluk sınıfı | Yayın ölçütü (11. bölüm) |
+|---|---|---|---|---|---|
+| D1 kaba ifade | kesinlik / F1 | 0,83 / 0,83 | **0,71 / 0,71** | 0 / 0 | ✗ sağlanmadı |
+| D2 kişisel veri | duyarlılık (kesinlik) | 0,80 (0,80) | **0,83 (1,00)** | 0 | ✓ |
+| D3 kategori | makro F1 (doğruluk) | 0,87 (0,86) | **0,49 (0,50)** | 0,04 (0,14) | ✗ sağlanmadı |
+
+**Yorum.**
+- **D3:** Önceki ölçümler, ontolojiyi bilen aynı kişinin yazdığı örneklerle yapılmıştı. Gerçek başarım belirgin biçimde daha
+  düşük çıktı. Hata analizinde yedi hatanın beşi "Eğitim" yönünde: "kampüs", "öğrenci", "ders", "laboratuvar" gibi her konuda geçen
+  kelimeler metni Eğitim'e çekiyor. "Gökbilim" gibi listede olmayan kelimeler hiç eşleşmiyor. Bu, H2-38'deki merdivenin beklenen
+  sonucu: anahtar kelime kuralı çoğunluk sınıfını açık farkla geçiyor (0,49'a karşı 0,04), ama kendi başına yeterli değil.
+- **D1:** Listede olmayan argo ("hödük") ve deyimsel hakaret ("kafana taş mı düştü") kaçıyor. Kavram anlamındaki kullanımlar
+  ("cahillik bilgisizlik demektir", "aptal telefon") yanlış engelleniyor. Yanlış engel oranı %29.
+- **D2:** Desenle tanımlanabilen veri türlerinde (telefon, e-posta, kimlik no, IBAN) sağlam. Serbest yazılmış adres yine kaçtı.
+
+**Karar (ölçütler önceden yazıldığı için, H2-43).**
+1. D3 yalnızca **uyarı** verir, konuyu engellemez; önerdiği kategori konu sahibine bir öneri olarak gösterilir. Düşük başarım
+   kullanıcıyı durdurmaz, bu yüzden yayın engeli sayılmadı. Ama "otomatik kategori" gibi bir kullanıma açılmamalıdır.
+2. D1 **engeller**; %29 yanlış engel, 5.3'teki maliyet tartışmasına göre (yanlış engel pahalı) kabul edilemez. Yönetmelikte D1'in
+   ciddiyetini "Uyarır"a çekmek bir yönetmelik oylamasıdır (H2-29: eşik bir iş kararıdır). Uygulama bunu kod değiştirmeden destekler.
+   Topluluğa öneri olarak sunulur.
+3. Her iki madde için de H2-9 karar ağacındaki sonraki adım aynıdır: **önce veri toplayın.** Topluluğun gizleme oylamaları ve
+   şikayetleri etiket olarak birikir. Birkaç yüz örnekte basit bir model (TF-IDF + lojistik regresyon) bugünkü kurala karşı aynı
+   son kümede ölçülür (11. bölümdeki değiştirme ölçütü).
 
 ---
 
@@ -402,6 +434,7 @@ Agora şu koşullarda yayına alınır; biri bozulursa yayın durur:
 1. Bütün otomatik testler geçer (`python -m unittest discover testler`).
 2. Denetim, test kümesinde (5.3'teki öncelikli metriklerle): D1 kesinlik ≥ 0,80 ve F1 ≥ 0,80, D2 duyarlılık ≥ 0,80,
    D3 makro F1 ≥ 0,85 — ve her biri temel çizgileri geçer (`testler/test_olcum.py` bu eşikleri her çalıştırmada denetler).
+   **Durum:** test kümesinde sağlanıyor. Görülmemiş son kümede (6.5) yalnızca D2 sağlanıyor; D1 ve D3 için karar 6.5'te.
 3. Sunucu tarafı p95 < 200 ms: demo verisinde (`gecikme_olcumu.py 60`), 1.000 konuda (`--konu 1000`) ve 50.000 bloklu defterde
    (`--defter-blok 50000`).
 4. Defter–veritabanı tutarsızlığı 0.

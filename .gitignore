@@ -18,3 +18,5 @@ node_modules/
 .idea/
 AGENTS.md
 _site/
+.venv/
+.pytest_cache/
