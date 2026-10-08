@@ -120,7 +120,7 @@
         d.x = p.x; d.y = p.y; guncelle();
       });
       d.el.addEventListener("pointerup", function () {
-        if (basladi && !tasindi) window.location.href = "/kullanici/" + encodeURIComponent(d.ad);
+        if (basladi && !tasindi) window.location.href = (document.body.getAttribute("data-kok") || "") + "/kullanici/" + encodeURIComponent(d.ad);
         basladi = null;
       });
     }

@@ -197,7 +197,8 @@ function Forum({ adres, onAdresDegistir }) {
   // Site içi bağlantılar uygulamada, site dışı bağlantılar telefonun tarayıcısında açılır
   const istekDenetle = useCallback((istek) => {
     const url = istek.url || '';
-    if (url.startsWith(kok + ADRES_SAYFASI)) { onAdresDegistir(); return false; }
+    // Tarayıcı sürümünde (GitHub Pages) site bir alt yolda ve çerçeve içinde çalışır: adres kok + "/app/uygulama/adres" olur
+    if (url.startsWith(kok) && url.split(/[?#]/)[0].endsWith(ADRES_SAYFASI)) { onAdresDegistir(); return false; }
     if (url.startsWith(kok) || url.startsWith('about:') || url.startsWith('data:') || url.startsWith('blob:')) return true;
     if (/^https?:/i.test(url) || /^(mailto|tel):/i.test(url)) { Linking.openURL(url).catch(() => {}); return false; }
     return false;

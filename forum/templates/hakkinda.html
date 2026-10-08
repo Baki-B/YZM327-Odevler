@@ -8,7 +8,7 @@
 
   <h2>Bir konunun yolculuğu</h2>
   <ol class="yolculuk">
-    <li><strong>Konu açılır.</strong> Her üye derdini (fikir, öneri, şikayet) yazıp konu açar. Konu hemen açılır; hakaret ya da kişisel veri varsa gönderilemez.</li>
+    <li><strong>Konu açılır.</strong> Her üye derdini (fikir, öneri, şikayet) yazıp konu açar. Konu hemen açılır; kişisel veri varsa gönderilemez, hakaret içeren ifadeler için yazana uyarı gösterilir.</li>
     <li><strong>Tartışma ({{ parametre('SURE_TARTISMA_SAAT') }} saat).</strong> Üyeler argüman, karşı argüman, soru ve kaynak yazar. Her katılımcı en fazla <strong>bir fikir</strong> verebilir; vermek zorunda değildir.</li>
     <li><strong>1. tur ({{ parametre('SURE_TUR1_SAAT') }} saat).</strong> Oylama açılır. Bu tur boyunca hâlâ fikir yazılabilir ve tartışma sürer. Tur bitince oranı {{ parametre('ELEME_TUR1') }} altında kalan fikirler elenir.</li>
     <li><strong>2. tur ({{ parametre('SURE_TUR_SAAT') }} saat).</strong> {{ parametre('ELEME_TUR2') }} altında kalanlar elenir.</li>

@@ -240,7 +240,8 @@ def bildirim_ac(bildirim_id):
     db = db_al()
     hedef = bildirimler.okundu_yap(db, g.kullanici["id"], bildirim_id)
     db.commit()
-    return redirect(hedef if site_ici_yol_mu(hedef) else url_for("profil.bildirim_listesi"))
+    # Bildirim bağlantısı uygulama içi yol olarak saklanır; alt yolda çalışırken önek eklenir (bkz. hesap._guvenli_adres)
+    return redirect(request.script_root + hedef if site_ici_yol_mu(hedef) else url_for("profil.bildirim_listesi"))
 
 
 @bp.post("/bildirimler/okundu")

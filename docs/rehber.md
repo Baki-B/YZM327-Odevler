@@ -69,7 +69,8 @@ Her üye konu açabilir. Derdi ne olursa olsun: bir fikir, bir öneri, bir şika
 açıklama (10–5000), kategori, katılım kuralı (isteğe bağlı il/ilçe ve yaş aralığı).
 
 Konu **hemen açılır**; kabul oylaması ya da ön inceleme yoktur. Gönderirken yalnızca **yönetmelik denetimi** çalışır
-(ayrıntı 12. bölümde): hakaret ya da kişisel veri varsa konu açılamaz, diğer sorunlar yalnızca uyarıdır.
+(ayrıntı 12. bölümde): kişisel veri varsa konu açılamaz; hakaret ve diğer sorunlar varsayılan olarak yalnızca uyarıdır
+(topluluk, yönetmelik oylamasıyla hakaret maddesini "Engeller"e çekebilir).
 
 Konuyu açan kişi, tartışma sürerken başlığı ve açıklamayı **düzenleyebilir**; eski hâli "düzenlendi, eski hâlini gör" bağlantısında herkese görünür.
 
@@ -327,7 +328,7 @@ Forumun kurallarıdır. **Meclis › Yönetmelik** sayfasında görülür. İki 
 **Denetim** (konu açılırken ve mesaj yazılırken çalışır)
 | Madde | Ne kontrol eder | Varsayılan |
 |---|---|---|
-| D1 Saygılı dil | Hakaret listesindeki kelimeler | Engeller |
+| D1 Saygılı dil | Hakaret listesindeki kelimeler | Uyarır* |
 | D2 Kişisel veri | Telefon numarası, T.C. kimlik no (resmi sağlamayla), e-posta, IBAN | Engeller |
 | D3 Kategoriye uygunluk | Metin seçilen kategorinin kavramlarını içeriyor mu? İçermiyorsa daha uygun kategori önerir | Uyarır |
 | D4 Konum tutarlılığı | Metinde "Ankara" geçiyor ama katılım herkese açıksa uyarır | Uyarır |
@@ -336,7 +337,12 @@ Forumun kurallarıdır. **Meclis › Yönetmelik** sayfasında görülür. İki 
 | D7 Açıklık | Açıklama en az 40 karakter mi? | Uyarır |
 
 Denetim bir **puan** (%) üretir. Engel varsa konu açılamaz; uyarılar engellemez ama konu sayfasında görünür.
-"Yönetmelik denetimini önizle" düğmesiyle göndermeden önce sonuç görülebilir.
+"Yönetmelik denetimini önizle" düğmesiyle göndermeden önce sonuç görülebilir. Mesaj, fikir ve gerekçelerde D1 ve D2 uygulanır:
+"Engeller" durumundaki madde mesajı durdurur, "Uyarır" durumundaki madde mesajı yayımlar ve yazana bir uyarı gösterir.
+
+\* D1 başlangıçta "Engeller" idi. Hiç görülmemiş bir ölçüm kümesinde hakaret listesinin yanlış engel oranı %29 çıktı
+(meşru mesajların bir kısmı durduruldu); önceden yazılmış yayın ölçütünü sağlamadığı için varsayılanı "Uyarır" yapıldı
+(`docs/analiz.md` 6.5). Mevcut bir kurulumda ciddiyet kendiliğinden değişmez; yönetmelik değişikliği oylamasıyla değiştirilir.
 
 **Beyan**
 - **B1 Tartışma kültürü:** Kişilere değil fikirlere karşı çıkılır.
@@ -818,7 +824,7 @@ Karanlık tema yalnızca bu değişkenleri yeniden tanımlar; hiçbir bileşene 
 - Eleme kuralları saf fonksiyon olduğu için (25.8) sınır değerleri (%4,9 – %5 – %75) doğrudan denenir.
 - **Sahte nesneler:** kayıt defteri testleri disk yerine bellekte çalışan sahte depoyla (`BellekDugumDeposu`), anlık bildirim
   testleri gerçek servis yerine sahte kanalla (`SahteKanal`) çalışır. Testlerde şifre özeti hızlı bir yöntemle yapılır
-  (`guvenlik.SIFRE_YONTEMI`); 181 test yaklaşık 7 saniye sürer.
+  (`guvenlik.SIFRE_YONTEMI`); 196 test yaklaşık 12 saniye sürer.
 - **Hata önce test:** yazılım mühendisliği incelemesinde bulunan her hata için önce hatayı yeniden üreten bir test yazıldı, sonra
   düzeltildi (`testler/test_duzeltmeler.py`).
 - **Ölçüm testleri:** denetim kurallarının etiketli örneklerdeki başarımı ve temel çizgileri geçtiği her çalıştırmada denetlenir
@@ -896,7 +902,7 @@ Katmanların ve diğer mimari kararların açıklaması 25. bölümde.
 | `web/` | Sayfa rotaları ve API; `istek.py` (istek öncesi zincir: kimlik, askı, CSRF, zamanlayıcı, yazma kilidi), `hata_sayfalari.py`, `sablon.py` (şablon filtreleri) |
 | `templates/` | Sayfalar (`panel/` = Panelim, `yonetim/` = yönetim paneli) |
 | `static/` | CSS, JS, simgeler, service worker |
-| `testler/` | 181 otomatik test |
+| `testler/` | 196 otomatik test |
 | `olcum/` | Ölçüm betikleri ve etiketli örnekler ([analiz.md](analiz.md)) |
 
 **Tek teklif mekanizması:** Bütün oylamalar (fikir turları, gizleme, kaldırma, uzmanlık, yönetmelik, yeni kategori) aynı "teklif" yapısından geçer;

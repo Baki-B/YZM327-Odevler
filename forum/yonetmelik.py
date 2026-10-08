@@ -157,7 +157,7 @@ def maddeler(db):
     liste = []
     for m in db.execute("SELECT * FROM yonetmelik_maddeleri ORDER BY CASE tur WHEN 'TEMEL_HAK' THEN 1 WHEN 'USUL' THEN 2 WHEN 'DENETIM' THEN 3 ELSE 4 END, CAST(substr(kod, 2) AS INTEGER)"):
         d = dict(m)
-        d["metin_goster"] = re.sub(r"\{([A-Z_]+)\}", lambda e: parametre_metni(db, e.group(1)), m["metin"])
+        d["metin_goster"] = re.sub(r"\{([A-Z][A-Z0-9_]*)\}", lambda e: parametre_metni(db, e.group(1)), m["metin"])
         liste.append(d)
     return liste
 

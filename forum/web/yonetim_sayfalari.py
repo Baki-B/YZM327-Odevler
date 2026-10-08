@@ -24,7 +24,8 @@ def _yalniz_yonetici():
 
 def _geri(varsayilan):
     hedef = request.form.get("geri") or ""
-    return redirect(hedef if hedef.startswith("/yonetim") and site_ici_yol_mu(hedef) else varsayilan)
+    # `geri` uygulama içi yoldur (request.full_path); alt yolda çalışırken önek eklenir (bkz. hesap._guvenli_adres)
+    return redirect(request.script_root + hedef if hedef.startswith("/yonetim") and site_ici_yol_mu(hedef) else varsayilan)
 
 
 # --- Pano ---

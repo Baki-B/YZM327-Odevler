@@ -13,9 +13,9 @@ from pathlib import Path
 _KLASOR = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [os.path.dirname(_KLASOR), _KLASOR]
 
-from forum import (anlik, ayarlar, defter, denetim, devir, gorevler, gorunum, graf, gundem, guvenlik, kategoriler,  # noqa: E402
-                   konu_durumlari, konular, kullanicilar, ontoloji, oylama, sonuclar, teklif_turleri, uygunluk, veritabani,
-                   yonetim, yonetmelik, yz, zaman)
+from forum import (anlik, ayarlar, bildirimler, defter, denetim, devir, gorevler, gorunum, graf, gundem, guvenlik,  # noqa: E402
+                   kategoriler, konu_durumlari, konular, kullanicilar, ontoloji, oylama, sonuclar, teklif_turleri, uygunluk,
+                   veritabani, yonetim, yonetmelik, yz, zaman)
 from forum.metin import site_ici_yol_mu  # noqa: E402
 from forum.hatalar import KuralHatasi, tamsayi  # noqa: E402
 from test_forum import Ortam  # noqa: E402
@@ -1064,6 +1064,42 @@ class ModulDongusu(unittest.TestCase):
         sonuc = subprocess.run([sys.executable, "-c", betik], cwd=os.path.dirname(_KLASOR), capture_output=True, text=True)
         self.assertEqual(sonuc.returncode, 0, sonuc.stderr)
         self.assertEqual(sonuc.stdout.strip(), "")
+
+
+class AltYoldaCalisma(WebOrtam):
+    """Tarayıcı sürümünde (GitHub Pages) uygulama /YZM327-Odevler/app gibi bir alt yolda çalışır. Uygulama içi yollara
+    yapılan yönlendirmeler bu öneki korumalı; yoksa tarayıcı sitenin köküne gidip 404 alır."""
+    KOK = "http://localhost/YZM327-Odevler/app"
+
+    def test_giristen_sonra_onek_korunur(self):
+        self.kisi("ali")
+        self.db.commit()
+        self.istemci.get("/giris", base_url=self.KOK)
+        with self.istemci.session_transaction() as s:
+            csrf = s["csrf"]
+        yanit = self.istemci.post("/giris", base_url=self.KOK,
+                                  data={"takma_ad": "ali", "sifre": "sifre1234", "csrf": csrf, "sonra": "/konu/5"})
+        self.assertEqual(yanit.headers["Location"], "/YZM327-Odevler/app/konu/5")
+
+    def test_bildirimden_ve_yonetimden_donus(self):
+        ali = self.kisi("ali")
+        bildirimler.gonder(self.db, ali["id"], "Deneme", "/konu/7")
+        b = self.db.execute("SELECT id FROM bildirimler WHERE kullanici_id = ?", (ali["id"],)).fetchone()[0]
+        self.giris(ali)
+        yanit = self.istemci.get(f"/bildirim/{b}", base_url=self.KOK)
+        self.assertEqual(yanit.headers["Location"], "/YZM327-Odevler/app/konu/7")
+        with self.app.test_request_context("/yonetim/konu/1/ilerlet", base_url=self.KOK, method="POST",
+                                           data={"geri": "/yonetim/konular?durum=OYLAMA"}):
+            from forum.web import yonetim_sayfalari
+            self.assertEqual(yonetim_sayfalari._geri("/x").headers["Location"],
+                             "/YZM327-Odevler/app/yonetim/konular?durum=OYLAMA")
+
+
+class YonetmelikMetni(Ortam):
+    def test_butun_yer_tutucular_doldurulur(self):
+        """Rakam içeren parametre kodları ({ELEME_TUR1}, {SURE_TUR1_SAAT}) da metne yerleşir."""
+        for m in yonetmelik.maddeler(self.db):
+            self.assertNotIn("{", m["metin_goster"], m["kod"])
 
 
 if __name__ == "__main__":

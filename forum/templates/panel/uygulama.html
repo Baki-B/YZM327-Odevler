@@ -6,7 +6,7 @@
   <h1>{{ ikon('telefon') }} Mobil uygulama</h1>
   {% if mobil_uygulama %}
     <p class="uyari basari">{{ ikon('tik') }} Şu an {{ ayarlar.SITE_ADI }} uygulamasındasın. Web sitesiyle aynı hesabı ve aynı içeriği kullanır.</p>
-    <p><a class="dugme ince kucuk-dugme" href="/uygulama/adres">{{ ikon('sunucu') }} Sunucu adresini değiştir</a></p>
+    <p><a class="dugme ince kucuk-dugme" href="{{ request.script_root }}/uygulama/adres" target="_top">{{ ikon('sunucu') }} Sunucu adresini değiştir</a></p>
   {% else %}
     <p>Telefonda üç yoldan kullanabilirsin; hepsi web sitesiyle aynı hesabı ve aynı içeriği kullanır.</p>
     <ul>

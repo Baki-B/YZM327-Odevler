@@ -31,6 +31,19 @@ cerceve.addEventListener("load", () => {
   } catch (e) { /* farklı kökenli sayfa: dokunma */ }
 });
 
+// İlk ziyarette sayfa, service worker etkinleşip clients.claim() çalışana kadar denetimsizdir. Python işçisi o arada
+// başlarsa indirdiği Pyodide ve uygulama dosyaları service worker'dan geçmez, önbelleğe girmez ve site çevrimdışı açılmaz.
+// Bu yüzden işçi, sayfa denetime girene kadar (en çok birkaç saniye) bekletilir. Zorla yenilemede (Shift+F5) sayfa hiç
+// denetime girmez; o zaman beklemeden devam edilir, dosyalar önceki ziyaretlerden zaten önbellektedir.
+async function denetimiBekle(ms) {
+  await navigator.serviceWorker.ready;
+  if (navigator.serviceWorker.controller) return;
+  await Promise.race([
+    new Promise((tamam) => navigator.serviceWorker.addEventListener("controllerchange", tamam, { once: true })),
+    new Promise((tamam) => setTimeout(tamam, ms)),
+  ]);
+}
+
 async function baslat() {
   if (!("serviceWorker" in navigator) || !window.Worker || !window.WebAssembly) {
     yaz("Bu tarayıcı Agora'nın tarayıcı sürümünü desteklemiyor (service worker, Web Worker ve WebAssembly gerekir). " +
@@ -54,6 +67,7 @@ async function baslat() {
   navigator.serviceWorker.addEventListener("message", (e) => {
     if (e.data && e.data.tur === "istek" && isci) isci.postMessage(e.data, [e.ports[0]]);
   });
+  await denetimiBekle(3000);
   isci = new Worker("isci.js");
   isci.onmessage = (e) => {
     const m = e.data;

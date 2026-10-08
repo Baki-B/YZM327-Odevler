@@ -229,8 +229,9 @@ Konu sayfasının sağ sütunu da beş kutudan üçe indi (senin durumun + oy a�
 ## 8. Tasarım ilkeleri (SOLID) ve tasarım desenleri
 
 Atıflar *Yazılım Tasarım Desenleri* slaytlarına (TD-numara). Bir desen ancak kodda somut bir sorunu çözdüğü yerde kullanıldı
-(TD-3: "desen bir amaç değil, araçtır"; TD-57: YAGNI ve KISS). Her satırdaki "önce" sütunu, desenin hangi sorunu çözdüğünü
-gösterir; her desenin davranışı testle korunur (test sınıfı adları; aksi yazılmadıkça `testler/test_duzeltmeler.py` içinde).
+(TD-3: "desen bir amaç değil, araçtır"; TD-57: YAGNI ve KISS). 8.2'deki her GoF deseninin "önce" sütunu, desenin hangi sorunu
+çözdüğünü gösterir ve davranışı testle korunur (test sınıfı adları; aksi yazılmadıkça `testler/test_duzeltmeler.py` içinde).
+GoF'un tam biçimi olmayan, Python'un dil özellikleriyle yapılan hafif karşılıklar ayrı tabloda (8.2 sonu) ve öyle adlandırıldı.
 
 ### 8.1 SOLID (TD-9…12)
 
@@ -239,27 +240,34 @@ gösterir; her desenin davranışı testle korunur (test sınıfı adları; aksi
 | **S** — Tek sorumluluk | `web/__init__.kur()` 150 satırda kimlik, CSRF, zamanlayıcı, hata sayfaları ve şablon filtrelerini birlikte yapıyordu. Yönetmelik modülü hem maddeleri hem denetim motorunu taşıyordu. Konu sayfası rotası iş kuralı içeriyordu. | Her biri kendi modülünde | `web/istek.py`, `web/hata_sayfalari.py`, `web/sablon.py`, `denetim.py`, `gorunum.py`, `metin.py`, `hatalar.py` |
 | **O** — Açık/kapalı | Yeni oylama türü 5 dosyada `if tip == …` dalı demekti; yeni bildirim kanalı `if tur == 'WEB'` dalı | Yeni tür = yeni sınıf + `@kaydet` + `ayarlar.TEKLIF_TIPLERI`'nde bir yapılandırma satırı; yeni denetim maddesi = yeni halka; yeni kanal = yeni adaptör; yeni depo = yeni `DugumDeposu` | `teklif_turleri.py`, `denetim.py`, `anlik.py`, `defter.py` |
 | **L** — Liskov | Web Push kanalı, `pywebpush` kurulu değilken abone kabul edip her bildirimde hata veriyordu (alt tür sözleşmeyi bozuyordu) | Kapalı kanal abone kabul etmez. Bütün teklif türleri şablon yöntemde aynı biçimde kullanılır. SQLite ve bellek depoları aynı sonucu verir | `test_forum.py: test_kapali_kanala_abone_olunmaz_ve_gonderilmez`, `TeklifTurleri`, `DefterOlceklenmesi.test_sorgu_islemleri_iki_depoda_ayni` |
-| **I** — Arayüz ayrımı | — | Arayüzler küçük: `AnlikKanal` 3 yöntem, `DenetimKurali` 1 soyut yöntem (`kontrol`), `DugumDeposu` 5 soyut yöntem (sorgular varsayılanlı) | `anlik.py`, `denetim.py`, `defter.py` |
-| **D** — Bağımlılığın tersine çevrilmesi | Veritabanı bağlantısı (altyapı) defter modülünü (üst katman) içe aktarıyordu. Şifre özeti yöntemi sabitti; zaman `datetime.now()` ile her yerden okunuyordu | Defter commit olayına abone (Observer); şifre yöntemi enjekte edilir (`FORUM_SIFRE_YONTEMI`); zaman tek kaynaktan (`zaman.simdi`); kanallar ve depolar dışarıdan verilir | `veritabani.commit_aboneligi`, `guvenlik.SIFRE_YONTEMI`, `zaman.py`, `anlik.KANALLAR`, `defter._depolar` |
+| **I** — Arayüz ayrımı | — | Küçük arayüzler: `AnlikKanal` 3 yöntem, `DenetimKurali` 1 soyut yöntem (`kontrol`), `DugumDeposu` 5 soyut yöntem (sorgular varsayılanlı). **İstisna:** `TeklifTuru` 18 yöntemli geniş bir arayüz (4 soyut, 14 varsayılanlı kanca); `FikirTuru` bazı kancaları anlamsız değerlerle dolduruyor. Bölmek için ikinci bir tüketici yok, bilerek bırakıldı (8.7) | `anlik.py`, `denetim.py`, `defter.py`, `teklif_turleri.py` |
+| **D** — Bağımlılığın tersine çevrilmesi | Veritabanı bağlantısı (altyapı) defter modülünü (üst katman) içe aktarıyordu. Şifre özeti yöntemi sabitti; zaman `datetime.now()` ile her yerden okunuyordu | Veritabanı defteri tanımaz: defter commit olayına abone olur (Observer). İş modülleri bağlantıyı (`db`) ve defter işlevleri depo kaynağını parametre olarak alır. Şifre yöntemi, saat ve bildirim kanalları birer **test dikişidir** (seam): modül düzeyindeki değişken testte değiştirilir; gerçek bir bağımlılık enjeksiyonu değildir (8.6) | `veritabani.commit_aboneligi`, `defter._depolar`, `guvenlik.SIFRE_YONTEMI`, `zaman.simdi`, `anlik.KANALLAR` |
 
 ### 8.2 Uygulanan desenler
 
 | Desen | Önceki sorun | Agora'da | Test |
 |---|---|---|---|
-| **State** (TD-43) | `konu["durum"] == …` karşılaştırmaları modüllere, web katmanına ve şablonlara dağılmıştı; unutulan bir kontrol kaldırılmış konunun geçmişini okunur bırakıyordu | `konu_durumlari.py`: `KonuDurumu` + 5 durum sınıfı; izinler (`yazilabilir`, `okunabilir`, `fikir_yazilabilir`…) ve geçiş tablosu (`gecis_dogrula`) | `GizliIcerikSizmaz` |
+| **State** (TD-43) | `konu["durum"] == …` karşılaştırmaları modüllere, web katmanına ve şablonlara dağılmıştı; unutulan bir kontrol kaldırılmış konunun geçmişini okunur bırakıyordu | `konu_durumlari.py`: `KonuDurumu` + 5 durum sınıfı; izinler (`yazilabilir`, `okunabilir`, `zamanli`, `fikir_yazilabilir`…) ve geçiş tablosu (`sonrakiler`). Geçişi yapan üç işlem tabloya danışır: `durum_degistir` ve `konuyu_kaldir` `gecis_dogrula` ile; `oylamayi_baslat` atomik UPDATE'in koşulunu `onceki_durumlar("OYLAMA")` ile tablodan kurar. Şablonlardaki izin kontrolleri de durum nesnesinden okunur. **Bilinçli sapma (TD-48):** geçişi durum nesnesi kendisi yapmaz; geçiş veritabanı, defter ve bildirim yazımı gerektirir, bunları durum sınıflarına taşımak döngüsel bağımlılık doğururdu. Şablonlarda kalan `konu.durum == …` karşılaştırmaları yalnızca rozet ve metin gösterimidir | `KonuDurumMakinesi`, `GizliIcerikSizmaz` |
 | **Strategy** (TD-36) | Sonuç uygulama kuralları türe göre `if/elif` ve dağınık sözlüklerde | `teklif_turleri.py`: `TeklifTuru` ve 6 somut tür (`FikirTuru`, `MesajGizlemeTuru`, `KonuKaldirmaTuru`, `UzmanlikTuru`, `YonetmelikTuru`, `KategoriTuru`) | `TeklifTurleri` |
-| **Template Method** (TD-41) | Her türün sonuçlandırması aynı iskeleti tekrar ediyordu | `oylama.sonuclandir`: sayım → `sonuc_durumu` → `sonucu_tamamla` → `sonuc_bildirimi` → `uygula`; adımlar stratejinin kancaları | `TeklifTurleri` |
-| **Registry** (TD-49) | Tür listesi birkaç yerde elle tutuluyordu | `teklif_turleri.TURLER` + `@kaydet` (yinelenen kod ve ayarlarda olmayan tür reddedilir); `anlik.KANALLAR`; `web/sablon.FILTRELER` | `TeklifTurleri` |
-| **Factory** (TD-16) | — | `teklif_turleri.tur(kod)` koddan strateji nesnesi; `denetim.zincir_kur(*siniflar)` halkaları bağlar; `defter._depolar(kaynak)` kaynağa göre depo seçer (yol → SQLite, liste → verilen) | — |
+| **Template Method** (TD-41) | Her türün sonuçlandırması aynı iskeleti tekrar ediyordu | `oylama.sonuclandir`: sayım → `sonuc_durumu` → `sonucu_tamamla` → `sonuc_bildirimi` → `uygula`; adımlar stratejinin kancaları. TD-41'deki biçim kalıtımlıdır; burada iskelet bir işlevde, kancalar Strategy nesnesinde (kompozisyonla şablon). Kalıtımlı örnek: `DenetimKurali.isle` iskeleti, alt sınıfın `kontrol` kancasını çağırır | `TeklifTurleri`, `DenetimZinciri` |
 | **Chain of Responsibility** (TD-44) | D1–D7 tek 77 satırlık fonksiyondaydı; mesaj denetimi D1 ve D2'yi ayrıca yeniden yazıyordu | `denetim.py`: her madde bir halka (`SayginDil` … `Aciklik`); mesajlara uygulananlar `mesajlara_uygulanir`. Web'de `web/istek.py` istek öncesi zinciri (kimlik → askı → CSRF → zamanlayıcı → yazma kilidi) | `DenetimZinciri` |
 | **Adapter** (TD-24) | `pywebpush` ve Firebase HTTP v1 farklı arayüzler; çağıran kod iki dalı da biliyordu | `anlik.py`: `AnlikKanal` ← `WebPushKanali`, `FcmKanali`; testlerde `SahteKanal` | `AnlikAbonelikAdresi` |
-| **Memento** (TD-47) | Zamanlayıcıda bir konunun hatası bütün işi geri alıyordu; geri alınan bloğun defter/bildirim yan etkileri kuyrukta kalıyordu | `veritabani.KuyrukHatirasi` + `kayit_noktasi()` (SAVEPOINT); `sonuclar.TurKarari` (turun kararı anlık görüntü olarak saklanır; sonradan parametre değişse de geçmiş tur aynı gösterilir) | `ZamanlayiciYalitimi`, `TurKarariAnlikGoruntusu` |
-| **Observer** (TD-38) | `Baglanti.commit` defteri doğrudan çağırıyordu | `veritabani.commit_aboneligi`; `defter._islem_kaydedildi` abone. Bağlantı başına `commit_sonrasi` kuyruğu (bildirim, arka plan işleri) | `CommitGozlemcisi` |
-| **Repository** (TD-51) | Düğüm dosyalarına `sqlite3` erişimi uzlaşma ve onarım mantığına gömülüydü; test için disk gerekiyordu; ölçeklenme düzeltmesi yapılamıyordu | `defter.DugumDeposu` ← `SqliteDugumDeposu` (üretim), `BellekDugumDeposu` (sahte depo, test) | `DefterDeposu`, `DefterOlceklenmesi` |
-| **Facade** (TD-28) | Konu sayfası rotası 9 alt sistemi tek tek çağırıyor, fikir rozeti kuralı rotadaydı | `gorunum.konu_sayfasi()`; kural saf işlev `gorunum.fikir_durumu` | `KonuSayfasiCephesi` |
-| **Dependency Injection** (TD-52) | Testler gerçek scrypt şifre özetiyle çalıştığı için 94 test ~60 sn sürüyordu | `guvenlik.SIFRE_YONTEMI` (testte hızlı yöntem), `zaman.simdi` (testte ileri sarılır), `anlik.KANALLAR` (testte sahte kanal), defter işlevlerine depo listesi | 181 test ~7 sn |
-| **Decorator** (TD-26, 27 — fonksiyon düzeyinde) | — | `giris_gerekli`, `yonetici_gerekli` rotayı sarar; `@kaydet`, `@commit_aboneligi` kayıt dekoratörleri | — |
-| **Command** (TD-40, hafif) | — | `commit_sonrasi` ve defter kuyrukları: yapılacak iş nesne olarak kuyruğa alınır, commit'te çalışır, rollback'te silinir | `YanEtkiDayanikliligi` |
+| **Memento** (TD-47) | Zamanlayıcıda bir konunun hatası bütün işi geri alıyordu; geri alınan bloğun defter/bildirim yan etkileri kuyrukta kalıyordu | `veritabani.KuyrukHatirasi` (hatıra) + `kayit_noktasi()` (SAVEPOINT): bağlantı (Originator) kuyruklarının durumunu hatıraya yazar, hata olursa ondan geri yükler | `ZamanlayiciYalitimi` |
+| **Observer** (TD-38) | `Baglanti.commit` defteri doğrudan çağırıyordu | `veritabani.commit_aboneligi`; üretimde tek abone `defter._islem_kaydedildi`. Bağlantı başına `commit_sonrasi` kuyruğu (bildirimler) | `CommitGozlemcisi` |
+| **Repository** (TD-51) | Düğüm dosyalarına `sqlite3` erişimi uzlaşma ve onarım mantığına gömülüydü; test için disk gerekiyordu; ölçeklenme düzeltmesi yapılamıyordu | Yalnızca **kayıt defteri düğümleri** için: `defter.DugumDeposu` ← `SqliteDugumDeposu` (üretim), `BellekDugumDeposu` (sahte depo, test). Forum verisinin kendisi Repository arkasında değildir: iş modülleri SQLite'a doğrudan SQL yazar (8.4) | `DefterDeposu`, `DefterOlceklenmesi` |
+| **Facade** (TD-28) | Konu sayfası rotası alt sistemleri tek tek çağırıyor, fikir rozeti kuralı rotadaydı | `gorunum.konu_sayfasi()` 7 alt sistemi (konular, oylama, kararlar, uygunluk, devir, kullanicilar, yz) tek çağrıda toplar; kural saf işlev `gorunum.fikir_durumu` | `KonuSayfasiCephesi` |
+
+**Python'un hafif karşılıkları (GoF'un tam biçimi değil).** Aşağıdakiler aynı amaca dilin kendi araçlarıyla ulaşır; GoF
+deseni sayılmamalıdır (TD-26: "Python'daki @decorator sözdizimi fonksiyon sarmalamadır; GoF Decorator ise nesne sarmalamadır").
+
+| Ad | Agora'da | Neden tam desen değil |
+|---|---|---|
+| Kayıt (Registry, TD-49) | `teklif_turleri.TURLER` + `@kaydet`: yinelenen kodu ve ayarlarda olmayan türü reddeder (testli: `TeklifTurleri`) | Tam karşılık. `anlik.KANALLAR` ve `web/sablon.FILTRELER` ise düz sözlüktür |
+| Fabrika işlevi (TD-16) | `teklif_turleri.tur(kod)`, `denetim.zincir_kur(*siniflar)`, `defter._depolar(kaynak)` | `tur(kod)` yeni nesne üretmez, kayıttaki tek örneği döndürür; `_depolar` yol verilince her zaman SQLite deposu kurar |
+| Fonksiyon dekoratörü | `giris_gerekli`, `yonetici_gerekli` rotayı sarar | Python dekoratörü; `@kaydet` ve `@commit_aboneligi` hiçbir şeyi sarmaz, yalnızca kaydeder |
+| Ertelenmiş iş kuyruğu | `commit_sonrasi` ve defter kuyrukları: iş commit'te çalışır, rollback'te silinir (testli: `YanEtkiDayanikliligi`) | Argümansız kapanış (closure) listesi; TD-40'taki `calistir/geri_al` yok. Doğru adı *transactional outbox*'tır (rehber 25.11) |
+| Test dikişi (seam) | `guvenlik.SIFRE_YONTEMI` (testte hızlı özet), `zaman.simdi` (testte ileri sarılır), `anlik.KANALLAR` (sahte kanal), `defter._saat` | Modül düzeyindeki değişkenin üzerine yazılır; kurucuya verilen bir bağımlılık değildir. Kazanç: test süresi 94 testte ~60 sn'den 196 testte ~12 sn'ye indi |
+| Değer görüntüsü | `sonuclar.TurKarari`: turun kararı saf bir değer nesnesi olarak saklanır; sonradan parametre değişse de geçmiş tur aynı gösterilir (testli: `TurKarariAnlikGoruntusu`) | Geri yükleyen bir Originator yok; Memento değil, değiştirilemez değer nesnesidir |
 
 ### 8.3 Sınıf diyagramları
 
@@ -447,12 +455,17 @@ classDiagram
 
 | Slayttaki madde | Agora'daki karşılığı |
 |---|---|
-| Seçim yapılandırmadan yapılsın (Registry + Factory) | Oylama türleri `ayarlar.TEKLIF_TIPLERI` yapılandırmasında; sınıflar `@kaydet` ile kaydolur, `tur(kod)` ile seçilir. Şifre yöntemi ve gizli anahtar ortam değişkeninden |
-| Ön işleme ve model tek nesnede (Pipeline) | Oylama sonuçlandırma hattı: sayım → saf `tur_karari` → `tur_uygula`; web istek öncesi zinciri |
-| Veri kaynağı değiştirilebilsin (Repository) | `DugumDeposu`: SQLite dosyası ya da bellek; PostgreSQL için yeni bir gerçekleme yeter |
-| Olaylar birden çok bileşene haber versin (Observer) | `commit_aboneligi`: defter commit olayına abone; bağlantı başına `commit_sonrasi` (bildirimler) |
-| Tek giriş noktası (Facade) | `gorunum.konu_sayfasi` |
-| Her bileşen için birim testi (sahte depo ile) | `BellekDugumDeposu` (sahte depo), `SahteKanal` (sahte bildirim kanalı), sahte zaman; 181 test |
+Slayttaki maddeler bir ML sistemi içindir; Agora'da ML modeli yok (analiz.md 3. bölüm). Bu yüzden karşılıklar birebir değil,
+en yakın benzerdir; nerede eksik kaldığı da yazıldı.
+
+| Slayttaki madde | Agora'daki en yakın karşılığı | Sınırı |
+|---|---|---|
+| Seçim yapılandırmadan yapılsın (Registry + Factory) | Oylama türünün adı, eşiği ve süresi `ayarlar.TEKLIF_TIPLERI`'nde; sınıflar `@kaydet` ile kaydolur, `tur(kod)` ile seçilir. Şifre yöntemi ve gizli anahtar ortam değişkeninden | Hangi türün çalışacağı yapılandırmadan değil, `teklifler.tip` sütunundaki veriden seçilir (yakın benzer) |
+| Ön işleme ve model tek nesnede (Pipeline) | Denetim zinciri `denetim.ZINCIR`: metin bütün halkalardan geçer. Ölçüm betiği (`olcum/denetim_olcumu.py`) üretimdeki aynı kodu çağırır, yani ölçülen ile çalışan aynıdır | Öğrenilmiş bir model ve ön işleme adımı yok |
+| Veri kaynağı değiştirilebilsin (Repository) | `DugumDeposu`: defter düğümleri SQLite dosyasında ya da bellekte | Yalnızca defter için. Üretim yolu yol verilince SQLite deposunu kendisi kurar (`defter._depolar`) ve süreçler arası kilit SQLite'a özgüdür; PostgreSQL için bu iki yer de değişir. Forum verisi doğrudan SQLite'tadır |
+| Olaylar birden çok bileşene haber versin (Observer) | `commit_aboneligi`: defter commit olayına abone; bağlantı başına `commit_sonrasi` (bildirimler) | Üretimde tek abone var; mekanizma çok aboneliye hazır |
+| Tek giriş noktası (Facade) | `gorunum.konu_sayfasi` | — |
+| Her bileşen için birim testi (sahte depo ile) | `BellekDugumDeposu` (sahte depo), `SahteKanal` (sahte bildirim kanalı), sahte zaman | Sahte nesneyle birim testi defter, bildirim kanalı ve saat için. İş modüllerinin testleri her testte yeni kurulan geçici bir SQLite veritabanıyla çalışır (entegrasyon testi); 196 test ~12 sn |
 
 ### 8.5 Bilerek kullanılmayan desenler (TD-57, TD-58)
 
@@ -466,6 +479,13 @@ classDiagram
 | Composite | Kategori ve konum ağaçları veri olarak var ama ağacın düğümlerine ortak bir işlem arayüzü gerekmedi |
 | Iterator | Python'da yerleşik (üreteçler: `DenetimKurali.halkalar()`) |
 
+**Modül bağımlılıkları (TD-12, DIP).** İş modülleri arasında karşılıklı çağrı var (ör. `oylama` ↔ `teklif_turleri` ↔
+`konular`). Modül düzeyinde bir döngü `import forum.teklif_turleri` ilk içe aktarma olarak yapılınca hata veriyordu; ortak
+sabitler ve eşik karşılaştırması yaprak bir modüle (`oy_kurallari.py`) taşınarak kırıldı. Her modülün tek başına yüklenebildiği
+testle korunur (`ModulDongusu`). Üç işlev içi içe aktarma (`yonetmelik`, `konular`, `kullanicilar` içinde) çalışma anı
+döngülerini bilerek erteler; bunları kaldırmak bir olay yolu (Observer) ya da modülleri yeniden bölmek gerektirir, şimdilik
+gerekmedi.
+
 ### 8.6 Giderilen anti-desenler (TD-57)
 
 | Anti-desen | Neredeydi | Nasıl giderildi |
@@ -473,20 +493,36 @@ classDiagram
 | God function | `web/__init__.kur()` (150 satır), `yonetmelik.denetle` (77 satır) | 3 modül; 7 halka |
 | Uzun `if durum == …` zinciri (TD-58: State) | Konu durumu kontrolleri, sonuç türü dalları, kanal dalları | State, Strategy, Adapter |
 | Kopya kod | Güvenli yönlendirme kontrolü 5 kopya (biri açık yönlendirme açığı içeriyordu), yüzde biçimi 4 kopya, mesaj denetimi D1/D2 iki kopya | `metin.site_ici_yol_mu`, `metin.yuzde`, tek zincir |
-| Gizli global durum | Sabit şifre yöntemi, her yerde `datetime.now()` | Enjeksiyon, `zaman.simdi` |
+| Gizli global durum | Sabit şifre yöntemi, her yerde `datetime.now()` | **Azaltıldı, bitmedi.** Zaman tek kaynaktan (`zaman.simdi`), şifre yöntemi ayarlanabilir. Kalan modül düzeyi durum: `veritabani._COMMIT_ABONELERI` (abonelikten çıkma yok), `defter._SQLITE_DEPOLARI` ve `_DOGRULAMA` (önbellek), `defter._saat`; demo verisi yüklenirken `zaman.simdi` süreç genelinde geçici olarak değiştirilir (`ornek_veri.py`). Tek süreçli dağıtımda zararsız; çok kiracılı (aynı süreçte birden çok forum) kullanımda bağlam nesnesine taşınmalı |
 | Yapılandırma borcu (doğrulanmamış ayar) | Oylamayla `UZMAN_AGIRLIK=0`, eleme eşiği > ezici eşik gibi anlamsız değerler kabul ediliyordu | `ayarlar.PARAMETRE_ARALIKLARI` |
-| Ölü kod | `yz_agirlik`, `komisyon_bitis` sütunları ("kullanılmıyor") | **Bilerek duruyor**: eski veritabanlarının göçü için (analiz.md 12. bölüm) |
+| Ölü kod | Hiç çağrılmayan `anlik.web_etkin`, `anlik.fcm_etkin`, `arama.yeniden_indeksle`, `kullanicilar.tum_kullanicilar`; `yz_agirlik`, `komisyon_bitis` sütunları | İşlevler silindi. Sütunlar **bilerek duruyor**: eski veritabanlarının göçü için (analiz.md 12. bölüm) |
+| Tür dalı zinciri (bilerek kalanlar) | Yönetmelik değişikliği türü (PARAMETRE / DENETIM / BEYAN) 4 yerde, devir kapsamı (GENEL / KATEGORI / KONU) 5 yerde `if` ile ayrılıyor | **Bilerek bırakıldı (YAGNI):** üçer değişken, yeni tür beklenmiyor. Dördüncü tür gelirse Strategy'ye çevrilmeli |
 | Erken soyutlama | — | Her arayüzün en az iki gerçeklemesi var (`DugumDeposu` 2, `AnlikKanal` 2 + test, `TeklifTuru` 6, `DenetimKurali` 7) |
 
 ### 8.7 Tartışma sorusu (TD-59): Python'un dinamik doğası hangi desenleri gereksiz kılıyor?
 
 - **Singleton:** modül zaten tek bir nesnedir.
 - **Strategy:** tek yöntemli bir strateji için fonksiyon yeter (`zaman.simdi` testte bir fonksiyonla değiştirilir). `TeklifTuru` sınıf
-  oldu çünkü 17 yöntemi var (4'ü soyut, 13'ü varsayılanı olan kanca).
+  oldu çünkü 18 yöntemi var (4'ü soyut, 14'ü varsayılanı olan kanca).
 - **Command:** kapanış (closure) ya da herhangi bir çağrılabilir nesne komuttur (`commit_sonrasi` listesi).
 - **Observer:** ayrı bir gözlemci arayüzü yerine fonksiyon listesi yeter (`commit_aboneligi`).
 - **Factory / Registry:** sınıflar birinci sınıf nesnedir; sözlükte saklanıp koddan seçilir (`TURLER`, `KANALLAR`).
 - **Iterator ve Decorator:** dilin kendisinde (`yield`, `@`).
+
+### 8.8 Tartışma sorusu (TD-59): Kullandığınız kütüphanede hangi desenleri görüyorsunuz?
+
+Agora bir ML kütüphanesi kullanmıyor (karar: analiz.md 3. bölüm); soru, kullanılan tek büyük kütüphane olan Flask için yanıtlandı:
+
+- **Chain of Responsibility:** `before_request` işlevleri sırayla çalışır, biri yanıt döndürürse zincir kesilir. Agora'nın
+  istek öncesi zinciri (`web/istek.py`) bunun üzerine kurulu.
+- **Registry + Decorator:** `@app.route` ve `@bp.route` bir işlevi URL kayıt defterine ekler; şablon filtreleri ve
+  `errorhandler` da aynı kayıt mantığıyla çalışır.
+- **Facade:** `Flask` nesnesi Werkzeug (HTTP), Jinja2 (şablon) ve itsdangerous (imzalı çerez) alt sistemlerinin önündeki tek yüzdür.
+- **Template Method:** `MethodView.dispatch_request`, istek yöntemine göre alt sınıfın `get`/`post` kancasını çağırır.
+- **Proxy:** `request`, `g`, `current_app` bağlama yerel vekillerdir (LocalProxy); her istekte doğru nesneye yönlenir.
+- Derste geçen scikit-learn örneklerinde: bütün modellerin ortak `fit/predict` arayüzü (TD-8) modelleri birbirinin yerine
+  takılabilir kılar (Strategy); model fabrikası (TD-17) Factory Method'dur; iç içe dönüştürücüler Composite'tir, PyTorch modelini
+  sklearn arayüzüne uyduran sarmalayıcı Adapter'dır (TD-23). Agora'da model olmadığı için bunlar kullanılmadı.
 
 ## 9. Dağıtım: sunucu sürümü ve tarayıcı sürümü (GitHub Pages)
 

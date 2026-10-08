@@ -5,8 +5,9 @@ sonra metrikler, temel çizgi (baseline), kısıtlar, paydaşlar ve ön-otopsi. 
 **H2** = Hafta 2 *Problem Çerçeveleme* slaytları, **S01** = *YZ Mühendisliğine Giriş*, **S02** = *Temel Modelleri Anlamak*,
 **TD** = *Yazılım Tasarım Desenleri* (numaralar slayt numarasıdır).
 
-Belgedeki bütün sayılar `olcum/` klasöründeki betiklerle **ölçülmüştür**; tahmin değildir. Her tablonun altında hangi
-komutla yeniden üretileceği yazar. Kendi bilgisayarında çalıştırıp sayıları güncelleyebilirsin.
+Belgedeki başarım sayıları (kesinlik, duyarlılık, gecikme, ürün metrikleri) `olcum/` klasöründeki betiklerle **ölçülmüştür**;
+tahmin değildir. Her tablonun altında hangi komutla yeniden üretileceği yazar. Hedef değerler ve hata maliyeti birimleri (5.3)
+ise varsayımdır; paydaşlarla belirlenmelidir.
 
 | Betik | Ne ölçer |
 |---|---|
@@ -46,6 +47,9 @@ YZ yalnızca üç *destek* işinde aday. Bu ayrım bütün belgenin omurgası: *
 | Karar | Bu konuda hangi fikir topluluğun kararı olacak? |
 | Kim karar verir | **Üyeler, oyla.** Model yok; sayım kuralı yönetmelikte yazılı ve herkesçe okunabilir |
 | YZ'nin yeri | Kararı *hazırlayan* adımlar: okunmamış tartışmayı özetlemek, uygunsuz içeriği önce yazana göstermek |
+| Tahmin (destek işlerinde) | Bu metin bir kişiyi aşağılıyor mu (D1), kişisel veri içeriyor mu (D2), hangi alana ait (D3)? |
+| ML görevi | D1, D2 ikili sınıflandırma; D3 7 sınıflı sınıflandırma. Bugün kural tabanlı ve ölçülüyor (6. bölüm) |
+| Veri ve etiket | Etiketli forum verisi yok; ölçüm için elle yazılmış 166 örnek (6.2). Gelecekte etiket kaynağı: gizleme oylamaları, şikayetler |
 
 **Bileşen düzeyinde çerçeveleme tablosu (H2-18, H2-23).** Her satır bir kararla başlıyor; karar sütunu boş olan bileşen yok.
 
@@ -89,8 +93,15 @@ gerektiren ölçülmüş bir eksik yok. Ayrıca dört somut engel var:
    **yuvarlanmaz, kesilir** (`metin.yuzde`: %74,9 asla "%75" olmaz), her fikrin durumu turun kaydedilmiş kararından okunur
    (`sonuclar.TurKarari`). Testler: `YapayZekaOzetleri`, `TurKarariAnlikGoruntusu`.
 2. **Veri dışarı çıkamaz (H2-45, KVKK):** Mesajları bir dış API'ye göndermek, kişisel verinin üçüncü tarafa aktarılması demek.
-3. **Maliyet ve gecikme (S01-24, H2-10):** Çağrı başına ücret ve saniyeler süren yanıt; kural tabanlı özet milisaniyeler sürer, ücretsiz.
+3. **Maliyet ve gecikme (S01-34, 35; H2-10):** Çağrı başına ücret ve saniyeler süren yanıt; kural tabanlı özet milisaniyeler sürer, ücretsiz.
 4. **Olasılıksal çıktı (S02-41, 42):** Aynı tartışma iki kez özetlenince farklı metin çıkabilir; denetlenebilirlik ilkesiyle çelişir.
+   Güncel modellerde `temperature=0` ile sabitleme de artık mümkün değil: Anthropic'in yeni modelleri sıcaklık parametresini
+   reddediyor (`laboratuvar/` 3. görev). Kural tabanlı özet ise belirlenimcidir (test: `Belirlenimcilik`).
+5. **Türkçe daha pahalı (S02-4…6):** Aynı anlam Türkçede İngilizceden 1,36–1,69 kat daha çok token tutuyor (`laboratuvar/`
+   1. görev); maliyet, gecikme ve bağlam kullanımı aynı oranda artar.
+
+Bu karar S01-19'un ölçütüne de uyar: ML, öğrenilecek karmaşık bir örüntü olduğunda anlamlıdır. Sayılar ve sayım kuralı için
+öğrenilecek bir şey yok, kural zaten biliniyor.
 
 **İleride BDM eklenecekse önerilen tasarım (insan döngüde, S01-32 "emekle–yürü–koş"):**
 - *Emekle:* BDM yalnızca içerik özetinin **taslağını** yazar; sayılar kural tabanlı özetten gelir ve BDM'ye "bu sayıları aynen kullan"
@@ -98,22 +109,36 @@ gerektiren ölçülmüş bir eksik yok. Ayrıca dört somut engel var:
 - Son işleme (S02-40): çıktıdaki her sayı veritabanındaki sayıyla karşılaştırılır; bir tanesi bile uymazsa özet atılır, kural
   tabanlı özet yazılır (**sayı sadakati** koruyucu metriği, 5. bölüm).
 - Özet, katılımcılardan biri onaylamadan yayımlanmaz. Onaylanan/düzeltilen özetler etiketli veri olur (veri çarkı, S01-33).
-- *Yürü*'ye geçiş ölçütü: 4 hafta boyunca onaylayanların taslağı değiştirmeden kabul oranı ≥ %95 (S01-32'deki ölçütün aynısı).
+- *Yürü*'ye geçiş ölçütü: onaylayanların taslağı değiştirmeden kabul oranı ≥ %95 (eşik S01-32'den; ölçümün en az 4 hafta
+  sürmesi bizim eklememiz, mevsimsel konu farklarını görmek için).
+- Aynı ilke bugün denetimde uygulandı: ölçülen güveni yetmeyen D1 "engelle" (koş) yerine "uyar" (emekle) düzeyine çekildi (6.5).
 
 ---
 
 ## 4. Tek sayfalık problem tanım kanvası (H2-48, H2-49)
 
+**Tek cümlelik problem tanımı (H2-50: kullanıcı, karar, görev, metrik, temel çizgi).** Denetim için:
+
+> Forumda konu ya da mesaj yazan üye, metninin bir kişiyi aşağılayıp aşağılamadığını (D1) ve kişisel veri içerip
+> içermediğini (D2) göndermeden önce görüp düzeltsin diye her metin ikili sınıflandırılır; başarı, kurallar dondurulduktan
+> sonra yazılmış, hiç görülmemiş bir kümede D1 kesinliği ve F1'inin ≥ 0,80, D2 duyarlılığının ≥ 0,80 olmasıdır; temel
+> çizgiler "hep temiz" (F1 = 0) ve rastgele tahmindir (F1 ≈ 0,50); bir model ancak bugünkü kuralı (son küme D1 F1 0,71,
+> D2 duyarlılık 0,83) aynı türden bir kümede en az +0,10 F1 farkla geçerse onun yerine geçer.
+
+Aynı problemin kötü tanımı (H2-50'deki karşı örnek gibi) şu olurdu: "Yapay zekâ ile forumdaki uygunsuz içeriği yüksek
+doğrulukla engelleyen bir sistem." Kim kullanacak, "uygunsuz" nasıl etiketlenecek, "yüksek doğruluk" kaç, belli değil;
+üstelik çözüm (YZ) problemden önce seçilmiş.
+
 | Kutu | Agora |
 |---|---|
 | **1. İş hedefi ve değer** | Topluluk kararlarının adil (azınlık korunur, tek kişi baskın olmaz), şeffaf (sayım ve kayıt herkesçe denetlenir) ve zamanında (en fazla 7 gün: 24 saat tartışma + 48 saatlik 1. tur + 4 × 24 saatlik tur) alınması. İş metriği: kapanan konuların karara bağlanma oranı. |
-| **2. Karar ve eylem** | Kararı üyeler oyla verir. Sistem, kararı *hazırlar*: içerik denetimi yazana anında geri bildirim verir (günde mesaj sayısı kadar), özet her tur sonunda bir kez yazılır. |
+| **2. Karar ve eylem** | Kararı üyeler oyla verir. Sistem, kararı *hazırlar*: içerik denetimi yazana anında geri bildirim verir (günde mesaj sayısı kadar; kişisel veri engellenir, hakaret için uyarılır), özet her tur sonunda bir kez yazılır. |
 | **3. ML görevi** | Çekirdekte yok. Destek görevleri: D1/D2 ikili sınıflandırma, D3 7 sınıflı sınıflandırma, D5 benzerlik, özet = üretim. Etiket tanımları: 6.2. |
-| **4. Veri** | Etiketli veri yok (yeni ürün). Ölçüm için elle etiketlenmiş 85 + 43 örnek. Gelecekte etiket kaynağı: topluluğun gizleme oylamaları, şikayetler, kategori değişiklikleri. Kişisel veri: ad soyad, doğum tarihi, adres yalnızca kayıtta; görünen takma ad; deftere yalnızca özet ve taahhüt. |
+| **4. Veri** | Etiketli veri yok (yeni ürün). Ölçüm için elle yazılıp etiketlenmiş 166 örnek (geliştirme 85, test 43, görülmemiş son küme 38); gerçek forum mesajı değildir (6.2). Gelecekte etiket kaynağı: topluluğun gizleme oylamaları, şikayetler, kategori değişiklikleri. Kişisel veri: ad soyad, doğum tarihi, adres yalnızca kayıtta; görünen takma ad; deftere yalnızca özet ve taahhüt. |
 | **5. Metrikler** | Model: D1 kesinlik (yanlış engel pahalı), D2 duyarlılık (kaçan kişisel veri pahalı), D3 makro F1. Ürün: katılım oranı, karar süresi. Koruyucu: oy gücü Gini, defter tutarsızlığı = 0, YZ sayı sadakati = %100, p95 gecikme. (5. bölüm) |
-| **6. Baseline** | Çoğunluk sınıfı ve rastgele (ölçüldü); bugünkü kural (ölçüldü); mevcut çözüm = insan (topluluğun gizleme oylaması, ölçülmedi). (6. bölüm) |
+| **6. Baseline** | Çoğunluk sınıfı: D1/D2 F1 0, D3 makro F1 0,04. Rastgele (beklenen): F1 ≈ 0,50, D3 makro F1 ≈ 0,13. Bugünkü kural, son kümede: D1 F1 0,71, D2 duyarlılık 0,83, D3 makro F1 0,49. Mevcut çözüm = insan (topluluğun gizleme oylaması): ölçülmedi. (6. bölüm) |
 | **7. Kısıtlar** | Dönem ödevi süresi; sunucu bütçesi yok, GPU yok, dış API yok; tek bilgisayarda SQLite; p95 < 200 ms; KVKK; gizli oy; kararlar açıklanabilir olmalı. (7. bölüm) |
-| **8. Riskler ve başarı** | Ön-otopsi: 9. bölüm. Yayın ölçütü: 11. bölüm. |
+| **8. Riskler ve başarı** | En büyük risk "kimse oy vermez, turlar sonuçsuz kalır" (O × E = 9; ön-otopsi, 10. bölüm). Yayın ölçütü (11. bölüm): son kümede D2 sağlandı; D1 sağlanmadı, varsayılanı "Uyarır" yapıldı; D3 zaten yalnızca uyarır. |
 
 ---
 
@@ -143,6 +168,11 @@ verisi elle kurulmuş bir senaryo olduğu için bu sütun **metriğin çalışt�
 **Kopukluk tehlikesi (H2-25):** Katılım oranı artarken karara bağlanma oranı düşüyorsa darboğaz katılım değil, fikir sayısıdır
 (çok fikir → yeter sayıya ulaşsa da eşiği kimse geçemez). İki metrik birlikte izlenir.
 
+**Model metriğinden iş metriğine (H2-25, S01-20).** D1'in kesinliği düşükse meşru mesajlar durdurulur → yazan vazgeçer →
+fikir başına yanıt ve katılım düşer (ürün) → daha az konu karara bağlanır (iş). D2'nin duyarlılığı düşükse kişisel veri
+yayımlanır → KVKK ihlali ve güven kaybı (koruyucu). Bu zincir bugün yalnızca mantıkla kuruldu; gerçek kullanımda A/B
+deneyiyle ölçülmelidir (S01-20).
+
 ### 5.2 Goodhart yasası (H2-35): metriği hedef yapınca ne bozulur?
 
 | Hedef yapılırsa | Nasıl bozulur | Agora'daki önlem |
@@ -157,11 +187,15 @@ verisi elle kurulmuş bir senaryo olduğu için bu sütun **metriğin çalışt�
 Denetim kurallarının bir olasılık eşiği yok; ama **ciddiyet** (Engeller / Uyarır / Kapalı) aynı işi görür ve H2-29'daki
 "eşik bir iş kararıdır" ilkesine uygun olarak **topluluk oylamasıyla** ayarlanır (yönetmelik değişikliği).
 
-- **D1 (kaba ifade), ENGEL:** Yanlış pozitif (YP) meşru bir mesajı durdurur, yazan düzeltmek zorunda kalır; yanlış negatif (YN)
-  hakaretin yayımlanması demek ama topluluk şikayet ve gizleme oylamasıyla düzeltebilir. **YP daha pahalı → kesinlik öncelikli** (F0,5).
+- **D1 (kaba ifade; başta ENGEL, 6.5'teki karardan sonra UYARI):** Engellerken yanlış pozitif (YP) meşru bir mesajı durdurur,
+  yazan düzeltmek zorunda kalır; yanlış negatif (YN) hakaretin yayımlanması demek ama topluluk şikayet ve gizleme oylamasıyla
+  düzeltebilir. **YP daha pahalı → kesinlik öncelikli** (F0,5; son kümede 0,71). Örnek maliyet (H2-31 yöntemi; birimler
+  varsayım, paydaşlarla belirlenmeli): engelleyen kuralda YP = 5, YN = 1 alınırsa son kümede kural 5·2 + 1·2 = **12**,
+  "hep temiz" 1·7 = **7** birim. Bu maliyetlerle engelleyen kural, hiç kural olmamasından pahalıdır. Uyarıda yanlış pozitifin
+  bedeli çok küçüktür (yazan uyarıyı okuyup geçer); 6.5'teki karar bu hesapla da desteklenir.
 - **D2 (kişisel veri), ENGEL:** YN kişisel verinin herkese açılması (KVKK); YP yalnızca bir yeniden yazma. **YN çok daha pahalı →
-  duyarlılık öncelikli** (F2). Örnek maliyet (H2-31 yöntemi; birimler paydaşlarla belirlenmeli): YN = 50, YP = 1 alınırsa test
-  kümesinde kural 50·1 + 1·1 = **51**, "hep temiz" temel çizgisi 50·5 = **250** birim.
+  duyarlılık öncelikli** (F2; son kümede 0,86). YN = 50, YP = 1 alınırsa test kümesinde kural 50·1 + 1·1 = **51**, "hep temiz"
+  50·5 = **250**; son kümede kural 50·1 + 1·0 = **50**, "hep temiz" 50·6 = **300** birim.
 - **D3 (kategori), UYARI:** Hata yalnızca bir uyarı; 7 sınıfın hepsi eşit önemde → **makro F1** (H2-30).
 
 ### 5.4 Çok boyutlu değerlendirme (H2-34)
@@ -182,7 +216,7 @@ Denetim kurallarının bir olasılık eşiği yok; ama **ciddiyet** (Engeller / 
 
 | Basamak | Agora'da | Durum |
 |---|---|---|
-| Rastgele | Sınıflardan birini eşit olasılıkla seç (tohum 42) | Ölçüldü |
+| Rastgele | Sınıflardan birini eşit olasılıkla seç; 1000 tohumun ortalaması verilir (beklenen değer) | Ölçüldü |
 | Çoğunluk sınıfı | D1/D2: "hep temiz" (hiçbir şeyi engelleme), D3: "hep en sık kategori" | Ölçüldü |
 | Basit kural | Anahtar kelime (D1), düzenli ifade + T.C. kimlik sağlaması (D2), ontoloji kavramları (D3) | **Bugünkü sistem**, ölçüldü |
 | Mevcut çözüm | İnsan: topluluğun şikayet ve gizleme oylaması | Ölçülmedi (gerçek kullanım verisi yok) |
@@ -191,8 +225,17 @@ Denetim kurallarının bir olasılık eşiği yok; ama **ciddiyet** (Engeller / 
 
 ### 6.2 Ölçüm düzeneği
 
-- Örnekler `olcum/gelistirme.csv` (D1: 28, D2: 22, D3: 35) ve `olcum/test.csv` (D1: 12, D2: 10, D3: 21). Etiketler kurallar
-  çalıştırılmadan **önce** elle yazıldı. Örnekler gerçekçi ama küçük; sonuçlar kesin başarım değil, bir referans noktası.
+- **Veri özeti (H2-53).** Örnekler gerçek forum mesajı değildir; ödev sahibi tarafından elle yazılıp etiketlendi. Etiketler
+  kurallar çalıştırılmadan **önce** yazıldı. Bütün kümeleri aynı kişi yazdı; bu yüzden "hiç görülmemiş" son küme bile yazarın
+  dil alışkanlıklarını taşır. Örnekler küçük; sonuçlar kesin başarım değil, bir referans noktası.
+
+  | Küme | D1 örnek (VAR / YOK) | D2 örnek (VAR / YOK) | D3 örnek (7 sınıfın her biri) | Medyan uzunluk D1 / D2 / D3 (karakter) |
+  |---|---|---|---|---|
+  | `gelistirme.csv` | 28 (14 / 14) | 22 (10 / 12) | 35 (5) | 38 / 42 / 56 |
+  | `test.csv` | 12 (6 / 6) | 10 (5 / 5) | 21 (3) | 37 / 35 / 53 |
+  | `son_test.csv` | 13 (7 / 6) | 11 (6 / 5) | 14 (2) | 39 / 38 / 57 |
+
+  Kümeler dengelidir; gerçek bir forumda hakaret ve kişisel veri çok daha seyrektir (6.3, yorum).
 - **Etiket tanımları:** D1 VAR = metin bir *kişiyi* aşağılayan ya da ona hakaret eden bir ifade içeriyor (fikre yönelik sert eleştiri
   VAR değildir). D2 VAR = metinde belirli bir kişiye ulaşmayı ya da onu tanımlamayı sağlayan bilgi var (telefon, e-posta, T.C. kimlik
   no, IBAN, açık adres); kurum santrali, ders kodu, sipariş/ürün numarası YOK'tur. D3 = metnin asıl konusu olan ana alan (7 ana kategoriden biri).
@@ -210,30 +253,35 @@ Denetim kurallarının bir olasılık eşiği yok; ama **ciddiyet** (Engeller / 
 
 ### 6.3 Sonuçlar — test kümesi (`python olcum/denetim_olcumu.py`)
 
-| Madde | Yöntem | Kesinlik | Duyarlılık | F1 | Doğruluk |
-|---|---|---|---|---|---|
-| D1 kaba ifade (12 örnek, 6 VAR) | Çoğunluk sınıfı | 0,00 | 0,00 | 0,00 | 0,50 |
-| | Rastgele | 0,50 | 0,83 | 0,62 | 0,50 |
-| | Kural — iyileştirmeden önce | 0,75 | 0,50 | 0,60 | 0,67 |
-| | **Kural — şimdi** | **0,83** | **0,83** | **0,83** | **0,83** |
-| D2 kişisel veri (10 örnek, 5 VAR) | Çoğunluk sınıfı | 0,00 | 0,00 | 0,00 | 0,50 |
-| | Rastgele | 0,57 | 0,80 | 0,67 | 0,60 |
-| | **Kural** (önce ve şimdi aynı) | **0,80** | **0,80** | **0,80** | **0,80** |
+DP / YP / YN / DN: doğru pozitif, yanlış pozitif, yanlış negatif, doğru negatif (ikili karışıklık matrisinin dört hücresi).
+Rastgele satırının sayıları 1000 tohumun ortalaması olduğu için kesirlidir.
+
+| Madde | Yöntem | DP | YP | YN | DN | Kesinlik | Duyarlılık | F1 | Doğruluk |
+|---|---|---|---|---|---|---|---|---|---|
+| D1 kaba ifade (12 örnek, 6 VAR) | Çoğunluk sınıfı | 0 | 0 | 6 | 6 | 0,00 | 0,00 | 0,00 | 0,50 |
+| | Rastgele (beklenen) | 2,9 | 3,0 | 3,1 | 3,0 | 0,49 | 0,49 | 0,48 | 0,49 |
+| | Kural — iyileştirmeden önce | 3 | 1 | 3 | 5 | 0,75 | 0,50 | 0,60 | 0,67 |
+| | **Kural — şimdi** | 5 | 1 | 1 | 5 | **0,83** | **0,83** | **0,83** | **0,83** |
+| D2 kişisel veri (10 örnek, 5 VAR) | Çoğunluk sınıfı | 0 | 0 | 5 | 5 | 0,00 | 0,00 | 0,00 | 0,50 |
+| | Rastgele (beklenen) | 2,5 | 2,5 | 2,5 | 2,5 | 0,50 | 0,49 | 0,48 | 0,50 |
+| | **Kural** (önce ve şimdi aynı) | 4 | 1 | 1 | 4 | **0,80** | **0,80** | **0,80** | **0,80** |
 
 | Madde | Yöntem | Doğruluk | Makro F1 |
 |---|---|---|---|
 | D3 kategori (21 örnek, 7 sınıf) | Çoğunluk sınıfı | 0,14 | 0,04 |
-| | Rastgele | 0,10 | 0,10 |
+| | Rastgele (beklenen) | 0,15 | 0,13 |
 | | Kural — iyileştirmeden önce | 0,81 | 0,83 |
 | | **Kural — şimdi** | **0,86** | **0,87** |
 
 Geliştirme kümesinde (iyimser, çünkü iyileştirmeler bu kümeye bakılarak yapıldı): D1 F1 0,74 → 0,79; D2 F1 0,82 → 0,95;
 D3 doğruluk 0,86 → 0,89.
 
-**Yorum.** Küçük ve dengeli (yarısı VAR) örneklerde rastgele tahminin F1'i yüksek görünür, çünkü duyarlılığı yüksektir.
-Gerçek forumda mesajların çok büyük kısmı temizdir (dengesiz sınıf, H2-27); orada rastgelenin kesinliği sınıfın oranına
-(ör. %2) düşer ve "hep temiz" temel çizgisi %98 doğruluk alır ama tek hakareti yakalamaz. Bu yüzden doğruluk değil, kesinlik
-ve duyarlılık raporlanır.
+**Yorum.** Dengeli (yarısı VAR) bir kümede rastgele tahminin beklenen kesinliği VAR oranına (~0,5), beklenen duyarlılığı 0,5'e
+eşittir; F1'i ≈ 0,48–0,50. (Bu belgenin önceki sürümü tek bir tohumla çekilmiş rastgele tahmini gösteriyordu ve 10–20 örnekte
+F1 0,62–0,73 çıkmıştı; bu şanstı, beklenen değer değildi.) Gerçek forumda mesajların çok büyük kısmı temizdir (dengesiz sınıf,
+H2-27): VAR oranı %2 ise rastgelenin kesinliği 0,02'ye, F1'i ≈ 0,04'e düşer; "hep temiz" temel çizgisi %98 doğruluk alır ama
+tek hakareti yakalamaz. Bu yüzden doğruluk değil, kesinlik ve duyarlılık raporlanır. `testler/test_olcum.py`, kuralın her
+kümede iki temel çizgiyi de en az +0,10 F1 farkla geçtiğini denetler.
 
 ### 6.4 Hata analizi (H2-56) ve ondan çıkan iyileştirmeler
 
@@ -260,7 +308,7 @@ Bilerek düzeltilmeyen hatalar (kuralın sınırı; düzeltmek ezberlemek olurdu
 | Örnek | Neden | Ne yapılmalı |
 |---|---|---|
 | "Cahiliye dönemi şiiri…", "Aptallar Gemisi adlı kitap…", "Ahmak ıslatan yağmur" → yanlış engel | Kök, masum bir kelimenin ya da deyimin içinde | Ciddiyet UYARI'ya çekilebilir; uzun vadede bağlamı anlayan model (H2-9: veri toplandıkça) |
-| "s.a.l.a.k", "öküz", "kafasız", "mal mısın" → kaçtı | Gizleme ve listede olmayan argo | Topluluğun gizleme oylamaları etiket olarak birikir; liste yönetmelik gibi güncellenebilir |
+| "s.a.l.a.k", "öküz", "kafasız", "mal mısın" → kaçtı | Gizleme ve listede olmayan argo | Topluluğun gizleme oylamaları etiket olarak birikir. Liste bugün kodda sabit (`denetim.KABA_IFADELER`); yönetmelik verisine taşınırsa oylamayla güncellenebilir (8.4) |
 | "Ev adresim Bağdat Caddesi No: 12…" → kaçtı | Adres serbest biçimli | NER modeli adayı; bugün şikayet + gizleme |
 | "Ürün kodu 11111111110" → yanlış engel | 11 haneli rastgele bir sayı %1 olasılıkla T.C. kimlik sağlamasını tutar | Kabul edilen bedel (YN çok daha pahalı) |
 | "Öğrencilere burs başvurusu…" → Eğitim | "öğrenci" kelimesi Eğitim'in iki kavramına (ogren, ogrenci) birden uyuyor | Ontoloji verisinde kavram tekrarı temizlenmeli |
@@ -272,11 +320,38 @@ Bilerek düzeltilmeyen hatalar (kuralın sınırı; düzeltmek ezberlemek olurdu
 örnek) yazıldı ve **ölçülmeden önce commit edildi** (`dfa996e`). Sıralama bu kez git geçmişinden doğrulanabilir. Sonra
 bir kez ölçüldü (`python olcum/denetim_olcumu.py`):
 
-| Madde | Öncelikli metrik | Test kümesi (iyimser) | **Son küme** | Çoğunluk sınıfı | Yayın ölçütü (11. bölüm) |
-|---|---|---|---|---|---|
-| D1 kaba ifade | kesinlik / F1 | 0,83 / 0,83 | **0,71 / 0,71** | 0 / 0 | ✗ sağlanmadı |
-| D2 kişisel veri | duyarlılık (kesinlik) | 0,80 (0,80) | **0,83 (1,00)** | 0 | ✓ |
-| D3 kategori | makro F1 (doğruluk) | 0,87 (0,86) | **0,49 (0,50)** | 0,04 (0,14) | ✗ sağlanmadı |
+| Madde | Örnek (VAR) | Öncelikli metrik | Test kümesi (iyimser) | **Son küme** | DP / YP / YN / DN (son küme) | Çoğunluk sınıfı | Rastgele (beklenen) | Yayın ölçütü (11. bölüm) |
+|---|---|---|---|---|---|---|---|---|
+| D1 kaba ifade | 13 (7) | kesinlik / F1 | 0,83 / 0,83 | **0,71 / 0,71** | 5 / 2 / 2 / 4 | 0 / 0 | 0,53 / 0,50 | ✗ sağlanmadı |
+| D2 kişisel veri | 11 (6) | duyarlılık (kesinlik) | 0,80 (0,80) | **0,83 (1,00)** | 5 / 0 / 1 / 5 | 0 | 0,49 | ✓ |
+| D3 kategori | 14 (7 × 2) | makro F1 (doğruluk) | 0,87 (0,86) | **0,49 (0,50)** | aşağıda | 0,04 (0,14) | 0,13 (0,14) | ✗ sağlanmadı |
+
+D1'de 0,83'ten 0,71'e düşüş, 13 örnekte bir yanlış engel ve bir kaçak farkıdır; küçük kümede tek örnek sonucu belirgin
+değiştirir. Bu yüzden ölçüt yalnızca tek bir sayıya değil, hata örneklerine de bakılarak yorumlandı.
+
+**D3 sınıf bazında ve karışıklık matrisi (son küme; satır gerçek sınıf, sütun kuralın tahmini, · = 0).**
+
+| Sınıf | Kesinlik | Duyarlılık | F1 | Bil | Eko | Eğt | Kül | Sağ | Siy | Tek | eşleşme yok |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Bilim | 0,00 | 0,00 | 0,00 | · | · | 1 | · | · | · | · | 1 |
+| Ekonomi | 1,00 | 0,50 | 0,67 | · | 1 | 1 | · | · | · | · | · |
+| Eğitim | 0,29 | 1,00 | 0,44 | · | · | 2 | · | · | · | · | · |
+| Kültür ve Sanat | 1,00 | 0,50 | 0,67 | · | · | 1 | 1 | · | · | · | · |
+| Sağlık | 1,00 | 0,50 | 0,67 | · | · | 1 | · | 1 | · | · | · |
+| Siyaset | 1,00 | 1,00 | 1,00 | · | · | · | · | · | 2 | · | · |
+| Teknoloji | 0,00 | 0,00 | 0,00 | 1 | · | 1 | · | · | · | · | · |
+
+Eğitim sütunu yedi hatanın beşini topluyor: Eğitim'in kesinliği 0,29'a düşüyor, Bilim ve Teknoloji hiç doğru bulunamıyor.
+
+**Hata örnekleri (H2-56).**
+
+| Madde | Örnek | Beklenen → kural | Neden |
+|---|---|---|---|
+| D1 | "Aptal telefonlar dönemine dönmek ister misiniz?" | YOK → VAR (yanlış engel) | Kelime bir kişiyi değil bir nesneyi niteliyor; liste bağlamı bilmiyor |
+| D1 | "Kafana taş mı düştü, ne biçim öneri bu?" | VAR → YOK (kaçtı) | Deyimsel hakaret; listede tek bir kelimesi yok |
+| D2 | "Moda Caddesi No 15 Daire 7 Kadıköy'de oturuyorum." | VAR → YOK (kaçtı) | Adres serbest biçimli; desenle yakalanmıyor |
+| D3 | "Yurtlarda grip aşısı kampanyası yapılsın." | Sağlık → Eğitim | Yalnızca "yurt" (Kampüs Yaşamı) eşleşti; "grip", "aşı" Sağlık kavramlarında yok |
+| D3 | "Laboratuvar bilgisayarlarına Linux kurulsun." | Teknoloji → Bilim | "laboratuvar" (Bilim) ve "bilgisayar" (Teknoloji) birer kavramla berabere; eşitliği kategori sırası bozdu |
 
 **Yorum.**
 - **D3:** Önceki ölçümler, ontolojiyi bilen aynı kişinin yazdığı örneklerle yapılmıştı. Gerçek başarım belirgin biçimde daha
@@ -290,12 +365,16 @@ bir kez ölçüldü (`python olcum/denetim_olcumu.py`):
 **Karar (ölçütler önceden yazıldığı için, H2-43).**
 1. D3 yalnızca **uyarı** verir, konuyu engellemez; önerdiği kategori konu sahibine bir öneri olarak gösterilir. Düşük başarım
    kullanıcıyı durdurmaz, bu yüzden yayın engeli sayılmadı. Ama "otomatik kategori" gibi bir kullanıma açılmamalıdır.
-2. D1 **engeller**; %29 yanlış engel, 5.3'teki maliyet tartışmasına göre (yanlış engel pahalı) kabul edilemez. Yönetmelikte D1'in
-   ciddiyetini "Uyarır"a çekmek bir yönetmelik oylamasıdır (H2-29: eşik bir iş kararıdır). Uygulama bunu kod değiştirmeden destekler.
-   Topluluğa öneri olarak sunulur.
+2. D1 **engelliyordu**; %29 yanlış engel, 5.3'teki maliyet hesabına göre (yanlış engel pahalı; engelleyen kural "hep temiz"den
+   pahalı çıkıyor) kabul edilemez. Ölçüt önceden yazıldığı için hedef kaydırılmadı, sonuç uygulandı: **yeni kurulumlarda D1'in
+   varsayılan ciddiyeti "Uyarır" yapıldı** (commit `1bdb6da`). Hakaret içeren metin artık yayımlanır ama yazana uyarı gösterilir;
+   kaçanı topluluk şikayet ve gizleme oylamasıyla düzeltir. Bu, S01-32'deki "emekle" aşamasıdır: sistem işaretler, karar insanın.
+   Topluluk isterse yönetmelik oylamasıyla "Engeller"e geri çekebilir (H2-29: eşik bir iş kararıdır); kod değişmez. Kişisel veri
+   (D2) engellemeye devam eder.
 3. Her iki madde için de H2-9 karar ağacındaki sonraki adım aynıdır: **önce veri toplayın.** Topluluğun gizleme oylamaları ve
-   şikayetleri etiket olarak birikir. Birkaç yüz örnekte basit bir model (TF-IDF + lojistik regresyon) bugünkü kurala karşı aynı
-   son kümede ölçülür (11. bölümdeki değiştirme ölçütü).
+   şikayetleri etiket olarak birikir. Birkaç yüz örnekte basit bir model (TF-IDF + lojistik regresyon) bugünkü kurala karşı,
+   ikisi de dondurulduktan sonra yazılmış yeni ve hiç görülmemiş bir kümede ölçülür (11. bölümdeki değiştirme ölçütü). Bu son
+   küme artık bir kez görüldüğü için o karşılaştırmada kullanılmaz.
 
 ---
 
@@ -376,7 +455,7 @@ Düzeltmeden önce aynı ölçüm (1.000 kopya, 10 istek) p50 77 ms, en kötü 1
 ### 8.3 Sürdürülebilirlik (maintainability)
 
 - Tasarım desenleri ve SOLID eşlemesi: `docs/tasarim.md` 8. bölüm (her desen dosya adıyla).
-- 181 otomatik test (~7 sn); ölçüm betikleri; her düzeltmenin önce hatayı üreten testi (`testler/test_duzeltmeler.py`).
+- 196 otomatik test (~12 sn); ölçüm betikleri; her düzeltmenin önce hatayı üreten testi (`testler/test_duzeltmeler.py`).
 - Bağımlılık sürümleri sabit; gizli anahtar kodda değil; ayarlar ortam değişkeniyle (README).
 
 ### 8.4 Uyarlanabilirlik (adaptability) — "hizmeti kesmeden uyum"
@@ -385,6 +464,7 @@ Düzeltmeden önce aynı ölçüm (1.000 kopya, 10 istek) p50 77 ms, en kötü 1
 |---|---|
 | Eşik, süre, ağırlık, yeter sayı | Hayır: yönetmelik oylamasıyla (parametreler veritabanında, anlamlı aralıklarla sınırlı) |
 | Denetim maddesinin sertliği (Engeller / Uyarır / Kapalı) | Hayır: oylamayla |
+| D1 hakaret kelime listesi | **Evet:** bugün kod sabiti (`denetim.KABA_IFADELER`). Yönetmelik verisine taşınırsa oylamayla güncellenebilir (önerilen sonraki adım) |
 | Yeni kategori ve kavramları | Hayır: üyeler önerir, oylar; D3 yeni kavramları hemen kullanır |
 | Yeni oylama türü | Bir sınıf (`teklif_turleri.py`'de `@kaydet`) + `ayarlar.TEKLIF_TIPLERI`'nde bir yapılandırma satırı (ad, eşik, süre); mevcut kod değişmez (OCP) |
 | Yeni denetim maddesi | Bir halka sınıfı (`denetim.py`) + madde metni |
@@ -410,37 +490,41 @@ Düzeltmeden önce aynı ölçüm (1.000 kopya, 10 istek) p50 77 ms, en kötü 1
 
 ## 10. Ön-otopsi (pre-mortem, H2-47): "Altı ay sonra Agora başarısız oldu. Neden?"
 
-O = olasılık, E = etki (Y yüksek, O orta, D düşük).
+O = olasılık, E = etki (Y yüksek = 3, O orta = 2, D düşük = 1). Risk = O × E; tablo riske göre sıralı (H2-47: önce en büyük risk).
 
-| # | Neden | O | E | Önlem | Durum |
-|---|---|---|---|---|---|
-| A | Bir grup oy devriyle gücü topladı | O | Y | Devir tavanı (MAX_DEVIR), döngü yasağı, koruyucu metrik Gini | Uygulandı, ölçülüyor |
-| B | Sahte hesaplarla oylama ele geçirildi (Sybil) | O | Y | Bir adresten saatte en fazla 20 kayıt; yaş/konum kuralı | **Kısmi**: kimlik doğrulama yok. Gerçek kullanımda okul e-postası/e-Devlet doğrulaması gerekir |
-| C | Kimse oy vermedi, turlar sonuçsuz kaldı | Y | Y | Bildirimler, oy devri, yeter sayı ayarı; metrik: yeter sayıya ulaşamayan tur oranı | Uygulandı, ölçülüyor |
-| D | Denetim meşru mesajları engelledi, üyeler küstü | O | O | Ölçüm (6. bölüm), ciddiyet oylamayla UYARI'ya çekilebilir | Uygulandı; yanlış engel örnekleri belgelendi |
-| E | YZ özeti yanlış sayı yazdı, karar etkilendi | D | Y | Kural tabanlı özet, sayılar veritabanından, kesme ile yuvarlama | Uygulandı, testli |
-| F | Defter büyüdü, site yavaşladı | Y | O | Doğrulama önbelleği | **Bulundu ve düzeltildi** (8.2) |
-| G | Yedek dosyası sızdı (gizli oylar + kişisel veri) | D | Y | Yedeği yalnızca yönetici indirir | **Açık risk**: yedek şifrelenmiyor |
-| H | Tek fikir + çok çekimser oyla zayıf bir fikir "tek kalan" olarak karar oldu | O | O | Ödev şartnamesindeki kural; yeter sayı ve itiraz konusu dengeler | Bilerek korundu; izlenecek metrik: tek kalanla kabul edilen kararların oranı |
-| I | Forum demo şifreleriyle yayına alındı | O | Y | Ağa açılırken uyarı; `--demo-verisiz` | Uygulandı |
-| J | Çok uzun bir gerekçeyle sunucu saniyelerce kilitlendi (hizmet reddi) | O | O | Desenler kelime/rakam sınırında başlar; serbest metinlere 5.000 karakter sınırı | **Bulundu ve düzeltildi** (ikinci inceleme turu) |
+| # | Neden | O | E | Risk | Önlem | Durum |
+|---|---|---|---|---|---|---|
+| C | Kimse oy vermedi, turlar sonuçsuz kaldı | Y | Y | **9** | Bildirimler, oy devri, yeter sayı ayarı; metrik: yeter sayıya ulaşamayan tur oranı | Uygulandı, ölçülüyor |
+| A | Bir grup oy devriyle gücü topladı | O | Y | 6 | Devir tavanı (MAX_DEVIR), döngü yasağı, koruyucu metrik Gini | Uygulandı, ölçülüyor |
+| B | Sahte hesaplarla oylama ele geçirildi (Sybil) | O | Y | 6 | Bir adresten saatte en fazla 20 kayıt; yaş/konum kuralı | **Kısmi**: hesaplar şifreyle korunuyor ama kişinin gerçek kimliği teyit edilmiyor. Gerçek kullanımda okul e-postası ya da e-Devlet ile kimlik teyidi gerekir |
+| F | Defter büyüdü, site yavaşladı | Y | O | 6 | Doğrulama önbelleği | **Bulundu ve düzeltildi** (8.2) |
+| I | Forum demo şifreleriyle yayına alındı | O | Y | 6 | Ağa açılırken uyarı; `--demo-verisiz` | Uygulandı |
+| D | Denetim meşru mesajları engelledi, üyeler küstü | O | O | 4 | Ölçüm (6. bölüm); ciddiyet oylamayla değiştirilebilir | **Gerçekleşti ve önlendi:** görülmemiş kümede D1'in yanlış engel oranı %29 çıktı; varsayılanı "Uyarır" yapıldı (6.5) |
+| H | Tek fikir + çok çekimser oyla zayıf bir fikir "tek kalan" olarak karar oldu | O | O | 4 | Ödev şartnamesindeki kural; yeter sayı ve itiraz konusu dengeler | Bilerek korundu; izlenecek metrik: tek kalanla kabul edilen kararların oranı |
+| J | Çok uzun bir gerekçeyle sunucu saniyelerce kilitlendi (hizmet reddi) | O | O | 4 | Desenler kelime/rakam sınırında başlar; serbest metinlere 5.000 karakter sınırı | **Bulundu ve düzeltildi** (ikinci inceleme turu) |
+| E | YZ özeti yanlış sayı yazdı, karar etkilendi | D | Y | 3 | Kural tabanlı özet, sayılar veritabanından, kesme ile yuvarlama | Uygulandı, testli |
+| G | Yedek dosyası sızdı (gizli oylar + kişisel veri) | D | Y | 3 | Yedeği yalnızca yönetici indirir | **Açık risk**: yedek şifrelenmiyor |
 
 ---
 
 ## 11. Başarı tanımı ve yayın ölçütü (H2-43: "önceden yazılmalı")
 
-Agora şu koşullarda yayına alınır; biri bozulursa yayın durur:
+Agora şu koşullarda yayına alınır. Biri bozulursa yayın durur ya da ölçütü bozan özellik engelleyici olarak yayına alınmaz
+(6.5'te D1 için yapıldığı gibi). Ders demosu ve GitHub Pages sürümü "yayın" değil, prototiptir; gerçek bir topluluğa açılmadan
+önce ayrıca 10. bölümdeki açık riskler (B kimlik teyidi, G yedek şifreleme) kapatılmalıdır.
 
 1. Bütün otomatik testler geçer (`python -m unittest discover testler`).
 2. Denetim, test kümesinde (5.3'teki öncelikli metriklerle): D1 kesinlik ≥ 0,80 ve F1 ≥ 0,80, D2 duyarlılık ≥ 0,80,
    D3 makro F1 ≥ 0,85 — ve her biri temel çizgileri geçer (`testler/test_olcum.py` bu eşikleri her çalıştırmada denetler).
-   **Durum:** test kümesinde sağlanıyor. Görülmemiş son kümede (6.5) yalnızca D2 sağlanıyor; D1 ve D3 için karar 6.5'te.
+   **Durum:** test kümesinde sağlanıyor. Görülmemiş son kümede (6.5) yalnızca D2 sağlandı. Karar: D1'in varsayılanı "Uyarır"
+   yapıldı (uygulandı); D3 zaten yalnızca uyarır ve otomatik kategori seçiminde kullanılmaz.
 3. Sunucu tarafı p95 < 200 ms: demo verisinde (`gecikme_olcumu.py 60`), 1.000 konuda (`--konu 1000`) ve 50.000 bloklu defterde
    (`--defter-blok 50000`).
 4. Defter–veritabanı tutarsızlığı 0.
 
-**Bir kuralı modelle değiştirme ölçütü:** model, *aynı test kümesinde* kuralı en az +0,10 F1 farkla geçmeli, p95 < 200 ms'yi
-korumalı ve mesaj metnini dışarı göndermemeli. Aksi hâlde H2-37'deki "Senaryo B": birkaç puan için GPU, izleme ve yeniden eğitim
+**Bir kuralı modelle değiştirme ölçütü:** model ve kural, ikisi de dondurulduktan sonra yazılmış, *hiç görülmemiş aynı kümede*
+ölçülür (6.5'teki yöntem); model kuralı en az +0,10 F1 farkla geçmeli, p95 < 200 ms'yi korumalı ve mesaj metnini dışarı
+göndermemeli. Aksi hâlde H2-37'deki "Senaryo B": birkaç puan için GPU, izleme ve yeniden eğitim
 maliyeti değmez.
 
 ---
@@ -453,5 +537,5 @@ maliyeti değmez.
 | ML tabanlı denetim | Etiketli veri yok | Gizleme oylaması/şikayet verisi birkaç yüz örneğe ulaşınca; bugünkü kural temel çizgi olur |
 | Çok süreçli dağıtım | SQLite tek yazar; defter yazmaları süreçler arası kilitle doğru ama önbellek kazancı azalır | Saniyede ~100 yazmayı aşan kullanımda |
 | Yedeğin şifrelenmesi | Kapsam | Gerçek kullanıma geçmeden önce |
-| Kimlik doğrulama (Sybil'e karşı) | Ödev kapsamı dışı | Gerçek kullanıma geçmeden önce |
+| Kimlik teyidi (Sybil'e karşı; okul e-postası ya da e-Devlet) | Ödev kapsamı dışı | Gerçek kullanıma geçmeden önce |
 | Göç kodundaki eski sütunlar | Eski veritabanlarıyla uyum | Bütün kurulumlar yeni şemaya geçince |
