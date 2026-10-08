@@ -728,3 +728,23 @@ a.stat:hover { border-color: var(--y300); text-decoration: none; }
   border-radius: 12px; padding: 12px 14px; color: var(--g900); }
 .oneri-karti:hover { text-decoration: none; border-color: var(--y400); }
 .oneri-git { font-weight: 750; color: var(--y700); font-size: .85rem; margin-top: auto; }
+
+/* Yönetim bölümü: kendi üst çubuğu, ayrı giriş sayfası; sayfa altı bağlantıları */
+/* Temadan bağımsız sabit renkler: koyu kaktüs yeşili zemin, taş beyazı yazı */
+.ust-yonetim { background: #3a5234; border-bottom-color: transparent; }
+.ust-yonetim .marka, .ust-yonetim .yonetici-kim { color: #f6f4ef; }
+.ust-yonetim .yonetici-kim .ik { color: #c5d6bd; }
+.ust-yonetim .dugme.ince { background: transparent; color: #f6f4ef; border-color: rgb(246 244 239 / 45%); }
+.ust-yonetim .dugme:not(.ince) { background: #f6f4ef; color: #2a3c25; }
+.ust-yonetim .hesap { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.ust-yonetim form { margin: 0; }
+.marka-ek { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .75; margin-left: 4px; }
+.yonetici-giris { max-width: 440px; margin: 32px auto; }
+.alt-bilgi { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--cizgi); text-align: center; font-size: .85rem; color: var(--soluk); }
+.alt-bilgi a { color: var(--soluk); }
+.alt-bilgi .ik { width: 14px; height: 14px; vertical-align: -2px; }
+@media (max-width: 680px) {
+  .ust-yonetim .ust-ic { flex-wrap: nowrap; padding-bottom: 8px; gap: 8px; }
+  .ust-yonetim .marka span, .ust-yonetim .dugme { white-space: nowrap; }
+  .ust-yonetim .yonetici-kim { display: none; }
+}

@@ -1,31 +1,65 @@
-"""Yönetim paneli (/yonetim). Yalnızca yöneticiler görür.
+"""Yönetim paneli (/yonetim). Yalnızca yöneticiler görür; üye girişinden ayrı, kendi giriş sayfası (/yonetim/giris)
+ve oturumu vardır.
 
 Yönetici yalnızca siteyi yönetir: yetki, askı, kategoriler, şikayet kutusu, duyurular, site ayarları, yedek.
 Kararları etkileyemez: uzman atayamaz, oylama sonuçlandıramaz, süre değiştiremez. Tek istisna sunum içindir:
 sunucu --demo ile başlatılırsa "süreyi ilerlet" düğmeleri görünür (her kullanımı günlüğe yazılır).
 """
-from flask import Blueprint, Response, current_app, flash, g, redirect, render_template, request, url_for
+from flask import Blueprint, Response, current_app, flash, g, redirect, render_template, request, session, url_for
 
 from .. import (ayarlar, defter, gorevler, gunluk, kullanicilar, ontoloji, oylama, sikayetler, uzmanlik, yonetim,
                zaman)
 from ..hatalar import KuralHatasi
 from ..metin import site_ici_yol_mu
-from . import db_al, sayfa_no, yonetici_gerekli
+from . import YONETICI_OTURUMU, db_al, oturumu_kapat, sayfa_no, yonetici_gerekli
 from .yardimcilar import sayfala
 
 bp = Blueprint("yonetim", __name__, url_prefix="/yonetim")
 
 
 @bp.before_request
-@yonetici_gerekli
 def _yalniz_yonetici():
-    return None
+    if request.endpoint in ("yonetim.giris", "yonetim.cikis"):
+        return None
+    return yonetici_gerekli(lambda: None)()
 
 
 def _geri(varsayilan):
     hedef = request.form.get("geri") or ""
     # `geri` uygulama içi yoldur (request.full_path); alt yolda çalışırken önek eklenir (bkz. hesap._guvenli_adres)
     return redirect(request.script_root + hedef if hedef.startswith("/yonetim") and site_ici_yol_mu(hedef) else varsayilan)
+
+
+# --- Giriş ve çıkış ---
+
+@bp.route("/giris", methods=["GET", "POST"])
+def giris():
+    sonra = request.values.get("sonra") or ""
+    if g.kullanici is not None:
+        return redirect(url_for("yonetim.pano"))
+    if request.method == "POST":
+        db = db_al()
+        try:
+            k = kullanicilar.giris(db, request.form.get("takma_ad"), request.form.get("sifre"), request.remote_addr or "")
+            if not k["yonetici_mi"]:
+                raise KuralHatasi("Bu hesap yönetici değil. Forumu kullanmak için üye girişini kullan.")
+        except KuralHatasi as e:
+            flash(str(e), "hata")
+            return render_template("yonetim/giris.html", sonra=sonra, takma_ad=request.form.get("takma_ad", ""))
+        db.commit()
+        oturumu_kapat(YONETICI_OTURUMU)
+        session["yonetici_id"], session["yonetici_surum"] = k["id"], k["oturum_surumu"]
+        flash(f"Yönetim paneline hoş geldin, @{k['takma_ad']}.", "basari")
+        hedef = request.script_root + sonra if sonra.startswith("/yonetim") and site_ici_yol_mu(sonra) else url_for("yonetim.pano")
+        return redirect(hedef)
+    return render_template("yonetim/giris.html", sonra=sonra, takma_ad="")
+
+
+@bp.post("/cikis")
+def cikis():
+    oturumu_kapat(YONETICI_OTURUMU)
+    flash("Yönetim panelinden çıktın.", "bilgi")
+    return redirect(url_for("yonetim.giris"))
 
 
 # --- Pano ---

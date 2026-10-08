@@ -5,7 +5,8 @@ filtreleri ve bağlamı) ve alan başına blueprint'ler (hesap, konu_sayfalari, 
 yonetim_sayfalari, api). Bu dosyada yalnızca blueprint'lerin ortak kullandığı küçük yardımcılar vardır.
 
 Kimlik doğrulama iki yoldan olur:
-  * Tarayıcı: imzalı oturum çerezi + her POST'ta CSRF anahtarı.
+  * Tarayıcı: imzalı oturum çerezi + her POST'ta CSRF anahtarı. Yönetim paneli (/yonetim) üye oturumunu değil, ayrı
+    yönetici girişiyle açılan yönetici oturumunu kullanır.
   * Uygulama (API): `Authorization: Bearer <anahtar>` başlığı (CSRF gerekmez, çerez kullanılmaz).
 """
 import secrets
@@ -36,12 +37,28 @@ def giris_gerekli(f):
 
 
 def yonetici_gerekli(f):
+    """Yönetim paneli üye girişinden ayrı bir oturumla açılır (bkz. istek.kimlik). Oturum yoksa yönetici girişine
+    yönlendirilir."""
     @wraps(f)
     def sarici(*args, **kwargs):
-        if g.kullanici is None or not g.kullanici["yonetici_mi"]:
+        if g.kullanici is None:
+            if request.method == "GET":
+                return redirect(url_for("yonetim.giris", sonra=request.full_path.rstrip("?")))
+            abort(403)
+        if not g.kullanici["yonetici_mi"]:
             abort(403)
         return f(*args, **kwargs)
     return sarici
+
+
+UYE_OTURUMU = ("kullanici_id", "surum")
+YONETICI_OTURUMU = ("yonetici_id", "yonetici_surum")
+
+
+def oturumu_kapat(anahtarlar):
+    """Üye ve yönetici oturumları aynı çerezde ama birbirinden bağımsızdır; biri kapanınca öteki sürer."""
+    for anahtar in anahtarlar:
+        session.pop(anahtar, None)
 
 
 def csrf_token():

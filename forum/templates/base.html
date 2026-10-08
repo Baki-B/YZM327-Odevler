@@ -24,11 +24,11 @@
                            ('genel.gunluk_sayfasi', 'Şeffaflık günlüğü'), ('genel.api_belgeleri', 'API')] %}
 {% set bolum = 'oylamalar' if ep.startswith('oylamalar.') else
                ('meclis' if ep in meclis_sayfalari|map('first')|list else
-               ('yonetim' if ep.startswith('yonetim.') else
                ('panel' if ep.startswith('profil.') and ep not in ('profil.kullanici', 'profil.takip_et') else
                ('konular' if (ep.startswith('konular.') and not (ep == 'konular.acilis' and not kullanici)) or ep == 'genel.ara'
-               else '')))) %}
+               else ''))) %}
 <a class="atla" href="#icerik">İçeriğe geç</a>
+{% block ust %}
 <header class="ust">
   <div class="ust-ic">
     <a class="marka" href="{{ url_for('konular.acilis') }}" aria-label="{{ ayarlar.SITE_ADI }} ana sayfa">
@@ -57,7 +57,6 @@
             <a href="{{ url_for('profil.profil') }}">{{ ikon('pano') }} Panelim</a>
             <a href="{{ url_for('profil.bildirim_listesi') }}">{{ ikon('zil') }} Bildirimler{% if okunmamis %} ({{ okunmamis }}){% endif %}</a>
             <a href="{{ url_for('profil.kullanici', takma_ad=kullanici.takma_ad) }}">{{ ikon('kisiler') }} Herkese açık profilim</a>
-            {% if kullanici.yonetici_mi %}<a href="{{ url_for('yonetim.pano') }}">{{ ikon('kalkan') }} Yönetim paneli</a>{% endif %}
             <p class="menu-alt-baslik">Görünüm</p>
             <div class="tema-secici" role="group" aria-label="Görünüm">
               <button type="button" data-tema-sec="otomatik">Otomatik</button>
@@ -74,6 +73,7 @@
     </div>
   </div>
 </header>
+{% endblock %}
 
 <main class="icerik-alani" id="icerik">
   {% set alt_sekmeler = oylama_sayfalari if bolum == 'oylamalar' and ep in oylama_sayfalari|map('first')|list
@@ -89,9 +89,16 @@
     {% for tur, m in mesajlar %}<div class="uyari {{ tur }}" role="status">{{ ikon({'basari': 'tik', 'hata': 'uyari'}.get(tur, 'bilgi')) }}<span>{{ m }}</span></div>{% endfor %}
   {% endwith %}
   {% block icerik %}{% endblock %}
+  {% block alt_bilgi %}
+  <footer class="alt-bilgi">
+    <a href="{{ url_for('genel.hakkinda') }}">Nasıl işler?</a> · <a href="{{ url_for('genel.yonetmelik_sayfasi') }}">Yönetmelik</a> ·
+    <a href="{{ url_for('yonetim.giris') }}">{{ ikon('kalkan') }} Yönetici girişi</a>
+  </footer>
+  {% endblock %}
 </main>
 
 {#- Telefonda ve mobil uygulamada alt sekme çubuğu (masaüstünde gizli) -#}
+{% block alt_cubuk %}
 <nav class="alt-cubuk" aria-label="Hızlı geçiş">
   <a class="{{ 'secili' if bolum == 'konular' }}" href="{{ url_for('konular.ana_sayfa') }}">{{ ikon('sohbet') }}<span>Konular</span></a>
   <a class="{{ 'secili' if bolum == 'oylamalar' }}" href="{{ url_for('oylamalar.gundem') }}">{{ ikon('oy') }}<span>Oylamalar</span>{% if bekleyen_oy %}<b class="sayac">{{ bekleyen_oy }}</b>{% endif %}</a>
@@ -100,11 +107,12 @@
   {% endif %}
   <a class="{{ 'secili' if bolum == 'meclis' }}" href="{{ url_for('genel.hakkinda') }}">{{ ikon('meclis') }}<span>Meclis</span></a>
   {% if kullanici %}
-    <a class="{{ 'secili' if bolum in ('panel', 'yonetim') }}" href="{{ url_for('profil.profil') }}"><img class="avatar" src="{{ avatar(kullanici.takma_ad) }}" alt=""><span>Panelim</span></a>
+    <a class="{{ 'secili' if bolum == 'panel' }}" href="{{ url_for('profil.profil') }}"><img class="avatar" src="{{ avatar(kullanici.takma_ad) }}" alt=""><span>Panelim</span></a>
   {% else %}
     <a href="{{ url_for('hesap.giris') }}">{{ ikon('kilit') }}<span>Giriş</span></a>
   {% endif %}
 </nav>
+{% endblock %}
 {% block ek_son %}{% endblock %}
 </body>
 </html>

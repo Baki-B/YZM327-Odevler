@@ -1,7 +1,7 @@
 """Her isteğin önünden ve arkasından geçtiği adımlar.
 
 Adımlar kayıt sırasıyla çalışır; biri yanıt döndürürse sonrakiler çalışmaz (Chain of Responsibility).
-  1. kimlik       oturum çerezi ya da (yalnızca /api/ altında) Bearer API anahtarı
+  1. kimlik       oturum çerezi (/yonetim altında yönetici oturumu) ya da (yalnızca /api/ altında) Bearer API anahtarı
   2. aski         askıdaki üyenin yazma isteklerini durdurur
   3. csrf         çerezle gelen POST'larda güvenlik anahtarını doğrular
   4. zamanlayici  süresi dolan tartışmaları ve oylama turlarını işler
@@ -12,7 +12,7 @@ import hmac
 from flask import abort, current_app, flash, g, jsonify, redirect, request, session, url_for
 
 from .. import gorevler, guvenlik, kullanicilar, uygunluk, zaman
-from . import db_al
+from . import UYE_OTURUMU, YONETICI_OTURUMU, db_al, oturumu_kapat
 
 CSP = ("default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; "
        "connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; form-action 'self'; "
@@ -35,13 +35,27 @@ def kimlik():
         g.token = True
         if g.kullanici is None:
             return jsonify(hata="Geçersiz API anahtarı."), 401
+    elif request.blueprint == "yonetim":
+        g.kullanici = _yonetici(db)
     elif "kullanici_id" in session:
         k = kullanicilar.getir(db, session["kullanici_id"])
         if k is None or session.get("surum", 0) != k["oturum_surumu"]:   # silinmiş hesap ya da şifre değişti
-            session.clear()
+            oturumu_kapat(UYE_OTURUMU)
         else:
             g.kullanici = kullanicilar.bekleyen_adresi_uygula(db, k)
     return None
+
+
+def _yonetici(db):
+    """Yönetim panelinde kimlik yalnızca yönetici oturumundan gelir; üye olarak giriş yapmış olmak paneli açmaz.
+    Şifre değişirse ya da yetki kaldırılırsa oturum kapanır."""
+    if "yonetici_id" not in session:
+        return None
+    k = kullanicilar.getir(db, session["yonetici_id"])
+    if k is None or not k["yonetici_mi"] or session.get("yonetici_surum", 0) != k["oturum_surumu"]:
+        oturumu_kapat(YONETICI_OTURUMU)
+        return None
+    return k
 
 
 def aski():
@@ -59,7 +73,7 @@ def aski():
 def csrf():
     if _statik() or request.method != "POST" or not current_app.config["CSRF"] or g.token:
         return None
-    if "kullanici_id" not in session and g.api:          # çerezsiz API isteği: CSRF riski yok (kimlik Bearer ile)
+    if "kullanici_id" not in session and "yonetici_id" not in session and g.api:          # çerezsiz API isteği: CSRF riski yok (kimlik Bearer ile)
         return None
     gelen = request.form.get("csrf") or request.headers.get("X-CSRF-Token") or ""
     if not session.get("csrf") or not hmac.compare_digest(gelen, session["csrf"]):

@@ -71,7 +71,7 @@ Android uygulamasının kaynağı `mobil/` klasöründedir (Capacitor); kendi su
 
 | Takma ad | Özellik |
 |---|---|
-| `yonetici` | Yönetici: yönetim paneline girer (yetki verir, askıya alır, şikayetlere bakar) |
+| `yonetici` | Yönetici: sayfa altındaki **Yönetici girişi**'nden yönetim paneline girer (yetki verir, askıya alır, şikayetlere bakar) |
 | `ayse`, `elif` (17 yaş) | İstanbul › Kadıköy |
 | `mehmet` · `burak` | İstanbul › Beşiktaş · İstanbul › Kartal |
 | `zeynep` | Ankara (İstanbul konularında gözlemci) |
@@ -93,7 +93,7 @@ Sunumda beklememek için `python calistir.py --demo` ile başlat; yönetim panel
 6. **"Final sınavları":** Yeter sayı olmadığı için **sonuçsuz**.
 7. `zeynep` ile gir → İstanbul konusunda **gözlemci**; `ayse` ile gir → birkaç mesajı işaretle → **toplu gizleme oylaması** (3/4).
 8. `mehmet` ile **Panelim › Uzmanlık:** ön şart, kontenjan ve sürmekte olan başvuru.
-9. `yonetici` ile **Yönetim paneli:** tabanı dolmuş şikayet; "Süreyi ilerlet" ile bir konuyu tartışmadan oylamaya geçir.
+9. Sayfa altındaki **Yönetici girişi** → `yonetici` ile **Yönetim paneli:** tabanı dolmuş şikayet; "Süreyi ilerlet" ile bir konuyu tartışmadan oylamaya geçir.
 10. **Kayıt defteri:** Yönetim paneli › Sistem › "Bozmayı dene" → kayıt defteri sayfasında düğüm bozuk görünür → "Onar". Makbuz kodunu kayıt defteri sayfasında doğrula.
 
 ## Ödev maddeleri
@@ -153,7 +153,7 @@ Tam karşılık tablosu sitede **Nasıl işler? → Ödev gereksinimleri** böl�
 - **Gündem ve trendler:** Konu akışında vitrin, trend konular ve öne çıkan kelimeler; **Keşfet** sayfasında son 24 saatin sayıları ve canlı akış.
 - **Giriş katmanı:** Ziyaretçi `/` adresinde tanıtım sayfasını görür; giriş yapmış üye doğrudan konu akışına (`/konular`) düşer.
 - **Panelim (`/profil`):** oyunu bekleyen oylamalar, açtığın konular, bildirimler, hesap bilgileri, oy devri, uzmanlık, güvenlik (şifre, kurtarma kodu), uygulama ve API anahtarları.
-- **Yönetim paneli (`/yonetim`, yalnızca yöneticiler):** pano, üyeler (yönetici yapma, askıya alma), şikayetler, konular ve oylamalar (yalnızca izleme), kategoriler, sistem (site duyurusu, yedek) ve günlük. **Yönetici yalnızca siteyi yönetir:** içerik silemez, uzman atayamaz, oylamaların süresine ve sonucuna dokunamaz (tek istisna: sunum kipindeki "Süreyi ilerlet", yalnızca beklemeyi kısaltır). Her işlem şeffaflık günlüğüne yazılır.
+- **Yönetim paneli (`/yonetim`, yalnızca yöneticiler):** üye arayüzünden ayrıdır; kendi giriş sayfası (`/yonetim/giris`, her sayfanın altındaki "Yönetici girişi") ve üye oturumundan bağımsız oturumu vardır. Bölümleri: pano, üyeler (yönetici yapma, askıya alma), şikayetler, konular ve oylamalar (yalnızca izleme), kategoriler, sistem (site duyurusu, yedek) ve günlük. **Yönetici yalnızca siteyi yönetir:** içerik silemez, uzman atayamaz, oylamaların süresine ve sonucuna dokunamaz (tek istisna: sunum kipindeki "Süreyi ilerlet", yalnızca beklemeyi kısaltır). Her işlem şeffaflık günlüğüne yazılır.
 - **Şikayet kutusu:** Aynı içeriği en az 3 farklı üye şikayet ederse yöneticilere ulaşır. Yönetici şikayeti gizleme/kaldırma oylamasına alır ya da yersiz bulup kapatır; karar yine oylamayla verilir (3/4).
 - **Toplu ve anlık bildirim:** Yönetici bütün üyelere, bir il/ilçeye, bir alanın uzmanlarına ya da yöneticilere bildirim gönderir. Anlık bildirim, bildirimleri açmış cihazlara da gider (Panelim › Bildirimler › Bu cihazda aç). Android uygulaması için Firebase ayarı `mobil/BENIOKU.md`'de.
 - **Karanlık tema:** Cihaz koyu moddaysa kendiliğinden açılır; hesap menüsündeki Görünüm'den Otomatik / Açık / Koyu seçilir.

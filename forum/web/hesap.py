@@ -3,7 +3,7 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from .. import kullanicilar, ontoloji
 from ..hatalar import KuralHatasi
 from ..metin import site_ici_yol_mu
-from . import db_al
+from . import UYE_OTURUMU, db_al, oturumu_kapat
 
 bp = Blueprint("hesap", __name__)
 
@@ -20,7 +20,7 @@ def _guvenli_adres(adres):
 
 def _oturum_ac(kullanici):
     """Oturum, hesabın oturum sürümünü de taşır: şifre değişince sürüm artar ve eski çerezler geçersiz olur."""
-    session.clear()
+    oturumu_kapat(UYE_OTURUMU)
     session.permanent = True
     session["kullanici_id"], session["surum"] = kullanici["id"], kullanici["oturum_surumu"]
 
@@ -72,7 +72,7 @@ def giris():
 
 @bp.post("/cikis")
 def cikis():
-    session.clear()
+    oturumu_kapat(UYE_OTURUMU)
     flash("Çıkış yaptın.", "bilgi")
     return redirect(url_for("konular.ana_sayfa"))
 

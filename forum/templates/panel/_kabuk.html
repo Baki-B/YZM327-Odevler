@@ -14,9 +14,6 @@
       <a class="{{ 'secili' if ep == e }}" {{ 'aria-current=page' if ep == e }} href="{{ url_for(e) }}">{{ ikon(ik) }}<span>{{ ad }}</span>
         {% if e == 'profil.bildirim_listesi' and okunmamis %}<span class="sayac">{{ okunmamis }}</span>{% endif %}</a>
     {% endfor %}
-    {% if kullanici.yonetici_mi %}
-      <a class="pm-yonetim" href="{{ url_for('yonetim.pano') }}">{{ ikon('kalkan') }}<span>Yönetim paneli</span></a>
-    {% endif %}
   </nav>
   <div class="panel-icerik">{% block panel %}{% endblock %}</div>
 </div>

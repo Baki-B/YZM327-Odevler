@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{#- Yönetim bölümünün sayfa düzeni: forumun menüsü yerine kendi üst çubuğu. Üye arayüzünden ayrıdır. -#}
+{% block ust %}
+<header class="ust ust-yonetim">
+  <div class="ust-ic">
+    <a class="marka" href="{{ url_for('yonetim.pano') }}" aria-label="Yönetim paneli">
+      <img class="logo" src="{{ url_for('static', filename='ikon.svg') }}" alt="">
+      <span>{{ ayarlar.SITE_ADI }} <small class="marka-ek">Yönetim</small></span>
+    </a>
+    <div class="hesap">
+      <a class="dugme ince kucuk-dugme" href="{{ url_for('konular.ana_sayfa') }}">Siteye dön</a>
+      {% if kullanici %}
+        <span class="soluk kucuk yonetici-kim">{{ ikon('kalkan') }} @{{ kullanici.takma_ad }}</span>
+        <form method="post" action="{{ url_for('yonetim.cikis') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="dugme kucuk-dugme">Çıkış</button></form>
+      {% endif %}
+    </div>
+  </div>
+</header>
+{% endblock %}
+{% block alt_cubuk %}{% endblock %}
+{% block alt_bilgi %}{% endblock %}

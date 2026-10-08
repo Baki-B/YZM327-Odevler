@@ -157,6 +157,11 @@ class WebOrtam(Ortam):
         with self.istemci.session_transaction() as s:
             s["kullanici_id"], s["csrf"] = kisi["id"], "anahtar"
 
+    def yonetici_girisi(self, kisi):
+        self.db.commit()
+        with self.istemci.session_transaction() as s:
+            s["yonetici_id"], s["yonetici_surum"], s["csrf"] = kisi["id"], kisi["oturum_surumu"], "anahtar"
+
     def post(self, adres, **veri):
         return self.istemci.post(adres, data=dict(veri, csrf="anahtar"))
 
@@ -337,7 +342,9 @@ class OturumVeAnahtarlar(WebOrtam):
         self.db.commit()
         basliklar = {"Authorization": f"Bearer {anahtar}"}
         self.assertEqual(self.istemci.get("/api/v1/bildirimler", headers=basliklar).status_code, 200)
-        self.assertEqual(self.istemci.get("/yonetim/yedek", headers=basliklar).status_code, 403)
+        yanit = self.istemci.get("/yonetim/yedek", headers=basliklar)                 # panel yalnızca yönetici girişiyle
+        self.assertEqual(yanit.status_code, 302)
+        self.assertIn("/yonetim/giris", yanit.headers["Location"])
 
     def test_oturumda_sifre_tahmini_sinirli(self):
         for _ in range(5):
@@ -438,7 +445,7 @@ class DefterKorumasi(WebOrtam):
     def test_bozma_denemesi_yalnizca_sunum_kipinde(self):
         y = self.kisi("yonetici")
         self.db.execute("UPDATE kullanicilar SET yonetici_mi = 1 WHERE id = ?", (y["id"],))
-        self.giris(y)
+        self.yonetici_girisi(y)
         self.post("/yonetim/defter/A/boz")
         self.post("/yonetim/defter/B/boz")
         self.assertTrue(defter.durum(self.db.defter_klasoru)["saglikli"])
@@ -1122,8 +1129,11 @@ class AltYoldaBaglantilar(unittest.TestCase):
                 if kisi:
                     with c.session_transaction() as oturum:
                         oturum["kullanici_id"], oturum["surum"], oturum["csrf"] = kisi["id"], kisi["oturum_surumu"], "x"
+                        if kisi["yonetici_mi"]:
+                            oturum["yonetici_id"], oturum["yonetici_surum"] = kisi["id"], kisi["oturum_surumu"]
                 gorulen, kuyruk = set(), deque(["/"])
-                while kuyruk and len(gorulen) < 150:
+                kuyruk.append("/yonetim")
+                while kuyruk and len(gorulen) < 200:
                     a = kuyruk.popleft()
                     if a in gorulen or a.startswith(("/static", "/cikis")) or "indir" in a or "yedek" in a:
                         continue
