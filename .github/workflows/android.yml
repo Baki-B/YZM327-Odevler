@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   apk:
@@ -24,6 +25,12 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+      # Hata ayıklama imza anahtarı derlemeler arasında saklanır: her APK aynı anahtarla imzalanır ve yeni sürüm
+      # telefondaki eskisinin üstüne kurulabilir. (Anahtar yoksa Gradle ilk derlemede üretir, önbellek onu saklar.)
+      - uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-imza-anahtari-v1
       - name: Capacitor projesini hazırla
         working-directory: mobil
         run: |
@@ -44,6 +51,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view android >/dev/null 2>&1 || gh release create android --title "Agora Android" \
-            --notes "Agora'nın Android uygulaması. Telefonda Agora.apk dosyasını indirip aç; bilinmeyen kaynaklardan kuruluma izin vermen istenebilir. Uygulama https://baki-b.github.io/YZM327-Odevler/ adresindeki forumu açar." --latest
+          NOTLAR="Agora'nın Android uygulaması; https://baki-b.github.io/YZM327-Odevler/ adresindeki forumu açar.
+          Telefonda Agora.apk dosyasını indirip aç. Android bilinmeyen kaynaklardan kuruluma izin isteyebilir; Play Protect
+          uyarı verirse Ayrıntılar › Yine de yükle. Aynı dosya sitede de var: https://baki-b.github.io/YZM327-Odevler/Agora.apk"
+          gh release view android >/dev/null 2>&1 || gh release create android --title "Agora Android" --notes "$NOTLAR" --latest
+          gh release edit android --notes "$NOTLAR"
           gh release upload android Agora.apk --clobber
+          # Site APK'nın yeni hâlini de sunsun diye yeniden yayınlanır
+          gh workflow run sayfalar.yml --ref main

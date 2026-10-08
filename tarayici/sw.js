@@ -23,7 +23,7 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin || url.pathname.endsWith(".apk")) return;   // APK önbelleğe alınmaz
   if (url.href.startsWith(UYGULAMA) && !url.href.startsWith(UYGULAMA + "static/")) {
     e.respondWith(uygulamaya(e.request, url));
   } else if (e.request.method === "GET") {

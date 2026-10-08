@@ -30,6 +30,10 @@ jobs:
           python -m unittest discover -s testler
       - name: Siteyi derle
         run: python tarayici/derle.py --cikti _site
+      - name: Android uygulamasını siteye ekle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download android -p Agora.apk -D _site --clobber --repo "$GITHUB_REPOSITORY" || echo "Henüz APK yok"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
