@@ -116,9 +116,15 @@ class OntolojiVeYonetmelik(Ortam):
         self.assertIn("protein", terimler)
         self.assertEqual(ontoloji.metindeki_yerler(self.db, "İstanbul'da gece vapuru"), [self.konum("İstanbul")])
 
-    def test_hakaret_iceren_konu_engellenir(self):
+    def test_hakaret_varsayilanda_uyarir_engel_secilince_engellenir(self):
+        """D1 varsayılan olarak uyarır (docs/analiz.md 6.5: yayın ölçütü sağlanmadı); topluluk "Engeller"e çekebilir."""
+        aciklama = "Bu menüyü savunanlar cahil, yemekhane rezalet durumda."
+        rapor = denetim.denetle(self.db, "Yemekhane menüsü değişsin", aciklama, self.kategori("Sağlık"))
+        self.assertIn("D1", {b["kod"] for b in rapor["uyarilar"]})
+        self.assertFalse(rapor["engel"])
+        yonetmelik.degisikligi_uygula(self.db, {"tur": "DENETIM", "kod": "D1", "yeni": "ENGEL"})
         with self.assertRaises(KuralHatasi):
-            self.konu(self.kisi("ali"), aciklama="Bu menüyü savunanlar cahil, yemekhane rezalet durumda.")
+            self.konu(self.kisi("ali"), aciklama=aciklama)
 
     def test_konum_uyarisi_ve_kategori_onerisi(self):
         rapor = denetim.denetle(self.db, "Ankara'da otobüs seferleri artsın",

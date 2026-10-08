@@ -1,7 +1,7 @@
 """Anlık bildirim (push): her site bildirimi, bildirimleri açmış cihazlara da gönderilir.
 
 İki kanal var, ikisi de isteğe bağlıdır:
-  * WEB: tarayıcı ve ana ekrana eklenen web uygulaması (Web Push, VAPID). `pip install pywebpush` gerekir;
+  * WEB: tarayıcı ve ana ekrana eklenen web uygulaması (Web Push, VAPID). `pip install pywebpush==2.5.0` gerekir;
     anahtarlar ilk kullanımda instance/vapid_ozel.pem dosyasına üretilir. Tarayıcılar bunu yalnızca HTTPS adreslerde
     (ya da bilgisayarın kendisindeki localhost'ta) izin verir.
   * FCM: mobil/ klasöründeki Android uygulaması (Firebase Cloud Messaging). instance/firebase.json dosyasına Firebase
@@ -195,17 +195,9 @@ def _kanal(tur):
 
 # --- Kanalların durumu ---
 
-def web_etkin():
-    return KANALLAR["WEB"].etkin(None)
-
-
 def vapid_acik_anahtar(db):
     kanal = KANALLAR["WEB"]
     return kanal.acik_anahtar(_instance(db)) if kanal.etkin(_instance(db)) else None
-
-
-def fcm_etkin(db):
-    return KANALLAR["FCM"].etkin(_instance(db))
 
 
 def durum(db):

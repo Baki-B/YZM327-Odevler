@@ -84,7 +84,7 @@ class DenetimIstegi:
 class DenetimKurali(ABC):
     """Zincirin bir halkası."""
     kod = ""
-    mesajlara_uygulanir = False            # True: mesaj, fikir ve gerekçelerde de uygulanır (yalnızca ENGEL ise)
+    mesajlara_uygulanir = False            # True: mesaj, fikir ve gerekçelerde de uygulanır (ENGEL ise engeller, UYARI ise uyarır)
 
     def __init__(self, sonraki=None):
         self.sonraki = sonraki
@@ -257,7 +257,17 @@ def mesaj_denetle(db, icerik):
     uygulanır (hakaret, kişisel veri). Gerekçe alanlarının kendi üst sınırı olmadığından uzunluk burada sınırlanır."""
     if len(icerik) > METIN_EN_UZUN:
         raise KuralHatasi(f"Metin en fazla {METIN_EN_UZUN} karakter olabilir.")
-    sorunlar = [s for h in ZINCIR.halkalar() if h.mesajlara_uygulanir and yonetmelik.ciddiyet(db, h.kod) == "ENGEL"
-                for s in [h.mesaj_sorunu(icerik)] if s]
+    sorunlar = _mesaj_sorunlari(db, icerik, "ENGEL")
     if sorunlar:
         raise KuralHatasi(" ".join(sorunlar))
+
+
+def mesaj_uyarilari(db, icerik):
+    """UYARI durumundaki mesaj halkalarının bulguları: mesaj yayımlanır, yazana uyarı gösterilir (emekle aşaması:
+    sistem işaretler, karar yazanın ve topluluğun)."""
+    return _mesaj_sorunlari(db, icerik, "UYARI")
+
+
+def _mesaj_sorunlari(db, icerik, ciddiyet):
+    return [s for h in ZINCIR.halkalar() if h.mesajlara_uygulanir and yonetmelik.ciddiyet(db, h.kod) == ciddiyet
+            for s in [h.mesaj_sorunu(icerik or "")] if s]

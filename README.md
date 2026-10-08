@@ -99,7 +99,7 @@ adımları `mobil/BENIOKU.md` dosyasında.
 oylamayla verilir (3/4), şikayet edene sonuç bildirilir.
 **Toplu bildirim:** yönetici bütün üyelere, bir il/ilçedeki üyelere, bir alanın uzmanlarına ya da yöneticilere bildirim gönderir.
 **Anlık bildirim:** her bildirim, bildirimleri açmış cihazlara da gider (Panelim › Bildirimler › Bu cihazda aç). Tarayıcı için
-`pip install pywebpush` yeter (HTTPS ya da localhost gerekir); Android uygulaması için Firebase ayarı `mobil/BENIOKU.md`'de.
+`pip install pywebpush==2.5.0` yeter (HTTPS ya da localhost gerekir); Android uygulaması için Firebase ayarı `mobil/BENIOKU.md`'de.
 **Karanlık tema:** cihaz koyu moddaysa kendiliğinden açılır; hesap menüsündeki Görünüm'den Otomatik / Açık / Koyu seçilir.
 **Yapay zeka üye:** yalnızca kısa özet yazar (tartışma özeti, tur özeti). Oy kullanmaz; dış servis gerektirmez. Özetler bilinçli
 olarak kural tabanlıdır: her sayı veritabanından gelir (gerekçe: [analiz.md](docs/analiz.md) 3. bölüm, "YZ gerekli mi?").

@@ -13,9 +13,9 @@ from pathlib import Path
 _KLASOR = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [os.path.dirname(_KLASOR), _KLASOR]
 
-from forum import (anlik, ayarlar, defter, denetim, devir, gorevler, gorunum, graf, gundem, guvenlik, kategoriler, konular,  # noqa: E402
-                   kullanicilar, ontoloji, oylama, sonuclar, teklif_turleri, uygunluk, veritabani, yonetim, yonetmelik, yz,
-                   zaman)
+from forum import (anlik, ayarlar, defter, denetim, devir, gorevler, gorunum, graf, gundem, guvenlik, kategoriler,  # noqa: E402
+                   konu_durumlari, konular, kullanicilar, ontoloji, oylama, sonuclar, teklif_turleri, uygunluk, veritabani,
+                   yonetim, yonetmelik, yz, zaman)
 from forum.metin import site_ici_yol_mu  # noqa: E402
 from forum.hatalar import KuralHatasi, tamsayi  # noqa: E402
 from test_forum import Ortam  # noqa: E402
@@ -281,8 +281,7 @@ class YapayZekaOzetleri(Ortam):
         konular.mesaj_yaz(self.db, ali, k, "SORU", "Hangi gün olsun?")
         yz.ozet_iste(self.db, ayse, k)
         konular.konuyu_kaldir(self.db, k, "Oylamayla kaldırıldı.")
-        konular.mesaj_yaz  # kaldırılmış konuya özet yazılmaz
-        with self.assertRaises(KuralHatasi):
+        with self.assertRaises(KuralHatasi):                                  # kaldırılmış konuya özet yazılmaz
             yz.ozet_iste(self.db, ayse, k)
 
 
@@ -590,15 +589,22 @@ class DenetimZinciri(Ortam):
         self.assertIsNone(denetim.AltKonuIliskisi().kontrol(istek))          # üst konu yoksa madde uygulanmaz
 
     def test_kapatilan_madde_mesajlara_uygulanmaz(self):
+        self.db.execute("UPDATE yonetmelik_maddeleri SET ciddiyet = 'ENGEL' WHERE kod = 'D1'")
+        self.db.onbellek.clear()
         with self.assertRaises(KuralHatasi):
             denetim.mesaj_denetle(self.db, "Bunu savunanlar aptal.")
         self.db.execute("UPDATE yonetmelik_maddeleri SET ciddiyet = 'KAPALI' WHERE kod = 'D1'")
         self.db.onbellek.clear()
         denetim.mesaj_denetle(self.db, "Bunu savunanlar aptal.")
+        self.assertEqual(denetim.mesaj_uyarilari(self.db, "Bunu savunanlar aptal."), [])
 
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_uyari_durumundaki_madde_mesaji_engellemez_uyarir(self):
+        """Varsayılan D1 = UYARI: mesaj yayımlanır, yazana uyarı gösterilir; D2 (ENGEL) engellemeye devam eder."""
+        denetim.mesaj_denetle(self.db, "Bunu savunanlar aptal.")
+        self.assertEqual(len(denetim.mesaj_uyarilari(self.db, "Bunu savunanlar aptal.")), 1)
+        self.assertEqual(denetim.mesaj_uyarilari(self.db, "Sebze yemekleri artmalı."), [])
+        with self.assertRaises(KuralHatasi):
+            denetim.mesaj_denetle(self.db, "Numaram 0532 123 45 67, arayın.")
 
 
 class DefterDeposu(unittest.TestCase):
@@ -965,3 +971,100 @@ class DenetimDesenSinirlari(Ortam):
         self.assertEqual(denetim.kisisel_veriler("TR33-0006-1005-1978-6457-8413-26"), ["IBAN"])
         self.assertEqual(denetim.kaba_ifadeler("Asalak bitkiler üzerine bir seminer düzenleyelim."), [])
         self.assertTrue(denetim.kaba_ifadeler("SALAK mısın sen?"))
+
+
+class MesajUyarisi(WebOrtam):
+    """D1 "Uyarır" durumundayken kaba ifadeli mesaj yayımlanır ve yazana uyarı gösterilir."""
+
+    def test_uyari_gosterilir(self):
+        ali = self.kisi("ali")
+        k = self.konu(ali)
+        self.giris(ali)
+        yanit = self.post(f"/konu/{k}/mesaj", tip="ARGUMAN", icerik="Bunu savunanlar aptal.")
+        self.assertEqual(yanit.status_code, 302)
+        self.assertIn("Yönetmelik uyarısı", self.istemci.get(f"/konu/{k}").get_data(as_text=True))
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM mesajlar WHERE konu_id = ? AND icerik LIKE '%aptal%'",
+                                         (k,)).fetchone()[0], 1)
+
+
+class KonuDurumMakinesi(Ortam):
+    """State: geçiş tablosu ve izin matrisi; geçişi yapan işlemler tabloya uyar."""
+
+    def test_gecis_tablosu(self):
+        self.assertEqual(konu_durumlari.onceki_durumlar("OYLAMA"), ["TARTISMA"])
+        self.assertEqual(konu_durumlari.onceki_durumlar("KARARA_BAGLANDI"), ["OYLAMA"])
+        self.assertEqual(konu_durumlari.onceki_durumlar("KALDIRILDI"),
+                         ["KARARA_BAGLANDI", "OYLAMA", "SONUCSUZ", "TARTISMA"])
+        with self.assertRaises(konu_durumlari.GecersizGecis):
+            konu_durumlari.DURUMLAR["TARTISMA"].gecis_dogrula("KARARA_BAGLANDI")
+        with self.assertRaises(konu_durumlari.GecersizGecis):
+            konu_durumlari.KALDIRILDI.gecis_dogrula("KALDIRILDI")
+
+    def test_izin_matrisi(self):
+        beklenen = {   # kod: (yazılabilir, kapalı, okunabilir, zamanlı, konu düzenlenir, fikir düzenlenir)
+            "TARTISMA": (True, False, True, True, True, True),
+            "OYLAMA": (True, False, True, True, False, False),
+            "KARARA_BAGLANDI": (False, True, True, False, False, False),
+            "SONUCSUZ": (False, True, True, False, False, False),
+            "KALDIRILDI": (False, False, False, False, False, False),
+        }
+        for d in [*konu_durumlari.DURUMLAR.values(), konu_durumlari.KALDIRILDI]:
+            self.assertEqual((d.yazilabilir, d.kapali, d.okunabilir, d.zamanli, d.konu_duzenlenebilir(),
+                              d.fikir_duzenlenebilir()), beklenen[d.kod], d.kod)
+        self.assertTrue(konu_durumlari.DURUMLAR["OYLAMA"].fikir_yazilabilir({"tur": 1}))
+        self.assertFalse(konu_durumlari.DURUMLAR["OYLAMA"].fikir_yazilabilir({"tur": 2}))
+
+    def test_islemler_tabloya_uyar(self):
+        ali = self.kisi("ali")
+        k = self.konu(ali)
+        self.assertIsNotNone(konular.oylamayi_baslat(self.db, k))
+        self.assertIsNone(konular.oylamayi_baslat(self.db, k))           # zaten oylamada: ikinci oylama açılmaz
+        with self.assertRaises(konu_durumlari.GecersizGecis):
+            konular.durum_degistir(self.db, k, "TARTISMA")                # geri dönüş tanımlı değil
+        konular.konuyu_kaldir(self.db, k, "Oylamayla kaldırıldı.")
+        self.assertIsNone(konular.oylamayi_baslat(self.db, k))
+        with self.assertRaises(konu_durumlari.GecersizGecis):
+            konular.konuyu_kaldir(self.db, k, "İkinci kez.")
+
+
+class Belirlenimcilik(Ortam):
+    """S02-42 "aynı girdi, farklı çıktı" sorunu kural tabanlı özette yoktur: aynı veriden her seferinde aynı metin."""
+
+    def test_ayni_veri_ayni_ozet(self):
+        self.yz()
+        ali, ayse = self.kisi("ali"), self.kisi("ayse")
+        k = self.konu(ali)
+        f = konular.fikir_yaz(self.db, ali, k, "Haftada bir gün etsiz menü olsun.")
+        konular.mesaj_yaz(self.db, ayse, k, "SORU", "Hangi gün olsun?", f)
+        konular.fikir_yaz(self.db, ayse, k, "Salata barı kurulsun.")
+        for _ in range(3):
+            yz.tartisma_ozeti(self.db, k)
+        ozetler = {r[0] for r in self.db.execute("SELECT icerik FROM mesajlar WHERE konu_id = ? AND tip = 'YZ'", (k,))}
+        self.assertEqual(len(ozetler), 1)
+
+
+class ModulDongusu(unittest.TestCase):
+    """Her modül tek başına (ilk içe aktarılan olarak) yüklenebilir: modül düzeyinde döngüsel bağımlılık yok."""
+
+    def test_her_modul_tek_basina_yuklenir(self):
+        import subprocess
+        betik = ("import importlib, pathlib, sys\n"
+                 "kok = pathlib.Path('forum')\n"
+                 "adlar = ['forum.' + '.'.join(p.with_suffix('').relative_to(kok).parts) for p in sorted(kok.rglob('*.py'))\n"
+                 "         if p.name != '__init__.py']\n"
+                 "hatalar = []\n"
+                 "for ad in adlar:\n"
+                 "    for m in [m for m in sys.modules if m == 'forum' or m.startswith('forum.')]:\n"
+                 "        del sys.modules[m]\n"
+                 "    try:\n"
+                 "        importlib.import_module(ad)\n"
+                 "    except ImportError as e:\n"
+                 "        hatalar.append(f'{ad}: {e}')\n"
+                 "print('\\n'.join(hatalar))\n")
+        sonuc = subprocess.run([sys.executable, "-c", betik], cwd=os.path.dirname(_KLASOR), capture_output=True, text=True)
+        self.assertEqual(sonuc.returncode, 0, sonuc.stderr)
+        self.assertEqual(sonuc.stdout.strip(), "")
+
+
+if __name__ == "__main__":
+    unittest.main()

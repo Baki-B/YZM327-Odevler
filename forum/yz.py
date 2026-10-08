@@ -37,7 +37,8 @@ def tartisma_ozeti(db, konu_id):
     if not ai:
         return False
     mesajlar = db.execute("""SELECT m.*, k.takma_ad FROM mesajlar m LEFT JOIN kullanicilar k ON k.id = m.yazar_id
-                             WHERE m.konu_id = ? AND m.gizli = 0 AND m.tip NOT IN ('SISTEM', 'YZ')""", (konu_id,)).fetchall()
+                             WHERE m.konu_id = ? AND m.gizli = 0 AND m.tip NOT IN ('SISTEM', 'YZ')
+                             ORDER BY m.id""", (konu_id,)).fetchall()
     fikirler = [m for m in mesajlar if m["tip"] == "FIKIR"]
     yazanlar = {m["yazar_id"] for m in mesajlar}
     satirlar = [f"Özet: {len(yazanlar)} kişi {len(mesajlar)} mesaj yazdı; {len(fikirler)} fikir var."]

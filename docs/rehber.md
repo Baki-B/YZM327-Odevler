@@ -926,7 +926,7 @@ sayım ve eşik kuralları tek yerde yazılıdır. Oylama türü değişince sad
 üretilip yalnızca sunucuyu çalıştıran kullanıcının okuyabildiği bir dosyada saklanır), `FORUM_HTTPS=1` (HTTPS arkasında yayınlanıyorsa
 güvenli çerez), `FORUM_ANLIK_ILETISIM` (Web Push iletişim adresi), `FORUM_SIFRE_YONTEMI` (şifre özeti yöntemi; varsayılan scrypt).
 
-**İsteğe bağlı:** `pip install pywebpush` → anlık bildirim.
+**İsteğe bağlı:** `pip install pywebpush==2.5.0` → anlık bildirim.
 
 **Demo hesapları** (hepsinin şifresi `forum1234`):
 | Takma ad | Özelliği |

@@ -25,10 +25,7 @@ from abc import ABC, abstractmethod
 
 from . import ayarlar, bildirimler, kategoriler, konular, ontoloji, sonuclar, uygunluk, uzmanlik, yonetmelik, zaman
 from .hatalar import KuralHatasi
-
-CEKIMSER = "CEKIMSER"
-EVET_HAYIR = ["EVET", "HAYIR", CEKIMSER]
-GIZLENEN_FIKIR = "Bu fikir oylamayla gizlendi."
+from .oy_kurallari import CEKIMSER, EVET_HAYIR, GIZLENEN_FIKIR, esik_saglandi
 
 TURLER = {}
 
@@ -48,14 +45,6 @@ def tur(kod):
         return TURLER[kod]
     except KeyError:
         raise KuralHatasi(f"Bilinmeyen oylama türü: {kod}") from None
-
-
-def esik_saglandi(pay, payda, esik):
-    """Tam sayılarla kesin karşılaştırma (yuvarlama hatası yok)."""
-    if payda <= 0:
-        return False
-    e = ayarlar.ESIKLER[esik]
-    return pay * e["payda"] > e["pay"] * payda if e["kati"] else pay * e["payda"] >= e["pay"] * payda
 
 
 def _veri(t):

@@ -55,11 +55,11 @@ Uygulama kapalıyken de bildirim gelmesi için Firebase Cloud Messaging kullanı
 2. İndirilen `google-services.json` dosyasını `mobil/android/app/` klasörüne koy.
 3. Firebase konsolunda **Proje ayarları › Hizmet hesapları › Yeni özel anahtar oluştur** ile bir JSON dosyası indir,
    adını `firebase.json` yapıp sunucudaki `instance/` klasörüne koy. Bu dosya gizlidir; kimseyle paylaşma.
-4. Sunucuda `pip install pywebpush` çalıştır (imza için gereken kütüphaneyi de kurar), sunucuyu yeniden başlat.
+4. Sunucuda `pip install pywebpush==2.5.0` çalıştır (imza için gereken kütüphaneyi de kurar), sunucuyu yeniden başlat.
 5. Bu klasörde `npm run esitle`, sonra Android Studio'da uygulamayı yeniden derle.
 
 Sonra uygulamada **Panelim › Bildirimler › Bu cihazda aç**. Bildirime dokununca ilgili sayfa açılır.
-Tarayıcıdaki anlık bildirim için Firebase gerekmez; yalnızca `pip install pywebpush` yeter (site HTTPS adreste olmalı).
+Tarayıcıdaki anlık bildirim için Firebase gerekmez; yalnızca `pip install pywebpush==2.5.0` yeter (site HTTPS adreste olmalı).
 
 ## Kalıcı bir sunucuya taşıyınca
 

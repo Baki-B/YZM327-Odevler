@@ -10,6 +10,7 @@ from flask import Blueprint, g, jsonify, request
 
 from .. import (anlik, arama, ayarlar, bildirimler, gundem, kategoriler, defter, graf, guvenlik, kararlar, konular, kullanicilar,
                 ontoloji, oylama, uygunluk, yonetmelik)
+from ..denetim import mesaj_uyarilari
 from . import db_al, giris_gerekli
 
 bp = Blueprint("api", __name__, url_prefix="/api/v1")
@@ -163,7 +164,7 @@ def mesaj_yaz(konu_id):
     mesaj_id = konular.mesaj_yaz(db, g.kullanici, konu_id, v.get("tip", "ARGUMAN"), v.get("icerik"),
                                  v.get("ust_mesaj_id"))
     db.commit()
-    return jsonify(id=mesaj_id), 201
+    return jsonify(id=mesaj_id, uyarilar=mesaj_uyarilari(db, v.get("icerik"))), 201
 
 
 @bp.post("/konular/<int:konu_id>/fikir")
@@ -171,9 +172,10 @@ def mesaj_yaz(konu_id):
 def fikir_yaz(konu_id):
     """Kişi başı bir fikir: tartışma ve 1. tur boyunca yazılabilir."""
     db = db_al()
-    mesaj_id = konular.fikir_yaz(db, g.kullanici, konu_id, _veri().get("icerik"))
+    icerik = _veri().get("icerik")
+    mesaj_id = konular.fikir_yaz(db, g.kullanici, konu_id, icerik)
     db.commit()
-    return jsonify(id=mesaj_id), 201
+    return jsonify(id=mesaj_id, uyarilar=mesaj_uyarilari(db, icerik)), 201
 
 
 @bp.get("/oylamalar")

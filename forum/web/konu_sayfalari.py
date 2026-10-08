@@ -2,8 +2,8 @@ import json
 
 from flask import Blueprint, flash, g, redirect, render_template, request, url_for
 
-from .. import (ayarlar, gorunum, gundem, kategoriler, konular, ontoloji, oylama, sikayetler, uygunluk, yonetmelik,
-                yz)
+from .. import (ayarlar, denetim, gorunum, gundem, kategoriler, konular, ontoloji, oylama, sikayetler, uygunluk,
+                yonetmelik, yz)
 from ..hatalar import KuralHatasi
 from ..konu_durumlari import durumu
 from . import db_al, giris_gerekli, sayfa_no
@@ -180,6 +180,7 @@ def fikir_yaz(konu_id):
     mesaj_id = konular.fikir_yaz(db, g.kullanici, konu_id, request.form.get("icerik"))
     db.commit()
     flash("Fikrin eklendi. Oylamada seçenek olarak yer alacak.", "basari")
+    _uyarilari_goster(db, request.form.get("icerik"))
     return redirect(url_for("konular.konu", konu_id=konu_id, _anchor=f"m{mesaj_id}"))
 
 
@@ -190,7 +191,13 @@ def mesaj_yaz(konu_id):
     f = request.form
     mesaj_id = konular.mesaj_yaz(db, g.kullanici, konu_id, f.get("tip"), f.get("icerik"), f.get("ust_mesaj_id"))
     db.commit()
+    _uyarilari_goster(db, f.get("icerik"))
     return redirect(url_for("konular.konu", konu_id=konu_id, _anchor=f"m{mesaj_id}"))
+
+
+def _uyarilari_goster(db, icerik):
+    for sorun in denetim.mesaj_uyarilari(db, icerik):
+        flash(f"Yönetmelik uyarısı: {sorun} Mesaj yayımlandı; gerekirse düzenleyebilirsin.", "uyari")
 
 
 @bp.route("/mesaj/<int:mesaj_id>/duzenle", methods=["GET", "POST"])

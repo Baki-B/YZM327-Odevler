@@ -172,10 +172,6 @@ def yz_ekle(db, yonetici, takma_ad):
     return kullanici_id
 
 
-def tum_kullanicilar(db):
-    return db.execute("SELECT * FROM kullanicilar ORDER BY yz_mi, takma_ad").fetchall()
-
-
 def acik_oylari(db, kullanici_id):
     """Uzman oyları (ağırlıklı oylar), oylama bittikten sonra herkese açıktır."""
     return db.execute(

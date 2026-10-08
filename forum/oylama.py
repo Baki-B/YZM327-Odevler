@@ -21,9 +21,9 @@ from datetime import timedelta
 
 from . import ayarlar, bildirimler, defter, denetim, devir, gunluk, teklif_turleri, uygunluk, yonetmelik, zaman
 from .hatalar import KuralHatasi
-from .teklif_turleri import CEKIMSER, GIZLENEN_FIKIR, esik_saglandi
+from .oy_kurallari import CEKIMSER, GIZLENEN_FIKIR, esik_saglandi
 
-# Oylama motorunun dışarıya açtığı adlar (bazıları teklif_turleri'nden gelir; çağıranlar oylama.X diye kullanır).
+# Oylama motorunun dışarıya açtığı adlar (bazıları oy_kurallari'ndan gelir; çağıranlar oylama.X diye kullanır).
 __all__ = ["CEKIMSER", "GIZLENEN_FIKIR", "esik_saglandi", "turu", "teklif_baglami", "teklif_getir", "acik_teklif",
            "teklif_ac", "secenek_ekle", "secenekler", "secim_anahtarlari", "oy_durumu", "oy_ver", "gerekli_katilim",
            "sayim", "sonuclandir", "sonuc", "teklif_basligi", "oy_sayisi", "konu_teklifleri", "kullanici_teklifleri",

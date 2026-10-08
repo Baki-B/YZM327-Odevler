@@ -68,7 +68,9 @@ MADDELER = [
      "Konular 7 temel alanda ve Genel kategoride açılır. Genel her konuya açıktır. Her üye yeni bir ana ya da alt "
      "kategori önerebilir; öneri bütün üyelerin oyuna sunulur ve {ESIK_KATEGORI} ile kabul edilirse kategori eklenir. "
      "Bu oylamada herkesin oyu 1 sayılır.", None, False),
-    ("D1", "DENETIM", "Saygılı dil", "Konular ve mesajlar hakaret içeremez.", "ENGEL", False),
+    # D1 varsayılan olarak yalnızca uyarır: görülmemiş ölçüm kümesinde kesinliği yayın ölçütünün altında kaldı
+    # (docs/analiz.md 6.5 ve 11). Topluluk yönetmelik oylamasıyla "Engeller"e çekebilir.
+    ("D1", "DENETIM", "Saygılı dil", "Konular ve mesajlar hakaret içeremez.", "UYARI", False),
     ("D2", "DENETIM", "Kişisel veri",
      "Telefon numarası, T.C. kimlik numarası, e-posta adresi gibi kişisel veriler paylaşılamaz.", "ENGEL", False),
     ("D3", "DENETIM", "Kategoriye uygunluk",
