@@ -8,7 +8,7 @@ Sıcaklık (S02-32): logitler softmax'tan önce T'ye bölünür. T → 0 en olas
 dağılım düzleşir ve yanıtlar çeşitlenir.
 
 API notları (Anthropic belgeleri, 2026):
-  * Opus 4.7 ve sonrası (ör. claude-opus-5-5) sıcaklık taşıyan her isteği 400 hatasıyla reddeder; Sonnet 5/5.5 ve
+  * Opus 4.7 ve sonrası sıcaklık taşıyan her isteği 400 hatasıyla reddeder; Sonnet 5/5.5 ve
     Haiku 5.5 varsayılan dışı değerleri reddeder. Deney bu yüzden sıcaklığı hâlâ kabul eden bir modelle yapılır
     (varsayılan claude-sonnet-4-6). Slayttaki (S02-42) "temperature=0 ile sabitle" önlemi yeni modellerde yoktur.
   * Python SDK'sının 1.x sürümü temperature parametresini imzadan kaldırdı; değer extra_body ile gönderilir.
