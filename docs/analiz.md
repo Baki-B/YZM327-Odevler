@@ -49,14 +49,14 @@ YZ yalnızca üç *destek* işinde aday. Bu ayrım bütün belgenin omurgası: *
 | YZ'nin yeri | Kararı *hazırlayan* adımlar: okunmamış tartışmayı özetlemek, uygunsuz içeriği önce yazana göstermek |
 | Tahmin (destek işlerinde) | Bu metin bir kişiyi aşağılıyor mu (D1), kişisel veri içeriyor mu (D2), hangi alana ait (D3)? |
 | ML görevi | D1, D2 ikili sınıflandırma; D3 7 sınıflı sınıflandırma. Bugün kural tabanlı ve ölçülüyor (6. bölüm) |
-| Veri ve etiket | Etiketli forum verisi yok; ölçüm için elle yazılmış 166 örnek (6.2). Gelecekte etiket kaynağı: gizleme oylamaları, şikayetler |
+| Veri ve etiket | Etiketli forum verisi yok; ölçüm için yazılıp etiketlenmiş 166 örnek (6.2). Gelecekte etiket kaynağı: gizleme oylamaları, şikayetler |
 
 **Bileşen düzeyinde çerçeveleme tablosu (H2-18, H2-23).** Her satır bir kararla başlıyor; karar sütunu boş olan bileşen yok.
 
 | Bileşen | Karar | Görev türü | Girdi → çıktı | Kararı kim verir |
 |---|---|---|---|---|
 | Fikir oylaması (`oylama.py`, `sonuclar.py`) | Hangi fikir kazanır | ML değil: sayım kuralı | Oylar → kabul / sonraki tur / sonuçsuz | Üyeler |
-| D1 Saygın dil (`denetim.py`) | Metin yayımlansın mı | İkili sınıflandırma | Metin → kaba ifade VAR/YOK | Kural engeller; yazan düzeltir; kaçanı topluluk gizler |
+| D1 Saygılı dil (`denetim.py`) | Metin yayımlansın mı | İkili sınıflandırma | Metin → kaba ifade VAR/YOK | Kural uyarır (6.5'ten beri); yazan karar verir; kaçanı topluluk gizler |
 | D2 Kişisel veri | Metin yayımlansın mı | İkili sınıflandırma (desen tanıma) | Metin → kişisel veri VAR/YOK | Kural engeller |
 | D3 Kategoriye uygunluk | Konu doğru alanda mı | Çok sınıflı sınıflandırma (7 ana alan) | Başlık + açıklama → kategori | Konu sahibi (yalnızca uyarı) |
 | D5 Benzer konu | Aynı konu zaten açılmış mı (sonuçsuz kapananlar hariç) | Benzerlik / sıralama | Başlık → en benzer konu ve oranı | Konu sahibi (uyarı) |
@@ -134,7 +134,7 @@ doğrulukla engelleyen bir sistem." Kim kullanacak, "uygunsuz" nasıl etiketlene
 | **1. İş hedefi ve değer** | Topluluk kararlarının adil (azınlık korunur, tek kişi baskın olmaz), şeffaf (sayım ve kayıt herkesçe denetlenir) ve zamanında (en fazla 7 gün: 24 saat tartışma + 48 saatlik 1. tur + 4 × 24 saatlik tur) alınması. İş metriği: kapanan konuların karara bağlanma oranı. |
 | **2. Karar ve eylem** | Kararı üyeler oyla verir. Sistem, kararı *hazırlar*: içerik denetimi yazana anında geri bildirim verir (günde mesaj sayısı kadar; kişisel veri engellenir, hakaret için uyarılır), özet her tur sonunda bir kez yazılır. |
 | **3. ML görevi** | Çekirdekte yok. Destek görevleri: D1/D2 ikili sınıflandırma, D3 7 sınıflı sınıflandırma, D5 benzerlik, özet = üretim. Etiket tanımları: 6.2. |
-| **4. Veri** | Etiketli veri yok (yeni ürün). Ölçüm için elle yazılıp etiketlenmiş 166 örnek (geliştirme 85, test 43, görülmemiş son küme 38); gerçek forum mesajı değildir (6.2). Gelecekte etiket kaynağı: topluluğun gizleme oylamaları, şikayetler, kategori değişiklikleri. Kişisel veri: ad soyad, doğum tarihi, adres yalnızca kayıtta; görünen takma ad; deftere yalnızca özet ve taahhüt. |
+| **4. Veri** | Etiketli veri yok (yeni ürün). Ölçüm için yazılıp etiketlenmiş 166 örnek (geliştirme 85, test 43, görülmemiş son küme 38); gerçek forum mesajı değildir (6.2). Gelecekte etiket kaynağı: topluluğun gizleme oylamaları, şikayetler, kategori değişiklikleri. Kişisel veri: ad soyad, doğum tarihi, adres yalnızca kayıtta; görünen takma ad; deftere yalnızca özet ve taahhüt. |
 | **5. Metrikler** | Model: D1 kesinlik (yanlış engel pahalı), D2 duyarlılık (kaçan kişisel veri pahalı), D3 makro F1. Ürün: katılım oranı, karar süresi. Koruyucu: oy gücü Gini, defter tutarsızlığı = 0, YZ sayı sadakati = %100, p95 gecikme. (5. bölüm) |
 | **6. Baseline** | Çoğunluk sınıfı: D1/D2 F1 0, D3 makro F1 0,04. Rastgele (beklenen): F1 ≈ 0,50, D3 makro F1 ≈ 0,13. Bugünkü kural, son kümede: D1 F1 0,71, D2 duyarlılık 0,83, D3 makro F1 0,49. Mevcut çözüm = insan (topluluğun gizleme oylaması): ölçülmedi. (6. bölüm) |
 | **7. Kısıtlar** | Dönem ödevi süresi; sunucu bütçesi yok, GPU yok, dış API yok; tek bilgisayarda SQLite; p95 < 200 ms; KVKK; gizli oy; kararlar açıklanabilir olmalı. (7. bölüm) |
@@ -225,9 +225,10 @@ Denetim kurallarının bir olasılık eşiği yok; ama **ciddiyet** (Engeller / 
 
 ### 6.2 Ölçüm düzeneği
 
-- **Veri özeti (H2-53).** Örnekler gerçek forum mesajı değildir; ödev sahibi tarafından elle yazılıp etiketlendi. Etiketler
-  kurallar çalıştırılmadan **önce** yazıldı. Bütün kümeleri aynı kişi yazdı; bu yüzden "hiç görülmemiş" son küme bile yazarın
-  dil alışkanlıklarını taşır. Örnekler küçük; sonuçlar kesin başarım değil, bir referans noktası.
+- **Veri özeti (H2-53).** Örnekler gerçek forum mesajı değildir. Üç kümeyi de, kuralları geliştiren YZ kodlama asistanı yazıp
+  etiketledi (YZ kullanım beyanı, README); etiketler kurallar çalıştırılmadan **önce** yazıldı. Kuralları ve örnekleri aynı
+  yazar yazdığı için "hiç görülmemiş" son küme bile yazarın dil alışkanlıklarını taşır; gerçek kullanıcı mesajlarındaki başarım
+  daha düşük olabilir. Örnekler küçük; sonuçlar kesin başarım değil, bir referans noktası.
 
   | Küme | D1 örnek (VAR / YOK) | D2 örnek (VAR / YOK) | D3 örnek (7 sınıfın her biri) | Medyan uzunluk D1 / D2 / D3 (karakter) |
   |---|---|---|---|---|
@@ -354,8 +355,8 @@ Eğitim sütunu yedi hatanın beşini topluyor: Eğitim'in kesinliği 0,29'a dü
 | D3 | "Laboratuvar bilgisayarlarına Linux kurulsun." | Teknoloji → Bilim | "laboratuvar" (Bilim) ve "bilgisayar" (Teknoloji) birer kavramla berabere; eşitliği kategori sırası bozdu |
 
 **Yorum.**
-- **D3:** Önceki ölçümler, ontolojiyi bilen aynı kişinin yazdığı örneklerle yapılmıştı. Gerçek başarım belirgin biçimde daha
-  düşük çıktı. Hata analizinde yedi hatanın beşi "Eğitim" yönünde: "kampüs", "öğrenci", "ders", "laboratuvar" gibi her konuda geçen
+- **D3:** Önceki ölçümler, kuralları geliştiren ve ontolojiyi bilen yazarın, kurallara bakarak düzeltme yaptığı örneklerle
+  yapılmıştı. Gerçek başarım belirgin biçimde daha düşük çıktı. Hata analizinde yedi hatanın beşi "Eğitim" yönünde: "kampüs", "öğrenci", "ders", "laboratuvar" gibi her konuda geçen
   kelimeler metni Eğitim'e çekiyor. "Gökbilim" gibi listede olmayan kelimeler hiç eşleşmiyor. Bu, H2-38'deki merdivenin beklenen
   sonucu: anahtar kelime kuralı çoğunluk sınıfını açık farkla geçiyor (0,49'a karşı 0,04), ama kendi başına yeterli değil.
 - **D1:** Listede olmayan argo ("hödük") ve deyimsel hakaret ("kafana taş mı düştü") kaçıyor. Kavram anlamındaki kullanımlar
@@ -455,7 +456,7 @@ Düzeltmeden önce aynı ölçüm (1.000 kopya, 10 istek) p50 77 ms, en kötü 1
 ### 8.3 Sürdürülebilirlik (maintainability)
 
 - Tasarım desenleri ve SOLID eşlemesi: `docs/tasarim.md` 8. bölüm (her desen dosya adıyla).
-- 196 otomatik test (~12 sn); ölçüm betikleri; her düzeltmenin önce hatayı üreten testi (`testler/test_duzeltmeler.py`).
+- 200 otomatik test (~12 sn); ölçüm betikleri; hata düzeltmelerinin testleri (`testler/test_duzeltmeler.py`; düzeltmeden önceki kodda kırmızı olduğu denetlendi, README YZ kullanım beyanı).
 - Bağımlılık sürümleri sabit; gizli anahtar kodda değil; ayarlar ortam değişkeniyle (README).
 
 ### 8.4 Uyarlanabilirlik (adaptability) — "hizmeti kesmeden uyum"

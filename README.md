@@ -14,8 +14,9 @@ Yazılım Mühendisliğine Giriş dersi ödevi.
 |---|---|
 | [docs/rapor/Agora_Proje_Raporu.pdf](docs/rapor/Agora_Proje_Raporu.pdf) | **Proje raporu (PDF, kapak + 4 sayfa):** teknik ayrıntılar, SOLID ve GoF desenleri, problem çerçeveleme, ölçümler, dağıtım. Kaynağı `docs/rapor/rapor.html` |
 | [docs/analiz.md](docs/analiz.md) | **Problem çerçeveleme ve gereksinim analizi:** YZ gerekli mi?, tek sayfalık kanvas, iş/ürün/koruyucu metrikler, ölçülmüş temel çizgi ve hata analizi, kısıtlar, paydaşlar, ön-otopsi, ölçülmüş gecikme ve ölçeklenme |
-| [docs/tasarim.md](docs/tasarim.md) | UML diyagramları; **SOLID ilkeleri ve tasarım desenlerinin** (State, Strategy, Template Method, Registry, Chain of Responsibility, Adapter, Memento, Observer, Repository, Facade…) dosya dosya karşılığı ve sınıf diyagramları |
+| [docs/tasarim.md](docs/tasarim.md) | UML diyagramları; **SOLID ilkeleri ve GoF tasarım desenlerinin** (State, Strategy, Template Method, Chain of Responsibility, Adapter, Memento, Observer, Repository, Facade) dosya dosya karşılığı, sınırları ve sınıf diyagramları |
 | [docs/rehber.md](docs/rehber.md) | Uygulamanın bütün ayrıntıları ve kullanılan mimariler, sade bir dille |
+| [laboratuvar/](laboratuvar/README.md) | **S02-50 mini laboratuvarı:** Türkçe/İngilizce token oranı (tiktoken), nedensel maskeli dikkat ısı haritası (NumPy), sıcaklık deneyi, YZ kodlama aracının önerdiği import'ların doğrulanması |
 
 ## Tarayıcı sürümü (GitHub Pages, sunucusuz)
 
@@ -59,7 +60,7 @@ Ya da klasördeki **`baslat.bat`** dosyasına çift tıkla. Tarayıcı kendiliğ
 | `python calistir.py --yonetici Baki` | Bir üyeyi yönetici yapar (ilk yönetici için; sonrası yönetim panelinden) |
 | `python calistir.py --demo` | Sunum kipi: yönetim panelinde "Süreyi ilerlet" düğmesi açılır (24/48 saat beklememek için) |
 | `python calistir.py --demo-verisiz` | Boş veritabanına demo verisini (ve şifresi herkesçe bilinen demo hesaplarını) yüklemez |
-| `python -m unittest discover testler` | 196 otomatik test (~12 sn) |
+| `python -m unittest discover testler` | 200 otomatik test (~12 sn) |
 | `python -m pytest` ya da `uv run pytest` | Aynı testler pytest ile (ayarlar `pyproject.toml`'da) |
 | `python olcum/denetim_olcumu.py` | Denetim kurallarının kesinlik/duyarlılık ölçümü (temel çizgilerle karşılaştırmalı; geliştirme, test ve görülmemiş son küme) |
 | `python olcum/gecikme_olcumu.py` | Sayfaların p50/p95 yanıt süresi (`--defter-blok 50000` ile büyük defterde) |
@@ -131,7 +132,7 @@ Tam karşılık tablosu sitede **Nasıl işler? → Ödev gereksinimleri** böl�
 | Giriş ekranı; ad soyad, adres, doğum tarihi, şifre, takma ad | Kayıt/giriş; bilgiler gizli, görünen takma ad; kurtarma kodu |
 | Bilgiler kısıt (İstanbul konusuna İstanbullular, diğerleri gözlemci) | Konum hiyerarşisi + yaş kuralı; gözlemci modu; uygunluk puanı |
 | Her birey eşit / bazıları daha eşit | Kurallar herkese eşit, herkes bir fikir yazar; uzman oyu 10 sayılır, çift oranla dengelenir |
-| Kurallar ve uygunluk ölçümü (ontoloji); yönetmelik denetlesin | Yönetmelik maddeleri D1–D7 ontolojiyle denetler; yönetmelik oylamayla değişir |
+| Kurallar ve uygunluk ölçümü (ontoloji); yönetmelik denetlesin | Yönetmelik maddeleri D1–D7 ontolojiyle denetler; yönetmelik oylamayla değişir. Kişisel veri engellenir; hakaret varsayılan olarak uyarılır (ölçüm sonucu, `docs/analiz.md` 6.5), topluluk "Engeller"e çekebilir |
 | Tartışmalar silinmez; (bir kısmı) silinmek istenirse oylama | Mesaj silinemez; düzenlenirse eski hâli görünür; tek ya da birden fazla mesaj tek oylamayla gizlenir (3/4), iz kalır |
 | Oy hakkı havale | Oy devri: genel / kategori / konu; zincirleme; tavanlı |
 | Azınlıkları koruma | Herkes fikir yazar, itiraz konusu, çift oran, çekimserin paydada sayılması, 3/4 eşikler, korunan haklar, devir tavanı, uzman kontenjanı, gizli oy |
@@ -212,10 +213,11 @@ forum/
   kullanicilar.py, guvenlik.py, bildirimler.py, arama.py, gorevler.py, veritabani.py (kayıt noktası, Memento)
   web/               HTTP katmanı: istek.py (istek öncesi zincir), hata_sayfalari.py, sablon.py, Flask blueprint'leri, REST API
   templates/         sayfalar; panel/ = Panelim, yonetim/ = yönetim paneli     static/  CSS, JS, ağ çizimi, PWA dosyaları
-olcum/               ölçüm betikleri ve etiketli örnekler (gelistirme.csv, test.csv)
+olcum/               ölçüm betikleri ve etiketli örnekler (gelistirme.csv, test.csv, son_test.csv)
+laboratuvar/         S02-50 mini laboratuvarı (4 görev; sonuçlar laboratuvar/README.md)
 mobil-expo/          Expo Go uygulaması (Expo SDK 57, WebView)
 mobil/               Android uygulaması (Capacitor): capacitor.config.json, android/ projesi, BENIOKU.md
-testler/             196 test: iş kuralları, web, hata düzeltmeleri, desenler, ölçüm
+testler/             200 test: iş kuralları, web, hata düzeltmeleri, desenler, ölçüm
 docs/                analiz.md (problem çerçeveleme), tasarim.md (UML + desenler), rehber.md (ayrıntılar)
 ```
 
@@ -231,7 +233,25 @@ docs/                analiz.md (problem çerçeveleme), tasarim.md (UML + desenl
 
 ## YZ kullanım beyanı
 
-Bu ödevin yazılım mühendisliği revizyonunda (SOLID/GoF incelemesi, hata düzeltmeleri, desenlerin uygulanması, ölçüm betikleri ve
-`docs/analiz.md`, `docs/tasarim.md` belgelerinin taslakları) bir YZ kodlama asistanı (Claude Code) kullanıldı. Asistanın
-önerdiği her değişiklik otomatik testlerle doğrulandı; bulunan her hata için önce hatayı yeniden üreten bir test yazıldı.
-Belgelerdeki sayılar `olcum/` betikleriyle ölçülmüştür.
+Ders sunumlarındaki çerçeveye göre (S01-46, 47; H2-59):
+
+- **Araç:** Claude Code (Anthropic) kodlama ajanı. İncelemelerde ayrıca, her biri bir ders sunumunun ölçütleriyle projeyi
+  denetleyen bağımsız YZ inceleme ajanları kullanıldı.
+- **İlk sürüm:** Forumun ilk sürümü öğrencinin commit'idir (`eae7510`, 1 Ekim 2026). Sonraki commit'lerin hepsi (git
+  geçmişinde yazar "Claude") YZ ajanıyla yapıldı.
+- **YZ'nin yaptığı:** problem çerçeveleme analizi ve tasarım belgeleri; SOLID ve GoF yeniden düzenlemeleri; hata düzeltmeleri ve
+  testleri; ölçüm betikleri ile ölçüm kümelerinin örnekleri ve etiketleri (`olcum/*.csv`); tarayıcı (GitHub Pages) sürümü;
+  mini laboratuvar; proje raporu.
+- **Öğrencinin rolü:** ürün fikri ve ilk sürüm; hedefin (hocanın istekleri) ve ders kaynaklarının verilmesi; kapsam kararları
+  (rapor biçimi, GitHub Pages, mobil); sonuçların gözden geçirilmesi ve teslim kararı.
+- **Doğrulama:** Testleri de YZ yazdı (S01-46: testleri de doğrulamak gerekir). Bu yüzden:
+  1. Düzeltme testleri düzeltmeden önceki koda karşı çalıştırıldı ve kırmızı olduğu görüldü: `de73de8` 9/9, `0a01434` 7/7,
+     son turdaki `AltYoldaCalisma`, `YonetmelikMetni`, `ModulDongusu`. İlk iki düzeltme commit'inde (`c9b0992`, `6e3cdd1`)
+     test dosyası eski kodla yüklenemediği için bu denetim yapılamadı.
+  2. Yayın ölçütleri sonuçlardan önce yazıldı; görülmemiş ölçüm kümesi ölçülmeden önce commit edildi (`dfa996e`). Sonuç
+     ölçütü bozunca hedef kaydırılmadı, karar uygulandı (D1 varsayılanı "Uyarır").
+  3. Her push'ta CI testleri, statik denetimi (pyflakes) ve ölçümü çalıştırır.
+  4. İnceleme ajanlarının her bulgusu kodla ya da komut çıktısıyla doğrulandıktan sonra uygulandı.
+- **Sınır:** Ölçüm kümelerini ve kuralları aynı YZ yazdığı için başarım sayıları iyimser olabilir (`docs/analiz.md` 6.2).
+  Başarım sayıları (kesinlik, duyarlılık, gecikme, ürün metrikleri) `olcum/` betikleriyle ölçülmüştür; hedefler ve maliyet
+  birimleri varsayımdır.
