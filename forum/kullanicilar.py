@@ -10,7 +10,7 @@ KAYIT_SINIRI = (20, 60)          # bir IP adresinden 60 dakikada en fazla 20 yen
 
 
 def _benzer_takma_ad_var_mi(db, takma_ad):
-    """Türkçe büyük/küçük harf ve şapkasız yazım farkı taklide izin vermesin: Çağlar = çağlar = CAGLAR = Caglar."""
+    """Büyük-küçük harf ve Türkçe karakter farkı, benzer bir takma adın alınmasını engellemesin (ör. Çağlar, caglar)."""
     aranan = ontoloji.katla(takma_ad)
     return any(ontoloji.katla(r["takma_ad"]) == aranan for r in db.execute("SELECT takma_ad FROM kullanicilar"))
 
@@ -46,7 +46,7 @@ def kayit(db, ad_soyad, takma_ad, sifre, sifre_tekrar, dogum_tarihi, konum_id, i
     if not TAKMA_AD_DESENI.match(takma_ad):
         raise KuralHatasi("Takma ad 3–30 karakter olmalı; harf, rakam, nokta ve alt çizgi kullanılabilir.")
     if takma_ad_ile(db, takma_ad) or _benzer_takma_ad_var_mi(db, takma_ad):
-        raise KuralHatasi("Bu takma ad (ya da yazılışı çok benzeri) alınmış.")
+        raise KuralHatasi("Bu takma ad ya da buna çok benzeyen bir ad alınmış.")
     if denetim.kaba_ifadeler(takma_ad):
         raise KuralHatasi("Takma ad kaba ifade içeremez.")
     guvenlik.sifre_kontrol(sifre, sifre_tekrar)
@@ -88,7 +88,7 @@ def giris(db, takma_ad, sifre, istemci=""):
 
 
 def _sifre_sor(db, kullanici, sifre, hata):
-    """Oturum açıkken şifre soran işlemler de giriş gibi deneme sınırına tabidir (çalınan oturumla tahmin edilemesin)."""
+    """Oturum açıkken şifre isteyen işlemler de giriş gibi deneme sınırına tabidir."""
     anahtar = f"sifre|{kullanici['id']}"
     guvenlik.giris_kilitli_mi(db, anahtar)
     if not guvenlik.sifre_dogru_mu(kullanici["sifre_hash"], sifre):

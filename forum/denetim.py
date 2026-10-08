@@ -5,9 +5,8 @@ Her madde zincirin bir halkasıdır: kendi kontrolünü yapar, bulgusunu ekler v
 rapor bütün maddelerin sonucunu gösterir. Bir maddenin ciddiyeti (ENGEL / UYARI / KAPALI) yönetmelikte veridir ve
 oylamayla değişir; halka yalnızca "geçti mi, ne diyeceğim" sorusunu yanıtlar.
 
-Önceden yedi kural 77 satırlık tek bir fonksiyonun içindeydi; mesaj denetimi D1 ve D2'yi ayrıca yeniden yazıyordu.
-Şimdi yeni bir madde (ör. D8) = yonetmelik.MADDELER'e metni + burada bir halka sınıfı; mesajlara da uygulanacaksa
-`mesajlara_uygulanir = True`. Halkalar tek tek test edilebilir.
+Yeni bir madde (ör. D8) için yonetmelik.MADDELER'e metni eklenir ve burada bir halka sınıfı yazılır; mesajlara da
+uygulanacaksa `mesajlara_uygulanir = True` yapılır. Halkalar tek tek test edilebilir.
 """
 import re
 from abc import ABC, abstractmethod
@@ -24,16 +23,15 @@ _YUMUSAMA = {"k": "g", "p": "b", "t": "d", "c": "c"}
 
 def _yumusamis(kok):
     """Türkçe ünsüz yumuşaması: ünlüyle başlayan ek alınca sondaki p, ç, t, k → b, c, d, ğ (ahmak → ahmağın).
-    Katlanmış metinde ğ, g olur. Ölçümün geliştirme kümesindeki "ahmağın" örneği bu yüzden kaçıyordu (olcum/)."""
+    Katlanmış metinde ğ, g olur; bu yüzden "ahmağın" gibi biçimler "ahmag" kökünden yakalanır."""
     return kok[:-1] + _YUMUSAMA[kok[-1]] if kok[-1] in _YUMUSAMA else kok
 
 
 KABA_KOKLER = sorted(set(KABA_IFADELER) | {_yumusamis(k) for k in KABA_IFADELER})
 # Kök kelimenin başında aranır (Türkçe sondan eklemeli): "asalak bitkiler" içindeki "salak" hakaret sayılmaz.
 _KABA_DESENLER = {k: re.compile(r"(?<![a-z0-9])" + re.escape(k)) for k in KABA_KOKLER}
-# Desenler rakam ya da kelime sınırında başlar. Sınırsız e-posta deseni, uzun bir metinde her konumdan yeniden
-# denendiği için süre metin uzunluğunun karesiyle büyüyordu (40.000 karakterlik bir gerekçe ~7 sn); telefon deseni de
-# 13 haneli bir barkodun içindeki 10 haneyi telefon sanıyordu.
+# Desenler rakam ya da kelime sınırında başlar: sınırsız desen uzun metinde her konumda yeniden denenir. Telefon
+# deseni de 13 haneli bir barkodun içindeki 10 haneyi telefon sayar.
 KISISEL_VERI_DESENLERI = {
     "telefon numarası": re.compile(r"(?<!\d)(?:\+?90|0)?\s?\(?5\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}(?!\d)"),
     "e-posta adresi": re.compile(r"(?<![\w.+-])[\w.+-]+@[\w-]+\.[\w.]+"),
@@ -45,7 +43,7 @@ _ON_BIR_HANE = re.compile(r"(?<!\d)[1-9]\d{10}(?!\d)")
 
 def tc_kimlik_gecerli_mi(no):
     """T.C. kimlik numarasının resmi sağlaması: 11 hane, ilk hane 0 değil, 10. ve 11. haneler önceki hanelerden hesaplanır.
-    Yalnızca biçime bakmak, 11 haneli her sipariş ya da fatura numarasını kişisel veri sanıp mesajı engelliyordu."""
+    Sağlama, 11 haneli sipariş ya da fatura numaralarının kişisel veri sayılmasını önler."""
     if len(no) != 11 or not no.isdigit() or no[0] == "0":
         return False
     h = [int(c) for c in no]
@@ -173,8 +171,8 @@ class KonumTutarliligi(DenetimKurali):
             return True, "Metinde belirli bir yer adı geçmiyor."
         if konum_id is None:
             adlar = ", ".join(ontoloji.yol_metni(db, "konumlar", y) for y in yerler[:3])
-            return False, (f"Metinde {adlar} geçiyor ama katılım herkese açık. Konu yalnızca orayı "
-                           "ilgilendiriyorsa katılımı oranın sakinleriyle sınırlayabilirsin.")
+            return False, (f"Metinde {adlar} geçiyor ama katılım herkese açık. Konu yalnızca o yeri "
+                           "ilgilendiriyorsa katılımı o yerin sakinleriyle sınırlayabilirsin.")
         uyumsuz = [y for y in yerler if not (ontoloji.altinda_mi(db, "konumlar", y, konum_id)
                                             or ontoloji.altinda_mi(db, "konumlar", konum_id, y))]
         if not uyumsuz:
@@ -263,8 +261,7 @@ def mesaj_denetle(db, icerik):
 
 
 def mesaj_uyarilari(db, icerik):
-    """UYARI durumundaki mesaj halkalarının bulguları: mesaj yayımlanır, yazana uyarı gösterilir (emekle aşaması:
-    sistem işaretler, karar yazanın ve topluluğun)."""
+    """UYARI durumundaki mesaj halkalarının bulguları. Mesaj yayımlanır, yazana uyarı gösterilir."""
     return _mesaj_sorunlari(db, icerik, "UYARI")
 
 

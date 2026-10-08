@@ -11,12 +11,10 @@ hash zincirine eklenir. Zincir birden fazla düğümde (A, B, C düğümleri) ay
 Kişisel veri deftere yazılmaz: mesajların sadece SHA-256 özeti, oyların sadece taahhüdü yazılır.
 
 Tasarım desenleri:
-  * **Repository** — bir düğümün blokları nerede saklanırsa saklansın `DugumDeposu` arayüzünün arkasındadır.
-    Uzlaşma, onarım ve doğrulama mantığı yalnızca bu arayüzü bilir. Üretimde `SqliteDugumDeposu` (her düğüm ayrı
-    dosya), birim testlerinde `BellekDugumDeposu` kullanılır; mantık disk olmadan test edilir.
-  * **Observer** — veritabanı bağlantısı defteri tanımaz. Defter, bağlantının "işlem kaydedildi" olayına abone olur
-    (`veritabani.commit_aboneligi`) ve kuyruktaki blokları o an düğümlere yazar. Böylece altyapı katmanı (veritabanı)
-    üst katmana (defter) bağımlı olmaz (DIP).
+  * **Repository** — bir düğümün blokları `DugumDeposu` arayüzünün arkasındadır. Üretimde `SqliteDugumDeposu`,
+    testlerde `BellekDugumDeposu` kullanılır.
+  * **Observer** — defter, veritabanının "işlem kaydedildi" olayına abone olur (`veritabani.commit_aboneligi`).
+    Veritabanı katmanı defteri tanımaz.
 
 Defter işlevlerinin `kaynak` parametresi bir klasör yolu (üretim) ya da `DugumDeposu` listesidir (test).
 """
@@ -86,8 +84,7 @@ def baslangic_blogu():
 
 
 class YinelenenBlok(Exception):
-    """Eklenmek istenen numarada depoda zaten bir blok var. Bütün depo gerçeklemeleri aynı hatayı verir (Liskov):
-    çağıran kod hangi depoyla çalıştığını bilmeden bu durumu yakalayabilir."""
+    """Eklenmek istenen numarada zaten bir blok var. Bütün depo gerçeklemeleri aynı hatayı verir (Liskov)."""
 
 
 class DugumDeposu(ABC):
@@ -156,7 +153,7 @@ class SqliteDugumDeposu(DugumDeposu):
         c.execute("""CREATE TABLE IF NOT EXISTS bloklar (
                        no INTEGER PRIMARY KEY, zaman TEXT NOT NULL, tur TEXT NOT NULL,
                        veri TEXT NOT NULL, onceki TEXT NOT NULL, hash TEXT NOT NULL)""")
-        if c.execute("SELECT 1 FROM bloklar LIMIT 1").fetchone() is None:     # COUNT(*) bütün tabloyu tarardı
+        if c.execute("SELECT 1 FROM bloklar LIMIT 1").fetchone() is None:     # COUNT(*) tüm tabloyu tarar
             c.execute(_EKLE, baslangic_blogu())
             c.commit()
         return c
@@ -193,11 +190,10 @@ class SqliteDugumDeposu(DugumDeposu):
         self._yaz([("UPDATE bloklar SET veri = ? WHERE no = ?", (veri, no))])
 
     def surum(self):
-        """SQLite dosya başlığındaki değişiklik sayacı (SQLite ile yapılan her yazmada artar) + dosyanın kimliği (inode),
-        boyu, değişiklik zamanı ve durum değişim zamanı (ctime) + varsa WAL dosyasının boyu ve zamanı. Dosyayı SQLite'ı
-        atlayıp ham bayt olarak değiştirmek sayacı değiştirmez; değişiklik zamanı da geri alınabilir (os.utime), ama
-        ctime geri alınamaz. (Windows'ta ctime oluşturma zamanıdır; oradaki güvence önbellek ömrüdür, bkz. _dugum_durumu.)
-        Dosya yoksa None."""
+        """Depo sürümü: SQLite başlığındaki değişiklik sayacı, dosya kimliği (inode), boyu, değişiklik ve durum değişim
+        zamanları (mtime, ctime), varsa WAL dosyasının boyu ve zamanı. Ham bayt değişikliği sayacı artırmaz; mtime geri
+        alınabildiği için ctime de tutulur. (Windows'ta ctime oluşturma zamanıdır; oradaki güvence önbellek ömrüdür,
+        bkz. _dugum_durumu.) Dosya yoksa None."""
         try:
             with open(self.yol, "rb") as f:
                 baslik = f.read(28)
@@ -323,11 +319,11 @@ def zinciri_dogrula(bloklar):
 
 
 # Düğüm başına son tam doğrulamanın sonucu, düğümün o anki sürümüyle birlikte. Sürüm değişmedikçe zincir yeniden
-# okunup hash'lenmez. Önceden her yazma ve her defter sayfası üç zinciri baştan doğruluyordu: 50.000 blokta bir oy
-# yarım saniye sürüyordu (olcum/gecikme_olcumu.py). Defterin kendi eklemeleri önbelleği günceller; dosyayı dışarıdan
-# değiştirmek sürümü değiştirir ve bir sonraki okumada tam doğrulama yapılır. Sürümün göremeyeceği değişikliklere
-# (disk bozulması; Windows'ta zamanı geri alınmış ham bayt değişikliği) karşı iki güvence: bir sonuç en fazla
-# DOGRULAMA_OMRU saniye kullanılır ve "denetle" istekleri (tam=True) önbelleği hiç kullanmaz.
+# okunup hash'lenmez. Her yazmada üç zincirin tam doğrulaması 50.000 blokta yarım saniye sürer (bkz.
+# olcum/gecikme_olcumu.py). Defterin kendi eklemeleri önbelleği günceller; dosyayı dışarıdan değiştirmek sürümü
+# değiştirir ve bir sonraki okumada tam doğrulama yapılır. Sürümün göremeyeceği değişikliklere (disk bozulması;
+# Windows'ta zamanı geri alınmış ham bayt değişikliği) karşı iki güvence: bir sonuç en fazla DOGRULAMA_OMRU saniye
+# kullanılır ve "denetle" istekleri (tam=True) önbelleği hiç kullanmaz.
 _DOGRULAMA = weakref.WeakKeyDictionary()
 DOGRULAMA_OMRU = 600
 _saat = time.monotonic      # testler değiştirir
@@ -384,9 +380,9 @@ def _uzlasma(kaynak, tam=False):
 
 @contextmanager
 def _surecler_arasi_kilit(depolar):
-    """Aynı düğümlere birden fazla sunucu süreci (ör. birden çok WSGI işçisi) yazarsa iki süreç aynı numaralı bloğu
-    ekleyip zinciri bölebilirdi. Yazmalar, düğüm klasöründeki kilit.db üzerinde BEGIN IMMEDIATE ile sıraya girer:
-    SQLite'ın kendi dosya kilidi, Windows'ta da çalışır. Bellek depolarında (testler) gerekmez."""
+    """Birden çok sunucu süreci (ör. WSGI işçileri) aynı düğümlere yazarsa aynı numaralı bloğu iki kez ekleyip zinciri
+    bölebilir. Yazmalar, düğüm klasöründeki kilit.db üzerinde BEGIN IMMEDIATE ile sıraya girer; bu SQLite'ın dosya
+    kilididir ve Windows'ta da çalışır. Bellek depolarında gerekmez."""
     klasorler = sorted({os.path.dirname(d.yol) for d in depolar.values() if isinstance(d, SqliteDugumDeposu)})
     if not klasorler:
         yield

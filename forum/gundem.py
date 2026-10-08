@@ -56,8 +56,7 @@ def _trend(db, esik, limit):
            FROM konular k WHERE k.silindi = 0""", {"e": esik}).fetchall()
     liste = []
     for r in satirlar:
-        # Mesajlar kişi başı en çok KISI_BASI_MESAJ kadar sayılır: tek kişi art arda yazarak konuyu gündeme taşıyamasın
-        # (ölçüt hedef olunca bozulur; çok kişinin katıldığı konu öne çıkmalı).
+        # Mesajlar kişi başı en çok KISI_BASI_MESAJ kadar sayılır: tek kişi art arda yazarak konuyu öne çıkaramasın.
         puan = (min(r["mesaj"], KISI_BASI_MESAJ * r["kisi"]) + 2 * r["fikir"] + 0.5 * r["oy"]
                 + (3 if r["olusturma"] >= esik else 0))
         if r["mesaj"] or r["oy"] or r["fikir"]:
@@ -83,7 +82,7 @@ def anahtar_kelimeler(db, gun=7, limit=14):
     for konu_id, metin in metinler:
         for kelime in _KELIME.findall(ontoloji.tr_kucuk(metin)):
             kok = koklar.get(kelime)
-            if kok is None:     # aynı kelime binlerce kez geçer; katlama kelime başına bir kez (1.000 konuda ~3 kat hız)
+            if kok is None:     # aynı kelime çok sık geçer; katlama kelime başına bir kez yapılır
                 kok = koklar[kelime] = ontoloji.katla(kelime)
             if len(kok) < 4 or kok in DURAK or kok.isdigit() or (len(kok) >= 6 and kok.endswith(("sin", "sun"))):
                 continue

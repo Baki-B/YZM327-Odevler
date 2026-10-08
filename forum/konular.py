@@ -220,9 +220,9 @@ def fikir_yaz(db, kullanici, konu_id, icerik):
     yazilabilir_olmali(konu)
     _katilimci_olmali(db, kullanici, konu)
     if not fikir_yazilabilir_mi(konu):
-        raise KuralHatasi("1. tur bittiği için artık yeni fikir yazılamaz.")
+        raise KuralHatasi("1. tur bittiği için yeni fikir yazılamaz.")
     if kullanicinin_fikri(db, konu_id, kullanici["id"]):
-        raise KuralHatasi("Bu konuda zaten bir fikrin var. Her katılımcı bir fikir yazabilir; istersen fikrini düzenleyebilirsin.")
+        raise KuralHatasi("Bu konuda zaten bir fikrin var; istersen onu düzenleyebilirsin.")
     icerik = (icerik or "").strip()
     if not FIKIR_UZUNLUGU[0] <= len(icerik) <= FIKIR_UZUNLUGU[1]:
         raise KuralHatasi(f"Fikir {FIKIR_UZUNLUGU[0]}–{FIKIR_UZUNLUGU[1]} karakter olmalı.")
@@ -242,8 +242,8 @@ def fikir_yaz(db, kullanici, konu_id, icerik):
 
 def oylamayi_baslat(db, konu_id):
     """Tartışma süresi dolunca 1. turu açar. Döner: oylamanın id'si ya da None (zaten başlamışsa)."""
-    # Atomik geçiş: arka plan zamanlayıcısı ile bir web isteği aynı anda çalışsa da tek oylama açılır. Hangi
-    # durumlardan OYLAMA'ya geçilebileceğini durum makinesinin geçiş tablosu söyler (State).
+    # Koşullu güncelleme: zamanlayıcı ile bir web isteği aynı anda çalışsa da tek oylama açılır. OYLAMA'ya hangi
+    # durumlardan geçilebileceği konu_durumlari.py'deki geçiş tablosunda tanımlıdır.
     kaynaklar = onceki_durumlar("OYLAMA")
     if db.execute(f"""UPDATE konular SET durum = 'OYLAMA', tur = 1
                       WHERE id = ? AND silindi = 0 AND durum IN ({','.join('?' * len(kaynaklar))})""",
@@ -476,7 +476,7 @@ def mesaji_gizle(db, mesaj_id, not_metni, teklif_id):
 # --- Okuma ---
 
 def mesaj_agaci(db, konu_id):
-    """Mesajları yanıt ağacı olarak döndürür. Fikirler ayrı listelenir; buradaki ağaçta da kök olarak yer alırlar."""
+    """Mesajları yanıt ağacı olarak döndürür. Fikirler de bu ağaçta kök olarak yer alır."""
     satirlar = db.execute(
         """SELECT m.*, k.takma_ad, k.yz_mi,
                   (SELECT COUNT(*) FROM mesaj_surumleri s WHERE s.mesaj_id = m.id) AS surum_sayisi
@@ -487,7 +487,7 @@ def mesaj_agaci(db, konu_id):
     kokler, derinlik, ebeveyn = [], {}, {}
     for d in dugumler.values():                     # id sırası: ebeveyn her zaman çocuğundan önce gelir
         ust = d["ust_mesaj_id"] if d["ust_mesaj_id"] in dugumler else None
-        # Sınırsız yanıt zinciri şablondaki özyinelemeyi aşıp konu sayfasını herkes için kalıcı olarak bozuyordu.
+        # Derinliği sınırla: sınırsız yanıt zinciri şablondaki özyinelemeyi aşar ve konu sayfasını bozar.
         while ust is not None and derinlik[ust] >= MAX_YANIT_DERINLIGI:
             ust = ebeveyn[ust]
         ebeveyn[d["id"]], derinlik[d["id"]] = ust, 0 if ust is None else derinlik[ust] + 1

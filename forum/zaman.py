@@ -1,4 +1,4 @@
-"""Zaman tek bir yerden okunur; testler `simdi` fonksiyonunu değiştirerek zamanı ileri sarabilir."""
+"""Zaman tek bir yerden okunur. Testler ve demo verisi `simdi` fonksiyonunu değiştirerek zamanı ileri sarabilir."""
 from datetime import datetime
 
 

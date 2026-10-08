@@ -71,7 +71,7 @@ def oner(db, kullanici, ad, ust_id, kavramlar, gerekce):
         if ontoloji.katla(veri["ad"]) == ontoloji.katla(ad) and veri.get("ust_id") == ust_id:
             raise KuralHatasi("Bu kategori için zaten süren bir oylama var.")
         if t["acan_id"] == kullanici["id"]:
-            raise KuralHatasi("Oylamada bekleyen bir kategori önerin var; o sonuçlanınca yenisini önerebilirsin.")
+            raise KuralHatasi("Sonucu bekleyen bir kategori önerin var; o sonuçlanınca yenisini önerebilirsin.")
     terimler = _kavramlar(kavramlar)
     gerekce = (gerekce or "").strip()
     if len(gerekce) < 20:

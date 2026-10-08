@@ -24,7 +24,7 @@
       <p class="iz">{{ ikon('oy') }} {{ m.gizlenme_notu }}</p>
     {% elif m.silme_teklifi %}
       <details class="katlanmis">
-        <summary>Bu mesaj için gizleme oylaması sürüyor; oylama bitene kadar katlandı ·
+        <summary>Bu mesaj için gizleme oylaması sürüyor ·
           <a href="{{ url_for('oylamalar.teklif', teklif_id=m.silme_teklifi) }}">oylamaya git</a></summary>
         <div class="icerik">{{ m.icerik|bicimle }}</div>
       </details>

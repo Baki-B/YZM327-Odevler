@@ -50,10 +50,10 @@ KATEGORILER = {
     "Kültür ve Sanat": ["Edebiyat", "Müzik", "Sinema"],
     "Genel": [],
 }
-KATEGORI_SURUMU = "2"   # site_ayarlari'nda tutulur; eski kurulumların kategori ağacı bir kez yeniye taşınır
+KATEGORI_SURUMU = "2"   # site_ayarlari'nda tutulur; değiştiğinde kategori ağacı yeni sürüme taşınır
 
-# Eski ağaçtan (Şehir, Kampüs Yaşamı) yeniye: (eski ana, eski alt) → (yeni ana, yeni alt). Konular, uzmanlıklar ve
-# devirler yeni kategoriye bağlanır; hiçbir konu kaybolmaz.
+# Eski kategorilerin yeni karşılıkları: (eski ana, eski alt) → (yeni ana, yeni alt). Konular, uzmanlıklar ve devirler
+# yeni kategoriye bağlanır; hiçbir konu kaybolmaz.
 ESKI_KATEGORILER = {
     ("Şehir", None): ("Siyaset", "Yerel Yönetim"),
     ("Şehir", "Ulaşım"): ("Siyaset", "Ulaşım"),
@@ -174,8 +174,8 @@ def _kategori_bul(db, ad_, ust_id):
 
 
 def _kategori_agacini_kur(db):
-    """Temel ağacı kurar (eksikleri ekler) ve eski ağaçtan kalan kategorileri yenilerine bağlar. Bir kez çalışır;
-    yöneticinin ya da topluluğun eklediği kategorilere dokunmaz."""
+    """Temel ağacı kurar (eksikleri ekler) ve eski kategorileri yenilerine bağlar. Yönetici ya da topluluk tarafından
+    eklenen kategorilere dokunmaz."""
     from . import zaman
     an = zaman.simdi_metin()
     for alan, alt_alanlar in KATEGORILER.items():
@@ -342,11 +342,10 @@ def alan_puanlari(db, eslesme):
 
 def en_uygun_kategori(db, metin):
     """Metne en uygun kategori. Önce ana alan seçilir: alt kategorileriyle birlikte en çok farklı kavramı eşleşen alan;
-    eşitlikte alt kategori düzeyinde (daha belirgin) eşleşmesi çok olan. Sonra o alanın içinde en çok eşleşen, eşitlikte
-    en derindeki kategori döner.
-    Önceden her kategori tek başına yarışıyordu: "belediye meclis toplantıları canlı yayınlansın" metninde Siyaset (meclis)
-    ve Yerel Yönetim (belediye) birer eşleşmeyle Biyoloji'ye (canlı) eşit kalıyor, kazananı sözlük sırası belirliyordu.
-    Tam eşitlikte (aynı iki puan) kazananı hâlâ kategori sırası belirler; D3 yalnızca uyarı verdiği için kabul edildi."""
+    eşitlikte alt kategori düzeyinde daha çok eşleşen alan. Sonra o alanın içinde en çok eşleşen, eşitlikte en derindeki
+    kategori döner. Her kategori tek başına yarıştırılırsa "belediye meclis toplantıları canlı yayınlansın" metninde
+    Siyaset ve Yerel Yönetim birer eşleşmeyle Biyoloji'ye (canlı) eşit kalır ve kazananı sözlük sırası belirlerdi.
+    Tam eşitlikte kazananı kategori sırası belirler; bu durumda D3 yalnızca uyarı verir."""
     eslesme = kategori_eslesmeleri(db, metin)
     if not eslesme:
         return None, []

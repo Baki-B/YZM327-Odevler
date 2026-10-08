@@ -1,9 +1,8 @@
 """Konu sayfasının görünüm verisi — GoF **Facade**.
 
 Bir konu sayfası yedi alt sistemden veri ister: konular, uygunluk, oylama, kararlar, devir, kullanıcılar ve
-yapay zeka. Önceden bu çağrıların hepsi ve "bu fikir elendi mi, kazandı mı?" kuralı web rotasının içindeydi
-(sunum katmanında iş kuralı). Şimdi web katmanı bu sayfa için yalnızca `konu_sayfasi()` işlevini bilir;
-alt sistemler değişirse rota değişmez. İş kuralı (`fikir_durumu`) saf bir işlevdir ve Flask olmadan test edilir.
+yapay zeka. Web rotası bu sayfa için yalnızca `konu_sayfasi()` işlevini bilir; alt sistemler değişirse rota
+değişmez. İş kuralı (`fikir_durumu`) saf bir işlevdir ve Flask olmadan test edilir.
 """
 import json
 

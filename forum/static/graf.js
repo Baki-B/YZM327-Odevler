@@ -18,7 +18,7 @@
       harita[d.id] = d;
     });
     kenarlar = kenarlar.filter(function (k) { return harita[k.kaynak] && harita[k.hedef]; });
-    // Aynı görüş grubundakiler birbirine çekilir (çizgi çizilmez; ikili oy benzerliği sunucudan hiç gelmez).
+    // Aynı görüş grubundakiler birbirine çekilir. Aralarına çizgi çizilmez; ikili oy benzerliği sunucudan gelmez.
     var grupCiftleri = [];
     dugumler.forEach(function (a, i) {
       dugumler.slice(i + 1).forEach(function (b) { if (a.grup && a.grup === b.grup) grupCiftleri.push([a, b]); });
@@ -83,9 +83,9 @@
         sekil.setAttribute("r", d.r);
       }
       sekil.setAttribute("class", "dugum-sekli" + (d.yz ? " yz" : ""));
-      sekil.setAttribute("fill", d.renk);  // YZ düğümünün rengi CSS'ten (.yz)
+      sekil.setAttribute("fill", d.renk);  // Yapay zeka düğümlerinin rengi CSS'ten gelir (.yz)
       var baslik = document.createElementNS(NS, "title");
-      baslik.textContent = "@" + d.ad + " · etki " + d.etki + (d.grup ? " · " + d.grup : "") + (d.uzman ? " · uzman" : "") + (d.yz ? " · YZ" : "");
+      baslik.textContent = "@" + d.ad + " · etki " + d.etki + (d.grup ? " · " + d.grup : "") + (d.uzman ? " · uzman" : "") + (d.yz ? " · yapay zeka" : "");
       sekil.appendChild(baslik);
       var yazi = document.createElementNS(NS, "text");
       yazi.setAttribute("y", -d.r - 6); yazi.setAttribute("text-anchor", "middle");

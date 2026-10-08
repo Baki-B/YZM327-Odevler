@@ -1,10 +1,10 @@
-"""Yapay zeka üye (ör. Bilge): yalnızca kısa özetler yazar.
+"""Yapay zeka hesabı (ör. Bilge): yalnızca kısa özetler yazar.
 
 Oy kullanmaz, fikir yazmaz, kararlara karışmaz. İki işi vardır:
   * Tartışma özeti: oylama başlarken (ve bir katılımcı isteyince) tartışmayı ve fikirleri kısaca özetler.
-  * Tur özeti: her tur bitince kimin ne kadar oy aldığını ve ne olduğunu kısaca yazar.
-Özetler KURAL TABANLIDIR: her sayı veritabanından gelir, yorum katmaz. Bu bilinçli bir seçimdir; gerekçesi
-docs/analiz.md'deki "YZ gerekli mi?" bölümündedir (dil modeli uydurma sayı üretebilir, kararı etkileyebilir).
+  * Tur özeti: her tur bitince kimin ne kadar oy aldığını ve ne olduğunu yazar.
+Özetler kural tabanlıdır: her sayı veritabanından gelir, yorum katılmaz. Gerekçe için docs/analiz.md'deki
+"YZ gerekli mi?" bölümüne bakın.
 """
 from . import konular, uygunluk
 from .hatalar import KuralHatasi

@@ -1,8 +1,7 @@
 """Oylamaların ortak sabitleri ve eşik karşılaştırması.
 
-Yaprak modül: yalnızca ayarlar'a bağlıdır. Önceden teklif_turleri.py'deydi; oylama.py onları oradan aldığı için
-`import forum.teklif_turleri` ilk içe aktarma olarak döngüye girip hata veriyordu (teklif_turleri → kategoriler →
-oylama → teklif_turleri). Ortak parçalar buraya taşınınca döngü modül düzeyinde kırıldı.
+Yaprak modül: yalnızca ayarlar'a bağlıdır. Oylamaların ortak sabitlerini ve eşik karşılaştırmasını tutar; böylece
+teklif_turleri ile oylama arasında içe aktarma döngüsü oluşmaz.
 """
 from . import ayarlar
 

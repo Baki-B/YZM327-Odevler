@@ -3,8 +3,8 @@
 {% block icerik %}
 <section class="kart">
   <h1>{{ ikon('ag') }} Üye ağı</h1>
-  <p>Her nokta bir üye, her çizgi iki üye arasındaki bir ilişki: oy devri, yanıt ya da takip. Noktanın rengi görüş grubunu
-    gösterir; aynı gruptakiler yan yana durur. Ağ yalnızca bilgi içindir; oylamaların sonucunu etkilemez.</p>
+  <p>Her nokta bir üye, her çizgi iki üye arasındaki bir bağ: oy devri, yanıt ya da takip. Renk, görüş grubunu
+    gösterir; aynı gruptakiler yan yana durur. Ağ yalnızca bilgi içindir, oylamaların sonucunu değiştirmez.</p>
 </section>
 
 <div class="iki-panel">
@@ -21,7 +21,7 @@
   <aside class="yan">
     <section class="kart">
       <h3>Güç yoğunlaşması</h3>
-      <p>Gini katsayısı: <strong>{{ '%.2f'|format(ozet.gini) }}</strong> ({{ ozet.yogunlasma }})</p>
+      <p>Eşitsizlik (Gini katsayısı): <strong>{{ '%.2f'|format(ozet.gini) }}</strong> ({{ ozet.yogunlasma }})</p>
       <p class="soluk kucuk">0 = oy gücü herkese eşit dağılmış; 1 = tek kişide toplanmış. Devir tavanı ({{ parametre('MAX_DEVIR') }}) yoğunlaşmayı sınırlar.</p>
       {% if ozet.en_guclu %}<p class="kucuk">Devirle en çok oy taşıyanlar: {% for ad, g in ozet.en_guclu %}@{{ ad }} ({{ g }}){{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
     </section>
@@ -31,7 +31,7 @@
         <p><span class="grup-rengi" style="background: {{ gr.renk }}"></span><strong>{{ gr.ad }}</strong>: {% for u in gr.uyeler %}@{{ u }}{{ ', ' if not loop.last }}{% endfor %}</p>
       {% else %}<p class="soluk">Henüz yeterli çekişmeli oylama yok.</p>{% endfor %}
       <p class="soluk kucuk">Gruplar yalnızca sonucu yakın oylamalardan (önde giden seçenek %80'in altında, en az 3 oy) çıkarılır.
-        Oy gizliliği için iki üye arasındaki benzerlik hiçbir yerde gösterilmez ve {{ grup_en_az }} kişiden küçük grup listelenmez.</p>
+        Oy gizliliği için iki üye arasındaki benzerlik hiçbir yerde gösterilmez; {{ grup_en_az }} kişiden küçük gruplar listelenmez.</p>
     </section>
     <section class="kart">
       <h3>En etkili üyeler</h3>

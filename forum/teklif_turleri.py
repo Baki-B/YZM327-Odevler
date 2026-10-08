@@ -12,11 +12,8 @@ değişen adımları ("kancalar") burada, her tür için ayrı bir sınıfta dur
         ├── YonetmelikTuru    YONETMELIK
         └── KategoriTuru      KATEGORI
 
-Önceden bu farklar `if t["tip"] == "KARAR": ... elif ...` dallarıyla oylama.py, uygunluk.py, sonuclar.py ve web
-katmanında 30'dan fazla yere dağılmıştı; yeni bir tür eklemek altı dosyaya dokunmayı gerektiriyordu ve unutulan bir
-dal (ör. uygunluk.teklif_baglami'nın "geri kalan her şey uzmanlıktır" varsayımı) sessizce yanlış çalışıyordu.
-Şimdi yeni bir oylama türü eklemek = bu dosyaya @kaydet ile bir sınıf eklemek (Açık/Kapalı ilkesi). Her alt sınıf
-üst sınıfın sözleşmesine uyar; oylama.py hangi türle çalıştığını bilmez (Liskov).
+Yeni bir oylama türü eklemek için bu dosyaya @kaydet ile bir sınıf eklenir; oylama.py türleri tek tek bilmez
+(Açık/Kapalı ilkesi). Her alt sınıf üst sınıfın sözleşmesine uyar (Liskov).
 
 Türlerin adı, eşik ve süre parametreleri veri olarak ayarlar.TEKLIF_TIPLERI'nde durur (şablonlar da oradan okur).
 """

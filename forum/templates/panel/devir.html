@@ -5,8 +5,8 @@
 <section class="kart">
   <h1>Oy devri</h1>
   <p class="soluk">Oy hakkını güvendiğin bir üyeye ya da bir uzmana devredebilirsin. Bir oylamada kendin oy verirsen
-    o oylama için devir geçersiz olur. Yalnızca kendi oyun (1) devredilir; bir kişi en fazla {{ parametre('MAX_DEVIR') }} devredilmiş oy taşıyabilir.
-    Birden fazla devrin varsa en dar olan geçerlidir: önce konu, sonra kategori, sonra tüm forum.</p>
+    o oylamadaki devir geçersiz olur. Yalnızca kendi oyun (1) devredilir; bir kişi en fazla {{ parametre('MAX_DEVIR') }} devredilmiş oy alabilir.
+    Birden fazla devrin varsa en dar olanı geçerlidir: önce konu, sonra kategori, en son tüm forum.</p>
   <h2>Verdiğin devirler</h2>
   {% for d in verilen %}
     <p class="is-satiri"><span>→ {{ kisi(d.alan_ad, d.alan_yz) }} · {{ kapsam_metni(d) }}</span>

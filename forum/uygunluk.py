@@ -41,7 +41,7 @@ def yas(dogum_tarihi, bugun=None):
 
 
 def etkin_konum_id(kullanici, an=None):
-    """Adres değişikliği 30 gün bekler; süre dolduysa yeni adres geçerlidir."""
+    """Adres değişikliği bekleme süresinin ardından geçerli olur; süre dolmadıysa eski adres kullanılır."""
     bekleyen = kullanici["bekleyen_konum_id"]
     if bekleyen and kullanici["konum_gecerlilik"] <= zaman.metin(an or zaman.simdi()):
         return bekleyen

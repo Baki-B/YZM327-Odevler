@@ -27,8 +27,8 @@ def ozet(s):
 
 @dataclass(frozen=True)
 class TurKarari:
-    """Bir turun sonucu ve o an geçerli olan kurallar. Oylama kapanırken sonucun içine yazılır (anlık görüntü):
-    yönetmelik sonradan oylamayla değişse de geçmiş tur, kendi kurallarıyla anlatılır."""
+    """Bir turun sonucu ve o turda geçerli olan kurallar. Oylama kapanırken sonuca yazılır; yönetmelik sonradan
+    değişse de geçmiş tur kendi kurallarıyla anlatılır."""
     sonuc: str                 # "KABUL" (kalanlar[0] kazandı), "DEVAM" (kalanlar sonraki tura geçti), "SONUCSUZ"
     kalanlar: tuple            # seçenek anahtarları
     elenenler: tuple           # eleme eşiğinin altında kaldığı için elenenler

@@ -55,8 +55,8 @@ class Baglanti(sqlite3.Connection):
 
     def commit(self):
         super().commit()
-        # Veri artık kalıcı. Yan etkilerden biri başarısız olsa bile istek hata vermez (kullanıcı işlemini tekrar
-        # denerse çift kayıt oluşurdu); hata günlüğe yazılır.
+        # Veri kalıcı olduğu için bir yan etkinin hatası isteği başarısız saymaz; aksi halde kullanıcının işlemi
+        # tekrar denemesi çift kayıt oluşturur. Hata günlüğe yazılır.
         for abone in list(_COMMIT_ABONELERI):
             try:
                 abone(self)
@@ -148,7 +148,7 @@ def hazirla(yol):
     return db
 
 
-# Sürüm 2 içinde sonradan eklenen / kaldırılan sütunlar. Kurulu veritabanı silinmeden yerinde güncellenir.
+# Sürüm 2 içinde eklenen ve kaldırılan sütunlar; kurulu veritabanı yerinde güncellenir.
 EK_SUTUNLAR = [("kullanicilar", "askida_bitis", "TEXT"), ("kullanicilar", "askida_neden", "TEXT"),
                ("kategoriler", "renk", "TEXT"), ("konular", "itiraz_id", "INTEGER"),
                ("konular", "tur", "INTEGER NOT NULL DEFAULT 0"), ("konular", "tartisma_bitis", "TEXT"),
@@ -167,7 +167,7 @@ def _sutunlari_esitle(db):
         if sutun in sutunlar(tablo):
             db.execute(f"ALTER TABLE {tablo} DROP COLUMN {sutun}")
     _yeni_akisa_gecir(db)
-    try:   # kişi başı tek (yarışan) fikir kuralı veri katmanında da korunur; eski bir kopya varsa kurulum durmaz
+    try:   # kişi başı tek fikir kuralı veritabanında da korunur; eski kayıtlarda kopya varsa kurulum durmaz
         db.execute("CREATE UNIQUE INDEX IF NOT EXISTS tek_fikir ON mesajlar (konu_id, yazar_id) "
                    "WHERE tip = 'FIKIR' AND gizli = 0")
     except sqlite3.IntegrityError:
@@ -176,8 +176,8 @@ def _sutunlari_esitle(db):
 
 
 def _yeni_akisa_gecir(db):
-    """Eski akıştan (komisyon → genel kurul → karar → erteleme) kalan kayıtları yeni akışa uyarlar. Bir kez çalışır;
-    üyelere, mesajlara ve geçmiş oylamalara dokunmaz.
+    """Eski akıştan (komisyon, genel kurul, karar, erteleme) kalan kayıtları yeni akışa uyarlar. Üyelere, mesajlara
+    ve geçmiş oylamalara dokunmaz.
       * Süren eski oylamalar iptal edilir; açık konular tartışmaya döner ve süreleri baştan başlar.
       * Geçici kararlar kesinleşir; reddedilen ve uzlaşılamayan konular "sonuçsuz" olur.
       * Mesaj gizleme ve konu kaldırma eşiği dörtte üçe çıkar."""
@@ -199,6 +199,6 @@ def _yeni_akisa_gecir(db):
     db.execute("UPDATE konular SET durum = 'TARTISMA', tur = 0, tartisma_bitis = ? WHERE durum IN "
                "('KOMISYON', 'GENEL_KURUL', 'UZLASMA_YOK') OR (durum IN ('TARTISMA', 'OYLAMA') AND tartisma_bitis IS NULL)",
                (bitis,))
-    # Gizleme ve kaldırma artık dörtte üç ister (eski kurulumlarda üçte iki kalmış olabilir).
+    # Gizleme ve kaldırma eşiği dörtte üç; eski kurulumlardaki değer de güncellenir.
     db.execute("UPDATE parametreler SET deger = 'DORTTE_UC' WHERE kod IN ('ESIK_MESAJ_SILME', 'ESIK_KONU_SILME')")
     log.warning("Veritabanı yeni konu akışına uyarlandı.")

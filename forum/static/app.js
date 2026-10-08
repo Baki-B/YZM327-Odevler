@@ -158,7 +158,7 @@
   }
 
   // Uygulama (PWA): service worker kaydı
-  // Tarayıcı sürümünde (data-sw="0") sayfaları zaten kabuğun service worker'ı sunar; ikinci bir kayıt onu ezerdi.
+  // Tarayıcı sürümünde (data-sw="0") sayfaları kabuğun service worker'ı sunar; ikinci bir kayıt onu ezer.
   if (document.body.getAttribute("data-sw") !== "0" && "serviceWorker" in navigator && window.isSecureContext) {
     navigator.serviceWorker.register(KOK + "/sw.js", { scope: KOK + "/" }).catch(function () {});
   }

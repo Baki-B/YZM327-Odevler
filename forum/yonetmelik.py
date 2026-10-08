@@ -12,7 +12,7 @@ from . import ayarlar, denetim, gunluk, zaman
 from .hatalar import KuralHatasi
 from .metin import yuzde
 
-# (kod, tür, başlık, metin şablonu, ciddiyet, korunan). {KOD} yerine parametrenin güncel değeri yazılır.
+# (kod, tür, başlık, metin şablonu, ciddiyet, korunan). {PARAMETRE} yerine parametrenin güncel değeri yazılır.
 MADDELER = [
     ("T1", "TEMEL_HAK", "Kurallar karşısında eşitlik",
      "Kurallar her üyeye aynı uygulanır. Bir konunun katılım kuralını sağlayan her üye o konuda yazabilir, "
@@ -65,11 +65,11 @@ MADDELER = [
      "Üyeler bir mesajı ya da konuyu şikayet edebilir. Şikayet, en az {SIKAYET_TABANI} farklı üye aynı içeriği "
      "şikayet edince yöneticilere ulaşır. Yönetici içeriği kendisi gizleyemez; oylamaya sunar.", None, False),
     ("U11", "USUL", "Kategoriler",
-     "Konular 7 temel alanda ve Genel kategoride açılır. Genel her konuya açıktır. Her üye yeni bir ana ya da alt "
+     "Konular 7 temel alanda ve Genel kategoride açılır. Genel kategori her konuya açıktır. Her üye yeni bir ana ya da alt "
      "kategori önerebilir; öneri bütün üyelerin oyuna sunulur ve {ESIK_KATEGORI} ile kabul edilirse kategori eklenir. "
      "Bu oylamada herkesin oyu 1 sayılır.", None, False),
-    # D1 varsayılan olarak yalnızca uyarır: görülmemiş ölçüm kümesinde kesinliği yayın ölçütünün altında kaldı
-    # (docs/analiz.md 6.5 ve 11). Topluluk yönetmelik oylamasıyla "Engeller"e çekebilir.
+    # D1 varsayılan olarak yalnızca uyarır; kesinlik yayın ölçütünün altında kaldığı için (docs/analiz.md 6.5 ve 11).
+    # Topluluk yönetmelik oylamasıyla ENGEL'e çekebilir.
     ("D1", "DENETIM", "Saygılı dil", "Konular ve mesajlar hakaret içeremez.", "UYARI", False),
     ("D2", "DENETIM", "Kişisel veri",
      "Telefon numarası, T.C. kimlik numarası, e-posta adresi gibi kişisel veriler paylaşılamaz.", "ENGEL", False),
@@ -81,7 +81,7 @@ MADDELER = [
      "Aynı konuda açık bir konu varsa yenisi yerine o konu kullanılmalıdır.", "UYARI", False),
     ("D6", "DENETIM", "Alt konu ilişkisi",
      "Alt konu, üst konuyla aynı alanda olmalıdır.", "UYARI", False),
-    ("D7", "DENETIM", "Açıklık", "Konunun açıklaması derdi anlaşılır biçimde anlatmalıdır (en az 40 karakter).",
+    ("D7", "DENETIM", "Açıklık", "Konunun açıklaması derdini anlaşılır biçimde anlatmalıdır (en az 40 karakter).",
      "UYARI", False),
     ("B1", "BEYAN", "Tartışma kültürü", "Kişilere değil fikirlere karşı çıkılır.", None, False),
 ]
@@ -91,8 +91,8 @@ CIDDIYETLER = {"ENGEL": "Engeller", "UYARI": "Uyarır", "KAPALI": "Kapalı"}
 
 
 def yukle(db):
-    """İlk kurulumda parametreleri ve maddeleri yükler. Kurulu veritabanında koddaki tanımlarla eşitler:
-    eksik parametre ve madde eklenir, kalkan parametre silinir, açıklama ve madde metinleri tazelenir.
+    """İlk kurulumda parametreleri ve maddeleri yükler. Kurulu veritabanını koddaki tanımlarla eşitler: eksik
+    parametre ve madde eklenir, artık kullanılmayan parametre silinir, açıklama ve madde metinleri güncellenir.
     Oylamayla değişmiş değerlere, ciddiyetlere ve sonradan eklenen beyan maddelerine dokunulmaz."""
     mevcut = {r[0] for r in db.execute("SELECT kod FROM parametreler")}
     for kod, deger_, tur, aciklama, korunan in ayarlar.VARSAYILAN_PARAMETRELER:

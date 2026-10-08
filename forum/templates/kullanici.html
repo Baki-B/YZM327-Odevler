@@ -18,7 +18,7 @@
 </section>
 {% if k.yz_mi %}
 <section class="kart orta">
-  <p>Bu hesap bir yapay zeka. Yalnızca kısa özetler yazar: tartışmayı ve tur sonuçlarını özetler. Oy kullanmaz, fikir yazmaz.</p>
+  <p>Bu hesap bir yapay zeka. Yalnızca kısa özetler yazar: tartışmaları ve tur sonuçlarını özetler. Oy kullanmaz, fikir yazmaz.</p>
   {% if aday_oylamasi %}
     <p>Bu hesap için süren bir uzmanlık oylaması var. <a href="{{ url_for('oylamalar.teklif', teklif_id=aday_oylamasi.id) }}">Oylamayı gör →</a></p>
   {% elif kullanici and not kullanici.yz_mi %}

@@ -4,15 +4,12 @@
                                    └──► SONUCSUZ
     (kaldırılmamış her durumdan oylamayla) ──► KALDIRILDI   (veritabanında `silindi = 1`)
 
-Her durum bir sınıftır ve "bu durumda ne yapılabilir?" sorusunu kendisi yanıtlar. Önceden bu sorular
-`if konu["durum"] == ...` biçiminde konular.py, web katmanı ve şablonlara dağılmıştı; bir yerde unutulan kontrol
-(ör. kaldırılmış konunun geçmişinin hâlâ okunabilmesi) hataya dönüşüyordu. Şimdi bütün izinler ve izin verilen
-geçişler buradan okunur; geçişi yapan üç işlem (konular.oylamayi_baslat, durum_degistir, konuyu_kaldir) geçiş
-tablosuna danışır.
+Her durum bir sınıftır ve "bu durumda ne yapılabilir?" sorusunu kendisi yanıtlar. İzinler ve izin verilen geçişler
+buradan okunur; geçişi yapan işlemler (konular.oylamayi_baslat, durum_degistir, konuyu_kaldir) geçiş tablosuna danışır.
 
-GoF'taki biçimden bilinçli sapma: geçişi durum nesnesi kendisi yapmaz. Geçiş veritabanı, kayıt defteri ve bildirim
-yazımı gerektirir; bunları durum sınıflarına taşımak bu modülü iş modüllerine bağlar (döngüsel bağımlılık). Durum
-nesneleri "ne yapılabilir ve nereye gidilebilir" bilgisinin tek kaynağıdır, "nasıl" konular.py'dedir.
+Geçişin kendisi durum nesnesinde değil konular.py'de yapılır: geçiş veritabanı, kayıt defteri ve bildirim yazımı
+gerektirir. Bunları durum sınıflarına taşımak modüller arasında döngüsel bağımlılık yaratır. Durum nesneleri
+"ne yapılabilir ve nereye gidilebilir" bilgisinin tek kaynağıdır.
 
 Durumlar iç durum taşımaz; her biri tek bir paylaşılan nesnedir. `durumu(konu)` bir veritabanı satırına karşılık
 gelen durum nesnesini verir.

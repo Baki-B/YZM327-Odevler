@@ -8,7 +8,7 @@
     <input type="search" name="q" value="{{ q }}" placeholder="Konu, fikir, argüman…" autofocus aria-label="Arama">
     <button class="dugme">Ara</button>
   </form>
-  <p class="soluk kucuk">Türkçe karakterleri yazmasan da bulur (“ogrenci” yazınca “öğrenci” de çıkar). Gizlenmiş mesajlar aramada görünmez.</p>
+  <p class="soluk kucuk">Türkçe karakter yazmasan da bulur (“ogrenci” yazınca “öğrenci” de çıkar). Gizlenen mesajlar aramada görünmez.</p>
   {% if q %}
     <h2>{{ sonuclar|length }} sonuç</h2>
     {% for s in sonuclar %}

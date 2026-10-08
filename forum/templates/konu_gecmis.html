@@ -4,7 +4,7 @@
 <section class="kart orta">
   <p class="soluk"><a href="{{ url_for('konular.konu', konu_id=konu.id) }}">← {{ konu.baslik }}</a></p>
   <h1>Konunun eski sürümleri</h1>
-  <p class="soluk">Şu anki hâli konu sayfasındadır. Aşağıda, düzenlenmeden önceki hâlleri yeniden eskiye doğru sıralıdır.</p>
+  <p class="soluk">Şu anki hâli konu sayfasında. Aşağıda düzenlenmeden önceki hâller, yeniden eskiye doğru listelenir.</p>
   {% for s in surumler|reverse %}
     <div class="surum">
       <p class="soluk kucuk">{{ s.tarih|tarih }} tarihinde değişti · {{ s.neden }}</p>

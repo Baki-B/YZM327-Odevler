@@ -9,8 +9,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from . import ayarlar, zaman
 from .hatalar import KuralHatasi
 
-# Şifre özeti yöntemi: bağımlılığın dışarıdan verildiği tek nokta. Üretimde Werkzeug'ün scrypt'i kullanılır.
-# Testler bunu hızlı bir yönteme çevirir: her scrypt ~0,1 sn sürdüğü için test paketinin süresinin çoğu buradaydı.
+# Şifre özeti yöntemi. Üretimde Werkzeug'ün scrypt'i kullanılır; testler her scrypt çağrısı ~0,1 sn sürdüğü için
+# bunu hızlı bir yönteme çevirir.
 SIFRE_YONTEMI = os.environ.get("FORUM_SIFRE_YONTEMI", "scrypt")
 
 

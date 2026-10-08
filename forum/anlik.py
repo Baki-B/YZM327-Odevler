@@ -8,10 +8,10 @@
     hizmet hesabı anahtarı konunca açılır (adımlar mobil/BENIOKU.md'de).
 Gönderim, veritabanı işlemi kaydedildikten sonra arka planda yapılır; istek beklemez. Geçersizleşen abonelikler silinir.
 
-Tasarım — GoF **Adapter**: iki kanalın dış API'leri birbirine hiç benzemez (pywebpush'ın webpush() fonksiyonu ile
-Firebase'in JWT + HTTP v1 uç noktası). Her biri AnlikKanal hedef arayüzüne uyarlanır; forumun geri kalanı yalnızca
-`etkin / abonelik_coz / gonder` bilir. Kanallar KANALLAR sözlüğünde durur (Strategy): üçüncü bir kanal (ör. iOS)
-yeni bir sınıf demektir; testler bu sözlüğe sahte bir kanal koyar (bağımlılığı tersine çevirme).
+Tasarım: GoF **Adapter** — iki kanalın dış API'leri birbirinden farklıdır (pywebpush'ın webpush() fonksiyonu, Firebase
+HTTP v1). Her biri AnlikKanal arayüzüne uyarlanır; forumun geri kalanı yalnızca `etkin / abonelik_coz / gonder`
+bilir. Kanallar KANALLAR sözlüğünde durur (**Strategy**); yeni kanal yeni bir sınıftır, testler sözlüğe sahte bir
+kanal koyar.
 """
 import base64
 import importlib.util
@@ -30,8 +30,7 @@ from .hatalar import KuralHatasi
 
 log = logging.getLogger(__name__)
 _kilit = threading.Lock()
-# Tarayıcıların Web Push servisleri. Abonelik adresi yalnızca bunlardan biri olabilir: sunucu bu adrese istek
-# attığı için, serbest bir adres kabul etmek iç ağa istek attırmaya (SSRF) kapı açardı.
+# Tarayıcıların Web Push servisleri. Sunucu bu adrese istek attığı için yalnızca bunlardan biri kabul edilir (SSRF).
 PUSH_SERVISLERI = ("fcm.googleapis.com", "android.googleapis.com", "push.services.mozilla.com",
                    "notify.windows.com", "push.apple.com")
 

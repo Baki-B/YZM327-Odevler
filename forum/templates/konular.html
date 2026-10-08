@@ -8,7 +8,7 @@
 </a>
 {% endif %}
 
-{#- Vitrin: şu an gündemde olan, süresi dolmak üzere olan ve son karara bağlanan -#}
+{#- Vitrin: gündemdeki konu, bitmek üzere olan oylama ve son karar -#}
 {% if sayfalama.sayfa == 1 and not kategori and filtre == 'tumu' %}
 <div class="vitrin">
   {% set t = yan.trend[0] if yan.trend else None %}
