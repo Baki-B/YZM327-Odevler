@@ -14,7 +14,7 @@ from datetime import timedelta
 
 from . import (arama, ayarlar, bildirimler, defter, denetim, gunluk, oylama, ontoloji, uygunluk, yonetmelik,
                zaman)
-from .hatalar import KuralHatasi, tamsayi
+from .hatalar import BulunamadiHatasi, KuralHatasi, tamsayi
 from .konu_durumlari import durumu, okunabilir_olmali, onceki_durumlar, yazilabilir_olmali
 from .metin import kisalt
 
@@ -26,14 +26,14 @@ MAX_YANIT_DERINLIGI = 6      # yanıt ağacı en fazla bu kadar iç içe çizili
 def konu_getir(db, konu_id):
     k = db.execute("SELECT * FROM konular WHERE id = ?", (konu_id,)).fetchone()
     if not k:
-        raise KuralHatasi("Konu bulunamadı.")
+        raise BulunamadiHatasi("Konu bulunamadı.")
     return k
 
 
 def mesaj_getir(db, mesaj_id):
     m = db.execute("SELECT * FROM mesajlar WHERE id = ?", (mesaj_id,)).fetchone()
     if not m:
-        raise KuralHatasi("Mesaj bulunamadı.")
+        raise BulunamadiHatasi("Mesaj bulunamadı.")
     return m
 
 

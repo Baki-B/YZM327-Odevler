@@ -9,7 +9,7 @@ import tempfile
 from datetime import timedelta
 
 from . import ayarlar, bildirimler, defter, gunluk, kategoriler, ontoloji, sikayetler, uygunluk, zaman
-from .hatalar import KuralHatasi, tamsayi
+from .hatalar import BulunamadiHatasi, KuralHatasi, tamsayi
 from .metin import site_ici_yol_mu
 
 # Yönetim işlemlerinin günlükteki eylem adları (panodaki "son yönetim işlemleri" bunları süzer)
@@ -65,7 +65,7 @@ def askida_mi(kullanici):
 def _hedef(db, kullanici_id):
     k = db.execute("SELECT * FROM kullanicilar WHERE id = ?", (kullanici_id,)).fetchone()
     if not k:
-        raise KuralHatasi("Üye bulunamadı.")
+        raise BulunamadiHatasi("Üye bulunamadı.")
     return k
 
 

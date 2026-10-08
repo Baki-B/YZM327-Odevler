@@ -16,7 +16,7 @@ Graf üzerinde hesaplananlar:
 from collections import defaultdict
 
 from . import ayarlar, bildirimler, yonetmelik, zaman
-from .hatalar import KuralHatasi
+from .hatalar import BulunamadiHatasi, KuralHatasi
 
 # Görüş grupları da paletten renk alır: yeşilin ve grinin birbirinden kolay ayrılan tonları
 GRUP_RENKLERI = [ayarlar.YESIL[600], ayarlar.GRI[500], ayarlar.YESIL[300], ayarlar.YESIL[800],
@@ -33,7 +33,7 @@ def takip_et(db, kullanici, hedef_id):
         raise KuralHatasi("Kendini takip edemezsin.")
     hedef = db.execute("SELECT * FROM kullanicilar WHERE id = ?", (hedef_id,)).fetchone()
     if not hedef:
-        raise KuralHatasi("Kullanıcı bulunamadı.")
+        raise BulunamadiHatasi("Kullanıcı bulunamadı.")
     if takip_ediyor_mu(db, kullanici["id"], hedef_id):
         db.execute("DELETE FROM takipler WHERE takip_eden_id = ? AND takip_edilen_id = ?", (kullanici["id"], hedef_id))
         return False

@@ -1102,5 +1102,14 @@ class YonetmelikMetni(Ortam):
             self.assertNotIn("{", m["metin_goster"], m["kod"])
 
 
+class Bulunamadi(WebOrtam):
+    """Olmayan bir kayıt 404 döner (önceden 400 "İşlem yapılamadı" ve API'de 422 dönüyordu)."""
+
+    def test_olmayan_konu_ve_oylama(self):
+        for adres in ("/konu/9999", "/oylama/9999", "/api/v1/konular/9999"):
+            self.assertEqual(self.istemci.get(adres).status_code, 404, adres)
+        self.assertEqual(self.istemci.get("/konu/abc").status_code, 404)
+
+
 if __name__ == "__main__":
     unittest.main()

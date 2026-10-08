@@ -4,7 +4,7 @@ import logging
 
 from flask import flash, g, jsonify, redirect, render_template, request
 
-from ..hatalar import KuralHatasi
+from ..hatalar import BulunamadiHatasi, KuralHatasi
 from . import db_al
 from .istek import geldigi_sayfa
 
@@ -13,9 +13,12 @@ log = logging.getLogger("forum.web")
 
 def kural_hatasi(e):
     db_al().rollback()
+    yok = isinstance(e, BulunamadiHatasi)
     if g.get("api"):
-        return jsonify(hata=str(e)), 422
+        return jsonify(hata=str(e)), 404 if yok else 422
     if request.method == "GET":
+        if yok:
+            return render_template("hata.html", baslik="Bulunamadı", mesaj=str(e)), 404
         return render_template("hata.html", baslik="İşlem yapılamadı", mesaj=str(e)), 400
     flash(str(e), "hata")
     return redirect(geldigi_sayfa())

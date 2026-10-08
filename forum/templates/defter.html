@@ -67,7 +67,7 @@
     <thead><tr><th>#</th><th>Zaman</th><th>Tür</th><th>Veri</th><th>Hash · önceki</th></tr></thead>
     {% for b in bloklar %}
       <tr><td>{{ b.no }}</td><td class="kucuk">{{ b.zaman|tarih }}</td><td><span class="rozet">{{ b.tur }}</span></td>
-          <td class="kucuk veri-hucresi">{% for k, v in b.veri_json.items() %}<span><b>{{ k }}</b>: {{ v if v is not mapping else '…' }}</span> {% endfor %}</td>
+          <td class="kucuk veri-hucresi">{% for k, v in b.veri_json.items() if v is not none %}<span><b>{{ k }}</b>: {{ v if v is not mapping else '…' }}</span> {% endfor %}</td>
           <td class="kucuk"><code>{{ b.hash[:12] }}</code><br><code class="soluk">{{ b.onceki[:12] }}</code></td></tr>
     {% endfor %}
   </table></div>

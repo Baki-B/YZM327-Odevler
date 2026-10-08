@@ -20,7 +20,7 @@ import secrets
 from datetime import timedelta
 
 from . import ayarlar, bildirimler, defter, denetim, devir, gunluk, teklif_turleri, uygunluk, yonetmelik, zaman
-from .hatalar import KuralHatasi
+from .hatalar import BulunamadiHatasi, KuralHatasi
 from .oy_kurallari import CEKIMSER, GIZLENEN_FIKIR, esik_saglandi
 
 # Oylama motorunun dışarıya açtığı adlar (bazıları oy_kurallari'ndan gelir; çağıranlar oylama.X diye kullanır).
@@ -42,7 +42,7 @@ def teklif_baglami(db, t):
 def teklif_getir(db, teklif_id):
     t = db.execute("SELECT * FROM teklifler WHERE id = ?", (teklif_id,)).fetchone()
     if not t:
-        raise KuralHatasi("Oylama bulunamadı.")
+        raise BulunamadiHatasi("Oylama bulunamadı.")
     return t
 
 
