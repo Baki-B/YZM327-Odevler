@@ -7,12 +7,13 @@ from datetime import date, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from forum import (anlik, arama, ayarlar, defter, devir, gorevler, graf, gundem, gunluk, guvenlik, kararlar,  # noqa: E402
+from forum import (anlik, arama, ayarlar, defter, denetim, devir, gorevler, graf, gundem, gunluk, guvenlik, kararlar,  # noqa: E402
                    kategoriler, konular, kullanicilar, ontoloji, oylama, sikayetler, sonuclar, uzmanlik, veritabani, yonetim,
                    yonetmelik, yz, zaman)
 from forum.hatalar import KuralHatasi  # noqa: E402
 
 SIFRE = "sifre1234"
+guvenlik.SIFRE_YONTEMI = "pbkdf2:sha256:1"   # testlerde hızlı şifre özeti (üretimde scrypt); bkz. guvenlik.py
 
 
 class Ortam(unittest.TestCase):
@@ -115,12 +116,18 @@ class OntolojiVeYonetmelik(Ortam):
         self.assertIn("protein", terimler)
         self.assertEqual(ontoloji.metindeki_yerler(self.db, "İstanbul'da gece vapuru"), [self.konum("İstanbul")])
 
-    def test_hakaret_iceren_konu_engellenir(self):
+    def test_hakaret_varsayilanda_uyarir_engel_secilince_engellenir(self):
+        """D1 varsayılan olarak uyarır (docs/analiz.md 6.5: yayın ölçütü sağlanmadı); topluluk "Engeller"e çekebilir."""
+        aciklama = "Bu menüyü savunanlar cahil, yemekhane rezalet durumda."
+        rapor = denetim.denetle(self.db, "Yemekhane menüsü değişsin", aciklama, self.kategori("Sağlık"))
+        self.assertIn("D1", {b["kod"] for b in rapor["uyarilar"]})
+        self.assertFalse(rapor["engel"])
+        yonetmelik.degisikligi_uygula(self.db, {"tur": "DENETIM", "kod": "D1", "yeni": "ENGEL"})
         with self.assertRaises(KuralHatasi):
-            self.konu(self.kisi("ali"), aciklama="Bu menüyü savunanlar cahil, yemekhane rezalet durumda.")
+            self.konu(self.kisi("ali"), aciklama=aciklama)
 
     def test_konum_uyarisi_ve_kategori_onerisi(self):
-        rapor = yonetmelik.denetle(self.db, "Ankara'da otobüs seferleri artsın",
+        rapor = denetim.denetle(self.db, "Ankara'da otobüs seferleri artsın",
                                    "Ankara'da ring otobüsleri gece de çalışsın, ulaşım kolaylaşsın.",
                                    self.kategori("Kültür ve Sanat", "Sinema"))
         kodlar = {b["kod"] for b in rapor["uyarilar"]}
@@ -130,7 +137,7 @@ class OntolojiVeYonetmelik(Ortam):
 
     def test_mesajda_kisisel_veri_engellenir(self):
         with self.assertRaises(KuralHatasi):
-            yonetmelik.mesaj_denetle(self.db, "Beni 0532 123 45 67 numarasından ara")
+            denetim.mesaj_denetle(self.db, "Beni 0532 123 45 67 numarasından ara")
 
     def test_korunan_parametre_dortte_uc_ister(self):
         kisiler = self.kisiler(4, "uye")
@@ -143,7 +150,7 @@ class OntolojiVeYonetmelik(Ortam):
 
     def test_denetim_maddesi_kapatilabilir(self):
         yonetmelik.degisikligi_uygula(self.db, {"tur": "DENETIM", "kod": "D1", "yeni": "KAPALI"})
-        yonetmelik.mesaj_denetle(self.db, "Bu fikir cahilce.")   # artık engellemez
+        denetim.mesaj_denetle(self.db, "Bu fikir cahilce.")   # kapalı madde engellemez
 
     def test_varsayilan_sureler_ve_esikler(self):
         d = lambda kod: yonetmelik.deger(self.db, kod)  # noqa: E731
@@ -266,8 +273,8 @@ class FikirOylamasi(Ortam):
         s = {"yeter": yeter, "katilan": 10, "gerekli": 2,
              "secenekler": [{"anahtar": str(i), "oran": o, "kisi": 1 if o else 0, "metin": f"f{i}"}
                             for i, o in enumerate(oranlar)]}
-        sonuc, kalan, _ = sonuclar.tur_karari(self.db, tur_no, s)
-        return sonuc, len(kalan)
+        k = sonuclar.tur_karari(tur_no, s, *sonuclar.tur_kurallari(self.db, tur_no))   # saf fonksiyon: kurallar parametre
+        return k.sonuc, len(k.kalanlar)
 
     def test_eleme_esikleri(self):
         self.assertEqual(self._karar(1, [.50, .30, .06, .049, .04]), ("DEVAM", 3))    # 1. tur: %5 altı elenir
@@ -361,7 +368,8 @@ class FikirOylamasi(Ortam):
         secimler = oylama.secim_anahtarlari(self.db, t)
         makbuz = oylama.oy_ver(self.db, t["id"], b, secimler[0])
         self.db.commit()
-        _, secim = defter.makbuz_dogrula(self.db.defter_klasoru, t["id"], makbuz, secimler)
+        _, secim, guncel = defter.makbuz_dogrula(self.db.defter_klasoru, t["id"], makbuz, secimler)
+        self.assertTrue(guncel)
         self.assertEqual(secim, secimler[0])
         self.assertIsNone(defter.makbuz_dogrula(self.db.defter_klasoru, t["id"], "YANLIS-KOD", secimler))
 
@@ -601,7 +609,7 @@ class EskiVeritabani(Ortam):
         m = konular.mesaj_yaz(self.db, a, idler["TARTISMA"], "ARGUMAN", "Eski bir mesaj; olduğu gibi kalmalı.")
         self.db.commit()
         self.db.close()
-        self.db = veritabani.hazirla(self.yol)                 # sunucu yeni sürümle yeniden başlıyor
+        self.db = veritabani.hazirla(self.yol)                 # sunucu yeniden başlatılır
         yonetmelik.yukle(self.db)
         durumlar = {eski: konular.konu_getir(self.db, i) for eski, i in idler.items()}
         for eski in ("KOMISYON", "GENEL_KURUL", "TARTISMA"):
@@ -690,7 +698,7 @@ class GrafVeGuvenlik(Ortam):
         _, kod = kullanicilar.kayit(self.db, "Deneme Kişi", "deneme", SIFRE, SIFRE, dogum, self.konum("İzmir"))
         _, yeni_kod = kullanicilar.sifre_sifirla(self.db, "deneme", kod, "yenisifre99", "yenisifre99")
         kullanicilar.giris(self.db, "deneme", "yenisifre99")
-        with self.assertRaises(KuralHatasi):   # eski kod artık geçersiz
+        with self.assertRaises(KuralHatasi):   # kullanılan kurtarma kodu yeniden kullanılamaz
             kullanicilar.sifre_sifirla(self.db, "deneme", kod, "baskasifre1", "baskasifre1")
         self.assertNotEqual(kod, yeni_kod)
 
@@ -855,7 +863,7 @@ class Web(unittest.TestCase):
                                                           "csrf": self._csrf()})
         self.assertEqual(y.status_code, 302)
         self.assertIn(f"/mesaj/{m}/gecmis", self.metin(f"/konu/{k}"))
-        self.assertIn("Her gün iki ana yemek çıkarmanın", self.metin(f"/mesaj/{m}/gecmis"))   # eski hâli
+        self.assertIn("Her gün iki ana yemek çıkarmanın", self.metin(f"/mesaj/{m}/gecmis"))   # düzenleme öncesi metin geçmişte kalır
 
     def test_guvenlik_basliklari(self):
         yanit = self.istemci.get("/")
@@ -990,7 +998,7 @@ class Kategoriler(Ortam):
         self.assertEqual(ontoloji.kategori_listesi(self.db)[-1][1], "Genel")         # Genel listenin sonunda
 
     def test_genel_kategoride_kategori_denetimi_aranmaz(self):
-        rapor = yonetmelik.denetle(self.db, "Forumda haftalık soru cevap saati olsun",
+        rapor = denetim.denetle(self.db, "Forumda haftalık soru cevap saati olsun",
                                    "Her pazar akşamı bir saat boyunca sorular yanıtlansın, yeni gelenler forumu tanısın.",
                                    self.kategori("Genel"))
         self.assertNotIn("D3", {b["kod"] for b in rapor["uyarilar"]})
@@ -1005,7 +1013,7 @@ class Kategoriler(Ortam):
             oylama.oy_ver(self.db, t, kim, secim)                     # herkes oy verince biter
         k = self.db.execute("SELECT * FROM kategoriler WHERE ad = 'Spor ve Oyun' AND ust_id IS NULL").fetchone()
         self.assertEqual((k["kaynak"], k["kavramlar"]), ("TOPLULUK", "turnuva,espor,satranc"))
-        rapor = yonetmelik.denetle(self.db, "Bahar turnuvası düzenlensin",
+        rapor = denetim.denetle(self.db, "Bahar turnuvası düzenlensin",
                                    "Kampüste satranç ve espor turnuvası düzenleyelim, ödüller de olsun.", k["id"])
         self.assertNotIn("D3", {b["kod"] for b in rapor["uyarilar"]})
         self.konu(kisiler[1], baslik="Bahar satranç turnuvası", kategori_id=k["id"],
@@ -1061,7 +1069,7 @@ class Kategoriler(Ortam):
         k2 = self.konu(a, kategori_id=kulup, baslik="Kulüp günleri", aciklama="Kulüp toplantıları için ortak bir gün belirlensin.")
         uzmanlik.uzmanlik_ver(self.db, a["id"], ulasim)
         self.db.execute("UPDATE site_ayarlari SET deger = '1' WHERE anahtar = 'kategori_surumu'")
-        ontoloji.yukle(self.db)                                       # sunucu yeni sürümle açılıyor
+        ontoloji.yukle(self.db)                                       # sunucu yeniden başlatılır
         yol = lambda k: ontoloji.yol_metni(self.db, "kategoriler", konular.konu_getir(self.db, k)["kategori_id"])  # noqa: E731
         self.assertEqual(yol(k1), "Siyaset › Ulaşım")
         self.assertEqual(yol(k2), "Eğitim › Kampüs Yaşamı")
@@ -1220,12 +1228,21 @@ class SikayetVeBildirim(Ortam):
         with self.assertRaises(KuralHatasi):                                  # dış bağlantı olmaz
             yonetim.toplu_bildirim(self.db, self.yonetici, "HEPSI", "Tıkla kazan", "https://ornek.com")
 
+    def sahte_kanal(self, kod, gecerli=True):
+        """Bağımlılığı tersine çevirme: gerçek push servisi yerine kanal sözlüğüne sahte bir kanal konur."""
+        kanal = SahteKanal(kod, gecerli)
+        gercek = anlik.KANALLAR[kod]
+        anlik.KANALLAR[kod] = kanal
+        self.addCleanup(anlik.KANALLAR.__setitem__, kod, gercek)
+        return kanal
+
     def test_anlik_bildirim_islem_kaydedilince_gider(self):
+        self.sahte_kanal("WEB")
         gonderilen = []
         gercek = anlik._gonder
         anlik._gonder = lambda yol, isler: gonderilen.extend(isler)
         try:
-            anlik.abone_ol(self.db, self.a, "WEB", {"endpoint": "https://push.ornek/abc",
+            anlik.abone_ol(self.db, self.a, "WEB", {"endpoint": "https://fcm.googleapis.com/fcm/send/abc",
                                                     "keys": {"p256dh": "x" * 20, "auth": "y" * 10}})
             self.db.commit()
             konular.mesaj_yaz(self.db, self.c, self.k, "SORU", "Ali bu konuyu neden açtın?", self.m)
@@ -1242,16 +1259,40 @@ class SikayetVeBildirim(Ortam):
             anlik.abone_ol(self.db, self.a, "WEB", {"endpoint": "http://guvensiz", "keys": {}})
 
     def test_gecersiz_abonelik_silinir(self):
+        kanal = self.sahte_kanal("FCM", gecerli=False)                        # uygulama kaldırılmış
         anlik.abone_ol(self.db, self.a, "FCM", {"token": "t" * 40})
         self.db.commit()
-        gercek = anlik._fcm_gonder
-        anlik._fcm_gonder = lambda db, abonelik, yuk: False                  # uygulama kaldırılmış
-        try:
-            anlik._gonder(self.yol, [(dict(anlik.abonelikler(self.db, self.a["id"])[0]), "{}")])
-        finally:
-            anlik._fcm_gonder = gercek
+        anlik._gonder(self.yol, [(dict(anlik.abonelikler(self.db, self.a["id"])[0]), "{}")])
+        self.assertEqual(len(kanal.gonderilen), 1)
         self.assertEqual(anlik.abonelikler(self.db, self.a["id"]), [])
 
+    def test_kapali_kanala_abone_olunmaz_ve_gonderilmez(self):
+        kanal = self.sahte_kanal("FCM")
+        anlik.abone_ol(self.db, self.a, "FCM", {"token": "t" * 40})
+        self.db.commit()
+        kanal.acik = False                                                    # sunucuda kanal sonradan kapandı
+        with self.assertRaises(KuralHatasi):
+            anlik.abone_ol(self.db, self.b, "FCM", {"token": "u" * 40})
+        anlik._gonder(self.yol, [(dict(anlik.abonelikler(self.db, self.a["id"])[0]), "{}")])
+        self.assertEqual(kanal.gonderilen, [])                                # denenmez, abonelik silinmez
+        self.assertEqual(len(anlik.abonelikler(self.db, self.a["id"])), 1)
+
+
+class SahteKanal(anlik.AnlikKanal):
+    """Test ikizi: AnlikKanal sözleşmesine uyar, ağa çıkmadan gönderilenleri kaydeder."""
+
+    def __init__(self, kod, gecerli=True):
+        self.kod, self.gecerli, self.acik, self.gonderilen = kod, gecerli, True, []
+
+    def etkin(self, klasor):
+        return self.acik
+
+    def abonelik_coz(self, veri):
+        return (anlik.WebPushKanali() if self.kod == "WEB" else anlik.FcmKanali()).abonelik_coz(veri)
+
+    def gonder(self, klasor, abonelik, yuk):
+        self.gonderilen.append((abonelik, yuk))
+        return self.gecerli
 
 if __name__ == "__main__":
     unittest.main()

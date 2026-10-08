@@ -1,0 +1,44 @@
+madde,etiket,metin
+D1,VAR,"Salağa bak, hâlâ aynı şeyi yazıyor."
+D1,VAR,Bu dangalağın yorumuna cevap vermeyin.
+D1,VAR,APTAL fikirlerini kendine sakla.
+D1,VAR,Gerizekalılar yüzünden karar çıkmıyor.
+D1,VAR,Mal mısın kardeşim?
+D1,VAR,Cahillerle tartışılmaz.
+D1,YOK,Ahmet'in önerisi bence en mantıklısı.
+D1,YOK,Salatalık ve domates menüye eklensin.
+D1,YOK,"Aptallık diye bir şey yok, herkes zamanla öğrenir."
+D1,YOK,Kurul kararını yeniden değerlendirsin.
+D1,YOK,Sınav sonuçları ne zaman açıklanacak?
+D1,YOK,Bu yöntem pek akıllıca değil.
+D2,VAR,WhatsApp'tan yazın: 0544 987 65 43
+D2,VAR,Detaylar için mehmet.k@gmail.com adresine yazın.
+D2,VAR,Kimlik no 12345678950 ile kayıt oldum.
+D2,VAR,Annemin numarası 0 532 765 43 21.
+D2,VAR,Adresim Atatürk Mah. 5. Sokak No 3.
+D2,YOK,Seminer 14.03.2026 saat 14.00'te.
+D2,YOK,Okul numarası değil ders kodu YZM327 yazılmalı.
+D2,YOK,"Kampüse 3 yeni otobüs hattı eklendi: 15, 15B ve 17."
+D2,YOK,Ürün kodu 11111111110 stokta yok.
+D2,YOK,Bilet fiyatı 25 TL.
+D3,Bilim,Fizik bölümünün kuantum seminerleri herkese açık olsun.
+D3,Bilim,Kampüsteki plastik atıklar için geri dönüşüm kutuları artırılsın.
+D3,Bilim,Biyoloji laboratuvarında hayvan deneyleri yerine simülasyon kullanılsın.
+D3,Sağlık,Yemekhanede günlük kalori ve protein bilgisi yazılsın.
+D3,Sağlık,Öğrencilere ücretsiz terapi seansı imkânı sağlansın.
+D3,Sağlık,Futbol turnuvası için sahalar akşam da açık olsun.
+D3,Siyaset,Yeni vergi düzenlemesi öğrenci harçlarını nasıl etkiler?
+D3,Siyaset,Bisiklet yolları kampüse kadar uzatılsın.
+D3,Siyaset,Deprem toplanma alanları mahallede işaretlensin.
+D3,Eğitim,Vize ve final sınavları arasında en az iki hafta olsun.
+D3,Eğitim,Hocalar ders slaytlarını önceden paylaşsın.
+D3,Eğitim,LGS'ye hazırlanan öğrencilere ücretsiz çalışma grubu kuralım.
+D3,Teknoloji,Kütüphane bilgisayarlarına güncel yazılımlar kurulsun.
+D3,Teknoloji,Sohbet botu ile ders kaydı sorularına yanıt verilsin.
+D3,Teknoloji,Elektronik devre atölyesine yeni cihazlar alınsın.
+D3,Ekonomi,Kantin ücretleri enflasyona göre değil maliyete göre belirlensin.
+D3,Ekonomi,Mezunlar için iş ilanı ve özgeçmiş atölyesi yapılsın.
+D3,Ekonomi,Öğrenci kulüplerinin bütçesi şeffaf yayınlansın.
+D3,Kültür ve Sanat,Şiir dinletisi için kampüs amfisi ayrılsın.
+D3,Kültür ve Sanat,Sinema kulübü klasik filmler haftası düzenlesin.
+D3,Kültür ve Sanat,Halk müziği konseri bahar festivalinde olsun.

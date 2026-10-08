@@ -465,11 +465,10 @@ body:has(.toplu-sec:checked) .toplu-cubuk { display: flex; }
 .graf { width: 100%; height: auto; background: var(--t100); border-radius: 12px; touch-action: none; }
 .graf .kenar { stroke-opacity: .7; fill: none; }
 .graf .kenar-devir { stroke: var(--y700); } .graf .kenar-faydali { stroke: var(--y500); } .graf .kenar-yanit { stroke: var(--y300); }
-.graf .kenar-takip { stroke: var(--g400); stroke-dasharray: 4 3; } .graf .kenar-benzerlik { stroke: var(--g500); stroke-dasharray: 1 3; }
+.graf .kenar-takip { stroke: var(--g400); stroke-dasharray: 4 3; }
 .kenar-ornegi { display: inline-block; width: 18px; height: 0; border-top: 3px solid; vertical-align: middle; }
 .kenar-ornegi.kenar-devir { border-color: var(--y700); } .kenar-ornegi.kenar-faydali { border-color: var(--y500); }
 .kenar-ornegi.kenar-yanit { border-color: var(--y300); } .kenar-ornegi.kenar-takip { border-top-style: dashed; border-color: var(--g400); }
-.kenar-ornegi.kenar-benzerlik { border-top-style: dotted; border-color: var(--g500); }
 .graf .dugum-sekli { stroke: var(--g700); stroke-width: 1.5; cursor: grab; }
 .graf .dugum-sekli.yz { fill: var(--y700); stroke: var(--y300); stroke-width: 2; }
 .graf text { font-size: 12px; font-weight: 650; fill: var(--g900); pointer-events: none; paint-order: stroke; stroke: var(--t100); stroke-width: 3px; }

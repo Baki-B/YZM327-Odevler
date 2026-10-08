@@ -6,8 +6,8 @@
   {% if itiraz %}
     <p class="soluk"><a href="{{ url_for('konular.konu', konu_id=itiraz.id) }}">← {{ itiraz.baslik }}</a></p>
     <h1>İtiraz konusu aç</h1>
-    <div class="uyari bilgi">Kapanmış bir konunun sonucuna katılmıyorsan yeni bir konu açıp yeniden tartışmaya açabilirsin.
-      İtiraz konusu da aynı yoldan geçer: tartışma, sonra fikir oylaması.</div>
+    <div class="uyari bilgi">Kapanmış bir konunun sonucuna katılmıyorsan yeni bir konu açıp yeniden tartışabilirsin.
+      İtiraz konusu da aynı yoldan geçer: önce tartışma, sonra fikir oylaması.</div>
   {% elif ust %}
     <p class="soluk"><a href="{{ url_for('konular.konu', konu_id=ust.id) }}">← {{ ust.baslik }}</a></p>
     <h1>Alt konu aç</h1>

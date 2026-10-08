@@ -6,7 +6,7 @@
   {%- else -%}<span class="kisi sistem">{{ ikon('sistem') }} Sistem</span>{%- endif -%}
 {%- endmacro %}
 
-{# Giriş katmanı: giriş, üye ol ve şifre sıfırlama sayfalarının solundaki tanıtım paneli #}
+{# Giriş, üye ol ve şifre sayfalarının solundaki tanıtım paneli #}
 {% macro giris_kabugu(baslik, metin) %}
 <div class="giris-kabugu">
   <aside class="gk-tanitim">
@@ -41,7 +41,7 @@
   <span class="rozet {{ 'katilimci' if u.katilimci else 'gozlemci' }}">{{ u.rol }}</span>
 {%- endmacro %}
 
-{# Konunun yolculuğu: tartışma, en fazla 5 tur, karar. sira: 0 tartışma, 1-5 tur, 6 karar #}
+{# Konunun aşamaları. sira: 0 tartışma, 1-5 tur, 6 karar #}
 {% macro _sira(konu) -%}
   {{- 0 if konu.durum == 'TARTISMA' else (6 if konu.durum == 'KARARA_BAGLANDI' else (konu.tur or 0)) -}}
 {%- endmacro %}
@@ -62,7 +62,7 @@
   </ol>
 {% endmacro %}
 
-{# Konu listesindeki küçük gösterge: 7 adımdan kaçıncısında olduğu #}
+{# Konu listesindeki küçük gösterge: 7 adımdan hangisinde olduğu #}
 {% macro asama_noktalari(konu) -%}
   {% set sira = _sira(konu)|int %}
   {% set sonucsuz = konu.durum == 'SONUCSUZ' %}
@@ -84,8 +84,8 @@
 </div>
 {% endmacro %}
 
-{# Sayım sonucu. fikir=True: fikir oylaması turu (kalanlar: sonraki tura kalan ya da kazanan fikirlerin anahtarları).
-   Oran = ağırlıklı pay ile kişi payının küçüğü; çekimserler toplamda sayılır. #}
+{# Sayım sonucu. fikir=True ise fikir oylaması turudur (kalanlar: sonraki tura kalan ya da kazanan fikirler).
+   Oran, ağırlıklı pay ile kişi payının küçüğüdür; çekimserler toplamda sayılır. #}
 {% macro sonuc_tablosu(s, kazanan=None, fikir=False, kalanlar=None) %}
 {% set satirlar = s.secenekler + ([s.cekimser] if fikir and s.cekimser else []) %}
 <div class="tablo-kap"><table class="sonuc">
@@ -117,9 +117,9 @@
     <li class="bilgi">{{ n }} devredilen oy sayılmadı: {{ {'DONGU': 'devir zinciri döngüye giriyor', 'HAK_YOK': 'devralan kişinin oy hakkı yok', 'TAVAN': 'devralan kişi devir tavanına ulaştı'}[neden] }}</li>
   {% endfor %}
 </ul>
-<p class="soluk kucuk">Oran, ağırlıklı oylardaki pay ile kişi sayısındaki payın küçüğüdür. Çekimser oylar toplamda sayılır.</p>
+<p class="soluk kucuk">Oran, ağırlıklı oylardaki pay ile kişi sayısındaki payın küçüğüdür. Çekimserler toplamda sayılır.</p>
 {% if s.acik_oylar %}
-<h4>Uzman oyları <small class="soluk">gerekçeleriyle birlikte açıktır</small></h4>
+<h4>Uzman oyları <small class="soluk">gerekçeleriyle birlikte herkese açık</small></h4>
 <ul class="acik-oylar">
   {% for o in s.acik_oylar %}
   <li>{{ kisi(o.takma_ad, o.yz_mi) }} <span class="rozet agirlik">{{ o.agirlik }} oy · {{ o.aciklama }}</span> → <strong>{{ o.secim_metni }}</strong>
@@ -142,7 +142,7 @@
 </div>
 {% endmacro %}
 
-{# args: mevcut sorgu parametreleri (request.args.to_dict()); makrolar request'i göremediği için dışarıdan gelir #}
+{# args: mevcut sorgu parametreleri. Makrolar request'i göremediği için dışarıdan alınır. #}
 {% macro sayfa_gezgini(s, endpoint, args) %}
 {% if s.sayfa_sayisi > 1 %}
 <nav class="sayfalama" aria-label="Sayfalar">

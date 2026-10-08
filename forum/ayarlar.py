@@ -11,7 +11,7 @@ SITE_ADI = "Agora"
 MOBIL_UA = "AgoraMobil"
 
 # --- Renk paleti: iki renk ---
-# Ana renk taş beyazı: güneş almış mermer tonunda, biraz silikleştirilmiş kirli beyaz. Yan renk kaktüs yeşili (düğmelerde koyu tonu). Yazılar taşın gölgesindeki koyu gridir.
+# Ana renk taş beyazı, yan renk kaktüs yeşili (düğmelerde koyu tonu). Yazılar koyu gridir.
 # Açık/koyu tonlar aynı rengin tonlarıdır; başka renk kullanılmaz. Aynı değerler static/style.css içindeki :root'ta da vardır.
 TAS_BEYAZI = {50: "#f6f4ef", 100: "#ebe7df", 200: "#dfd9ce", 300: "#cfc8ba"}
 GRI = {300: "#c9c5bd", 400: "#a9a49b", 500: "#8a857c", 700: "#57534c", 900: "#2c2a27"}
@@ -23,7 +23,7 @@ KATEGORI_RENKLERI = {
     "Bilim": YESIL[300], "Sağlık": YESIL[400], "Siyaset": GRI[700], "Eğitim": YESIL[200],
     "Teknoloji": YESIL[600], "Ekonomi": YESIL[800], "Kültür ve Sanat": GRI[300], "Genel": GRI[500],
 }
-# Her konuya açık kategori: kategori denetimi (D3) burada aranmaz; yeni kategori fikirleri de burada tartışılır.
+# Genel kategori her konuya açıktır; D3 kategori denetiminde burada aranmaz.
 GENEL_KATEGORI = "Genel"
 VARSAYILAN_KATEGORI_RENGI = TAS_BEYAZI[300]
 
@@ -36,9 +36,10 @@ ESIKLER = {
 }
 
 # --- Oylama türleri ---
-# esik/sure: yönetmelik parametresinin kodu. KARAR (fikir oylaması turu) eşik yerine eleme kurallarını kullanır.
+# esik/sure: yönetmelik parametresinin kodu. Davranışları teklif_turleri.py'deki sınıflardadır (Strategy + Registry).
+# KARAR (fikir oylaması turu) eşik yerine eleme kurallarını kullanır; süresi tur numarasına göre seçilir.
 TEKLIF_TIPLERI = {
-    "KARAR":       {"ad": "Fikir oylaması", "esik": None, "sure": "SURE_TUR_SAAT"},
+    "KARAR":       {"ad": "Fikir oylaması", "esik": None, "sure": None},
     "MESAJ_SILME": {"ad": "Mesaj gizleme", "esik": "ESIK_MESAJ_SILME", "sure": "SURE_USUL_SAAT"},
     "KONU_SILME":  {"ad": "Konu kaldırma", "esik": "ESIK_KONU_SILME", "sure": "SURE_USUL_SAAT"},
     "UZMANLIK":    {"ad": "Uzmanlık başvurusu", "esik": "ESIK_UZMANLIK", "sure": "SURE_USUL_SAAT"},
@@ -89,6 +90,18 @@ VARSAYILAN_PARAMETRELER = [
     ("ADRES_BEKLEME_GUN", "30", "sayi", "Yeni adresin geçerli olması için geçen süre (gün)", False),
 ]
 
+# Oylamayla değişebilen sayıların aralıkları (en az, en çok). Aralık dışı değer önerilemez: ör. UZMAN_AGIRLIK=0
+# uzmanların oy verememesine, SIKAYET_TABANI=0 şikayetlerin yöneticiye ulaşmamasına, SURE_TUR_SAAT=0 turların anında
+# bitmesine yol açar. Eşik türündeki parametrelerin geçerli değerleri ESIKLER'dir.
+PARAMETRE_ARALIKLARI = {
+    "SURE_TARTISMA_SAAT": (1, 720), "SURE_TUR1_SAAT": (1, 720), "SURE_TUR_SAAT": (1, 720),
+    "ELEME_TUR1": (0.01, 0.5), "ELEME_TUR2": (0.01, 0.5), "ELEME_TUR3": (0.01, 0.5), "ELEME_TUR4": (0.01, 0.5),
+    "ESIK_EZICI": (0.51, 1), "YETER_SAYI_ORANI": (0.01, 1), "MIN_KATILIM": (1, 1000),
+    "SURE_USUL_SAAT": (1, 720), "SURE_YONETMELIK_SAAT": (24, 720),
+    "UZMAN_AGIRLIK": (1, 100), "UZMAN_KONTENJAN": (1, 50), "UZMAN_MIN_MESAJ": (0, 1000), "UZMAN_MIN_KONU": (0, 1000),
+    "UZMAN_SURE_GUN": (1, 3650), "MAX_DEVIR": (0, 1000), "SIKAYET_TABANI": (1, 1000), "ADRES_BEKLEME_GUN": (0, 365),
+}
+
 # --- Değişmeyen tanımlar ---
 KONU_DURUMLARI = {
     "TARTISMA": "Tartışmada",
@@ -96,7 +109,6 @@ KONU_DURUMLARI = {
     "KARARA_BAGLANDI": "Karara bağlandı",
     "SONUCSUZ": "Sonuçsuz kapandı",
 }
-AKTIF_DURUMLAR = {"TARTISMA", "OYLAMA"}   # mesaj yazılabilen durumlar
 
 MESAJ_TIPLERI = {
     "ARGUMAN": "Argüman", "KARSI_ARGUMAN": "Karşı argüman", "SORU": "Soru", "KAYNAK": "Kaynak",

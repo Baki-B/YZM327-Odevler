@@ -5,8 +5,8 @@
   "appendUserAgent": "AgoraMobil",
   "backgroundColor": "#ebe7df",
   "server": {
-    "url": "http://10.0.2.2:5000",
-    "cleartext": true,
+    "url": "https://baki-b.github.io/YZM327-Odevler/",
+    "cleartext": false,
     "errorPath": "hata.html"
   },
   "android": {

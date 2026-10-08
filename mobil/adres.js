@@ -3,10 +3,13 @@
 const fs = require("fs");
 const path = require("path");
 
-const adres = (process.argv[2] || "").replace(/\/+$/, "");
-if (!/^https?:\/\/[^\s/]+(:\d+)?$/.test(adres)) {
+// Yol içeren adreslerde (GitHub Pages gibi) sondaki "/" korunur; yoksa sunucu bir yönlendirme daha yapar.
+const ham = (process.argv[2] || "").replace(/\/+$/, "");
+const adres = /^https?:\/\/[^/]+\/./.test(ham) ? ham + "/" : ham;
+if (!/^https?:\/\/[^\s/]+(:\d+)?(\/[^\s]*)?$/.test(adres)) {
   console.error("Kullanım: npm run adres -- http://BILGISAYARIN-IP-ADRESI:5000");
   console.error("Emülatörde bilgisayarın kendisi: http://10.0.2.2:5000");
+  console.error("Web sitesi (varsayılan): https://baki-b.github.io/YZM327-Odevler/");
   process.exit(1);
 }
 const yol = path.join(__dirname, "capacitor.config.json");

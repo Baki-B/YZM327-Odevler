@@ -4,7 +4,7 @@
 {% block panel %}
 <section class="kart">
   <h1>Uzmanlık</h1>
-  <p class="soluk">Uzmanın, kendi alanındaki fikir oylamalarında oyu {{ parametre('UZMAN_AGIRLIK') }} sayılır; oyu açıktır ve gerekçe ister.
+  <p class="soluk">Uzmanın, kendi alanındaki fikir oylamalarında oyu {{ parametre('UZMAN_AGIRLIK') }} sayılır. Uzmanın oyu herkesçe görülür ve bir gerekçeyle birlikte verilir.
     Uzmanlık {{ parametre('UZMAN_SURE_GUN') }} gün sürer. Yöneticiler uzman atayamaz; uzmanlık yalnızca oylamayla verilir.</p>
   {% for u in uzmanliklar %}
     <p class="is-satiri"><span>{{ u.kategori_id|kategori }}<br><span class="soluk kucuk">{{ u.baslangic|gun }} – {{ u.bitis|gun }}</span></span>

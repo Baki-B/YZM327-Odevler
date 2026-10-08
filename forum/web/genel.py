@@ -51,10 +51,9 @@ def defter_sayfasi():
     sayfa = sayfa_no()
     bloklar, toplam = defter.bloklar(db.defter_klasoru, sayfa, 20, tur)
     aranan = request.args.get("blok", "").strip()
-    return render_template("defter.html", durum=defter.durum(db.defter_klasoru), bloklar=bloklar,
+    return render_template("defter.html", durum=defter.durum(db.defter_klasoru, tam=bool(request.args.get("denetle"))), bloklar=bloklar,
                            sayfalama=sayfa_bilgisi(toplam, sayfa, 20), tur=tur,
-                           turler=["KONU", "KONU_DUZENLEME", "KONU_DURUM", "MESAJ", "MESAJ_DUZENLEME", "GIZLEME", "TEKLIF",
-                                   "OY", "SONUC", "KARAR", "DEVIR", "UYE", "UZMANLIK", "YONETIM"],
+                           turler=defter.BLOK_TURLERI,
                            aranan=aranan, bulunan=defter.blok_bul(db.defter_klasoru, aranan) if aranan else None,
                            tutarlilik=defter.tutarlilik(db) if request.args.get("denetle") else None)
 
@@ -70,27 +69,23 @@ def makbuz_dogrula():
         flash("Oylama bulunamadı.", "hata")
         return redirect(url_for("genel.defter_sayfasi"))
     bulunan = defter.makbuz_dogrula(db.defter_klasoru, teklif_id, makbuz, oylama.secim_anahtarlari(db, t))
-    if bulunan:
-        blok, secim = bulunan
+    if bulunan and not bulunan[2]:
+        flash(f"Bu makbuz, değiştirdiğin eski oyuna ait (blok #{bulunan[0]['no']}). Sayılan oy bu değil; "
+              "son oyunu verirken aldığın makbuzu kullan.", "hata")
+    elif bulunan:
+        blok, secim, _ = bulunan
         flash(f"Oyun defterde kayıtlı: blok #{blok['no']} ({blok['hash'][:16]}…). Seçimin: "
-              f"“{_secim_metni(db, t, secim)}”. Bu bilgiyi sadece makbuz sahibi görebilir.", "basari")
+              f"“{oylama.turu(t).secim_metni(db, t, secim)}”. Bu bilgiyi sadece makbuz sahibi görebilir.", "basari")
     else:
         flash("Bu makbuzla eşleşen bir oy bulunamadı (oyunu sonradan değiştirdiysen yeni makbuzu kullan).", "hata")
     return redirect(url_for("genel.defter_sayfasi"))
-
-
-def _secim_metni(db, t, secim):
-    if t["tip"] == "KARAR" and secim != oylama.CEKIMSER:
-        r = db.execute("SELECT metin FROM secenekler WHERE id = ?", (int(secim),)).fetchone()
-        return r["metin"] if r else secim
-    return ayarlar.SECIM_ADLARI.get(secim, secim)
 
 
 # --- Graf, arama, günlük ---
 
 @bp.get("/graf")
 def graf_sayfasi():
-    return render_template("graf.html", ozet=graf.ozet(db_al()))
+    return render_template("graf.html", ozet=graf.ozet(db_al()), grup_en_az=graf.GRUP_EN_AZ)
 
 
 @bp.get("/ara")

@@ -13,7 +13,7 @@ Kurallar:
 from collections import defaultdict
 
 from . import bildirimler, defter, gunluk, ontoloji, uygunluk, yonetmelik, zaman
-from .hatalar import KuralHatasi
+from .hatalar import KuralHatasi, tamsayi
 
 KAPSAMLAR = {"GENEL": "Tüm forum", "KATEGORI": "Kategori", "KONU": "Konu"}
 
@@ -29,12 +29,11 @@ def devir_ekle(db, veren, alan_takma_ad, kapsam, kapsam_id=0):
         raise KuralHatasi("Geçersiz devir kapsamı.")
     if veren["yz_mi"]:
         raise KuralHatasi("YZ hesapları oy devredemez.")
-    if kapsam == "GENEL":
-        kapsam_id = 0
-    elif kapsam == "KATEGORI":
+    kapsam_id = 0 if kapsam == "GENEL" else tamsayi(kapsam_id, "Geçersiz kategori ya da konu.")
+    if kapsam == "KATEGORI":
         if not ontoloji.dugum(db, "kategoriler", kapsam_id):
             raise KuralHatasi("Kategori bulunamadı.")
-    else:
+    elif kapsam == "KONU":
         if not db.execute("SELECT 1 FROM konular WHERE id = ? AND silindi = 0", (kapsam_id,)).fetchone():
             raise KuralHatasi("Konu bulunamadı.")
 

@@ -14,14 +14,6 @@ def kaldir(db, tur, ref_id):
     db.execute("DELETE FROM arama WHERE tur = ? AND ref_id = ?", (tur, ref_id))
 
 
-def yeniden_indeksle(db):
-    db.execute("DELETE FROM arama")
-    for k in db.execute("SELECT id, baslik, aciklama FROM konular WHERE silindi = 0"):
-        indeksle(db, "KONU", k["id"], k["id"], f"{k['baslik']} {k['aciklama']}")
-    for m in db.execute("SELECT id, konu_id, icerik FROM mesajlar WHERE gizli = 0 AND tip != 'SISTEM'"):
-        indeksle(db, "MESAJ", m["id"], m["konu_id"], m["icerik"])
-
-
 def _alinti(metin, kelimeler, uzunluk=180):
     katli = ontoloji.katla(metin)
     konum = min((katli.find(k) for k in kelimeler if katli.find(k) >= 0), default=0)

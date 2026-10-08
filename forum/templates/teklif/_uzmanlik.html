@@ -1,0 +1,12 @@
+{# Oylama sayfasının UZMANLIK türüne özgü bölümü (teklif.html bunu tür koduna göre içerir). #}
+{% from "_makrolar.html" import kisi %}
+{% if aday %}
+<p>{{ kisi(aday.k.takma_ad, aday.k.yz_mi) }} için <strong>{{ veri.kategori_id|kategori }}</strong> alanında uzmanlık isteniyor.
+  Kabul edilirse {{ parametre('UZMAN_SURE_GUN') }} gün boyunca bu alandaki fikir oylamalarında oyu {{ parametre('UZMAN_AGIRLIK') }} sayılır.</p>
+<ul class="kontrol-listesi">
+  <li class="{{ 'tamam' if aday.sart.mesaj >= aday.sart.gereken_mesaj else 'eksik' }}">Ön şart: bu alanda {{ aday.sart.mesaj }} mesaj (en az {{ aday.sart.gereken_mesaj }})</li>
+  <li class="{{ 'tamam' if aday.sart.konu >= aday.sart.gereken_konu else 'eksik' }}">Ön şart: bu alanda {{ aday.sart.konu }} farklı konu (en az {{ aday.sart.gereken_konu }})</li>
+  <li class="{{ 'tamam' if aday.kontenjan.yer_var else 'eksik' }}">Kontenjan: {{ aday.kontenjan.alan }} alanında {{ aday.kontenjan.dolu }}/{{ aday.kontenjan.toplam }} uzman</li>
+</ul>
+<p class="soluk kucuk">Bu oylamaya yalnızca {{ aday.kontenjan.alan }} alanındaki konulara yazmış üyeler katılır. Herkesin oyu 1 sayılır; aday oy kullanamaz.</p>
+{% endif %}

@@ -1,0 +1,5 @@
+{# Oylama sayfasının YONETMELIK türüne özgü bölümü (teklif.html bunu tür koduna göre içerir). #}
+<div class="kutucuk"><p><strong>Önerilen değişiklik:</strong> {{ veri.aciklama }}</p>
+  {% if veri.tur == 'BEYAN' %}<p><em>{{ veri.baslik }}:</em> {{ veri.metin }}</p>{% endif %}
+  {% if veri.korunan %}<p class="uyari hata">Bu değişiklik korunan bir temel hak maddesine dokunuyor; {{ ayarlar.ESIKLER[t.esik].ad|lower }} gerekir.</p>{% endif %}
+  <p class="soluk kucuk">Yönetmelik oylamasında herkesin oyu 1 sayılır.</p></div>

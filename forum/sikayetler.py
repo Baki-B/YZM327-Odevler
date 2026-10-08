@@ -8,8 +8,8 @@ yersiz bulup kapatır. Aynı içerik hakkındaki bütün açık şikayetler birl
 """
 from datetime import timedelta
 
-from . import ayarlar, bildirimler, gunluk, konular, oylama, yonetmelik, zaman
-from .hatalar import KuralHatasi
+from . import ayarlar, bildirimler, denetim, gunluk, konular, oylama, yonetmelik, zaman
+from .hatalar import BulunamadiHatasi, KuralHatasi
 
 TURLER = {"MESAJ": "Mesaj", "KONU": "Konu"}
 DURUMLAR = {"ACIK": "Bekliyor", "OYLAMADA": "Oylamaya alındı", "YERSIZ": "Yersiz bulundu"}
@@ -52,7 +52,7 @@ def sikayet_et(db, kullanici, tur, hedef_id, neden, aciklama=""):
     if len(aciklama) > 500:
         raise KuralHatasi("Açıklama en fazla 500 karakter olabilir.")
     if aciklama:
-        yonetmelik.mesaj_denetle(db, aciklama)
+        denetim.mesaj_denetle(db, aciklama)
     if db.execute("SELECT 1 FROM sikayetler WHERE sikayetci_id = ? AND tur = ? AND hedef_id = ? AND durum = 'ACIK'",
                   (kullanici["id"], tur, hedef_id)).fetchone():
         raise KuralHatasi("Bu içerik için bekleyen bir şikayetin zaten var.")
@@ -120,7 +120,7 @@ def liste(db, durum="ACIK"):
 def _gruptakiler(db, sikayet_id):
     s = db.execute("SELECT * FROM sikayetler WHERE id = ?", (sikayet_id,)).fetchone()
     if not s:
-        raise KuralHatasi("Şikayet bulunamadı.")
+        raise BulunamadiHatasi("Şikayet bulunamadı.")
     if s["durum"] != "ACIK":
         raise KuralHatasi("Bu şikayet zaten sonuçlandı.")
     if sikayetci_sayisi(db, s["tur"], s["hedef_id"]) < yonetmelik.deger(db, "SIKAYET_TABANI"):

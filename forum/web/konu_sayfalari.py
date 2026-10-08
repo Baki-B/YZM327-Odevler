@@ -2,9 +2,10 @@ import json
 
 from flask import Blueprint, flash, g, redirect, render_template, request, url_for
 
-from .. import (ayarlar, devir, gundem, kararlar, kategoriler, konular, kullanicilar, ontoloji, oylama, sikayetler,
-                uygunluk, yonetmelik, yz)
+from .. import (ayarlar, denetim, gorunum, gundem, kategoriler, konular, ontoloji, oylama, sikayetler, uygunluk,
+                yonetmelik, yz)
 from ..hatalar import KuralHatasi
+from ..konu_durumlari import durumu
 from . import db_al, giris_gerekli, sayfa_no
 from .yardimcilar import sayfala
 
@@ -21,7 +22,7 @@ def acilis():
     if g.kullanici:
         return ana_sayfa()
     db = db_al()
-    gundemdekiler = sorted((k for k in konular.konu_listesi(db) if k["durum"] in ayarlar.AKTIF_DURUMLAR),
+    gundemdekiler = sorted((k for k in konular.konu_listesi(db) if durumu(k).yazilabilir),
                            key=lambda k: k["son_etkinlik"], reverse=True)[:3]
     return render_template("acilis.html", istatistik=konular.istatistikler(db), gundemdekiler=gundemdekiler)
 
@@ -71,7 +72,7 @@ def kategori_sayfasi():
     return render_template("kategoriler.html", satirlar=satirlar, duz=duz, q=q, sirala=sirala, suz=suz,
                            siralamalar=kategoriler.SIRALAMALAR, suzgecler=kategoriler.SUZGECLER,
                            oneriler=[{"t": t, "baslik": oylama.teklif_basligi(db, t), "veri": json.loads(t["veri"]),
-                                      "oy": db.execute("SELECT COUNT(*) FROM oylar WHERE teklif_id = ?", (t["id"],)).fetchone()[0]}
+                                      "oy": oylama.oy_sayisi(db, t["id"])}
                                      for t in kategoriler.oylama_suren_oneriler(db)],
                            sonuclananlar=[{"t": t, "baslik": oylama.teklif_basligi(db, t)} for t in kategoriler.son_oneriler(db, 6)],
                            ana_kategoriler=kategoriler.ana_kategoriler(db), toplam=len(db.execute("SELECT id FROM kategoriler").fetchall()),
@@ -85,7 +86,7 @@ def kategori_oner():
     f = request.form
     teklif_id = kategoriler.oner(db, g.kullanici, f.get("ad"), f.get("ust_id"), f.get("kavramlar"), f.get("gerekce"))
     db.commit()
-    flash("Kategori önerin oylamaya sunuldu. Bütün üyelere haber verildi.", "basari")
+    flash("Kategori önerin oylamaya sunuldu. Tüm üyelere haber verildi.", "basari")
     return redirect(url_for("oylamalar.teklif", teklif_id=teklif_id))
 
 
@@ -127,7 +128,7 @@ def konu_yeni():
 @giris_gerekli
 def konu_duzenle(konu_id):
     db = db_al()
-    k = konular.konu_getir(db, konu_id)
+    k = konular.konu_duzenleme_izni(db, g.kullanici, konu_id)
     if request.method == "POST":
         konular.konu_duzenle(db, g.kullanici, konu_id, request.form)
         db.commit()
@@ -140,65 +141,8 @@ def konu_duzenle(konu_id):
 
 @bp.route("/konu/<int:konu_id>")
 def konu(konu_id):
-    db = db_al()
-    k = konular.konu_getir(db, konu_id)
-    zincir = uygunluk.konu_zinciri(db, k)
-    if k["silindi"]:
-        return render_template("konu_silindi.html", konu=k, zincir=zincir)
-    ben = g.kullanici
-    u = uygunluk.uygunluk(db, ben, k)
-    baglam = uygunluk.konu_baglami(k)
-    teklifler = oylama.konu_teklifleri(db, konu_id)
-    tur = next((t for t in teklifler if t["tip"] == "KARAR" and t["durum"] == "ACIK"), None)
-
-    # Fikirler ayrı listelenir; her fikrin altındaki yanıtlar onunla birlikte gösterilir.
-    agac = konular.mesaj_agaci(db, konu_id)
-    yarisanlar = {s["mesaj_id"] for s in oylama.secenekler(db, tur["id"])} if tur else set()
-    karar = kararlar.konu_karari(db, konu_id)
-    kazanan_mesaj = None
-    if karar:
-        r = db.execute("SELECT mesaj_id FROM secenekler WHERE id = ?", (karar["kazanan_secenek_id"],)).fetchone()
-        kazanan_mesaj = r["mesaj_id"] if r else None
-    fikirler = []
-    for m in agac:
-        if m["tip"] != "FIKIR":
-            continue
-        if kazanan_mesaj == m["id"]:
-            m["fikir_durumu"] = "KAZANDI"
-        elif k["durum"] == "OYLAMA" and k["tur"] > 1 and m["id"] not in yarisanlar and not m["gizli"]:
-            m["fikir_durumu"] = "ELENDI"
-        else:
-            m["fikir_durumu"] = ""
-        fikirler.append(m)
-
-    benim_devrim = None
-    if ben:
-        alan_id, kapsam = devir.gecerli_devir(db, ben["id"], baglam)
-        if alan_id:
-            benim_devrim = {"takma_ad": kullanicilar.getir(db, alan_id)["takma_ad"], "kapsam": devir.KAPSAMLAR[kapsam]}
-    katilimci = bool(ben) and u.katilimci
-    return render_template(
-        "konu.html", konu=k, zincir=zincir, uygunluk=u, kural=uygunluk.kural_metni(db, k),
-        katilimci=katilimci, aktif=k["durum"] in ayarlar.AKTIF_DURUMLAR,
-        sahibi=bool(ben) and ben["id"] == k["sahip_id"],
-        agirlik=uygunluk.oy_agirligi(db, ben, baglam) if ben else (0, ""),
-        sahip=kullanicilar.getir(db, k["sahip_id"]),
-        alt_konular=konular.konu_listesi(db, konu_id),
-        tur=tur, tur_durumu=oylama.oy_durumu(db, tur, ben) if tur else None,
-        diger_acik=[t for t in teklifler if t["durum"] == "ACIK" and t["tip"] != "KARAR"],
-        kapali_teklifler=[t for t in teklifler if t["durum"] != "ACIK"][:8],
-        basliklar={t["id"]: oylama.teklif_basligi(db, t) for t in teklifler},
-        karar=karar, karar_sonucu=oylama.sonuc(oylama.teklif_getir(db, karar["teklif_id"])) if karar else None,
-        fikirler=fikirler, mesajlar=[m for m in agac if m["tip"] != "FIKIR"],
-        fikir_yazilabilir=katilimci and konular.fikir_yazilabilir_mi(k)
-        and not konular.kullanicinin_fikri(db, konu_id, ben["id"]),
-        benim_fikrim=konular.kullanicinin_fikri(db, konu_id, ben["id"]) if ben else None,
-        denetim=json.loads(k["denetim"]) if k["denetim"] else None,
-        itiraz_edilen=konular.konu_getir(db, k["itiraz_id"]) if k["itiraz_id"] else None,
-        itirazlar=konular.itirazlar(db, konu_id),
-        surum_sayisi=len(konular.konu_surumleri(db, konu_id)), benim_devrim=benim_devrim,
-        yz_var=bool(yz.asistan(db)),
-    )
+    sablon, veri = gorunum.konu_sayfasi(db_al(), g.kullanici, konu_id)
+    return render_template(sablon, **veri)
 
 
 @bp.post("/konu/<int:konu_id>/kaldir")
@@ -214,7 +158,7 @@ def kaldir(konu_id):
 @bp.get("/konu/<int:konu_id>/gecmis")
 def konu_gecmisi(konu_id):
     db = db_al()
-    return render_template("konu_gecmis.html", konu=konular.konu_getir(db, konu_id),
+    return render_template("konu_gecmis.html", konu=konular.okunur_konu(db, konu_id),
                            surumler=konular.konu_surumleri(db, konu_id))
 
 
@@ -222,11 +166,7 @@ def konu_gecmisi(konu_id):
 @giris_gerekli
 def ozet_iste(konu_id):
     db = db_al()
-    k = konular.konu_getir(db, konu_id)
-    if not uygunluk.uygunluk(db, g.kullanici, k).katilimci or k["durum"] not in ayarlar.AKTIF_DURUMLAR:
-        raise KuralHatasi("Özet, süren bir konuda katılımcılar tarafından istenebilir.")
-    if not yz.tartisma_ozeti(db, konu_id):
-        raise KuralHatasi("Forumda özet yazacak bir yapay zeka hesabı yok.")
+    yz.ozet_iste(db, g.kullanici, konu_id)
     db.commit()
     return redirect(url_for("konular.konu", konu_id=konu_id, _anchor="mesajlar"))
 
@@ -240,6 +180,7 @@ def fikir_yaz(konu_id):
     mesaj_id = konular.fikir_yaz(db, g.kullanici, konu_id, request.form.get("icerik"))
     db.commit()
     flash("Fikrin eklendi. Oylamada seçenek olarak yer alacak.", "basari")
+    _uyarilari_goster(db, request.form.get("icerik"))
     return redirect(url_for("konular.konu", konu_id=konu_id, _anchor=f"m{mesaj_id}"))
 
 
@@ -250,14 +191,20 @@ def mesaj_yaz(konu_id):
     f = request.form
     mesaj_id = konular.mesaj_yaz(db, g.kullanici, konu_id, f.get("tip"), f.get("icerik"), f.get("ust_mesaj_id"))
     db.commit()
+    _uyarilari_goster(db, f.get("icerik"))
     return redirect(url_for("konular.konu", konu_id=konu_id, _anchor=f"m{mesaj_id}"))
+
+
+def _uyarilari_goster(db, icerik):
+    for sorun in denetim.mesaj_uyarilari(db, icerik):
+        flash(f"Yönetmelik uyarısı: {sorun} Mesaj yayımlandı; gerekirse düzenleyebilirsin.", "uyari")
 
 
 @bp.route("/mesaj/<int:mesaj_id>/duzenle", methods=["GET", "POST"])
 @giris_gerekli
 def mesaj_duzenle(mesaj_id):
     db = db_al()
-    m = konular.mesaj_getir(db, mesaj_id)
+    m = konular.mesaj_duzenleme_izni(db, g.kullanici, mesaj_id)
     if request.method == "POST":
         konular.mesaj_duzenle(db, g.kullanici, mesaj_id, request.form.get("icerik"))
         db.commit()
@@ -269,9 +216,7 @@ def mesaj_duzenle(mesaj_id):
 @bp.get("/mesaj/<int:mesaj_id>/gecmis")
 def mesaj_gecmisi(mesaj_id):
     db = db_al()
-    m = konular.mesaj_getir(db, mesaj_id)
-    if m["gizli"]:
-        raise KuralHatasi("Bu mesaj oylamayla gizlendi; geçmişi de gösterilmiyor.")
+    m = konular.okunur_mesaj(db, mesaj_id)
     return render_template("mesaj_gecmis.html", mesaj=m, surumler=konular.mesaj_surumleri(db, mesaj_id))
 
 

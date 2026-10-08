@@ -6,8 +6,8 @@
   <section class="acilis-kahraman">
     <div class="ak-metin">
       <h1>Konuları tartış,<br><em>kararı oyla.</em></h1>
-      <p class="ak-giris">{{ ayarlar.SITE_ADI }}'da her üye konu açar, herkes tartışır ve herkes bir fikir yazar. Sonra fikirler oylanır:
-        az oy alanlar tur tur elenir, geriye kalan fikir kabul edilir ve konu kapanır.</p>
+      <p class="ak-giris">{{ ayarlar.SITE_ADI }}'da her üye konu açar, herkes tartışır ve bir fikir yazar. Sonra fikirler oylanır:
+        az oy alanlar tur tur elenir, en sonda kalan fikir kabul edilir ve konu kapanır.</p>
       <div class="eylem-satiri">
         <a class="dugme buyuk" href="{{ url_for('hesap.kayit') }}">Üye ol</a>
         <a class="dugme ince buyuk" href="{{ url_for('hesap.giris') }}">Giriş yap</a>
@@ -35,7 +35,7 @@
       <li><strong>Konu aç</strong><span>Derdini yaz: fikir, öneri ya da şikayet. Konu hemen açılır.</span></li>
       <li><strong>Tartış ({{ parametre('SURE_TARTISMA_SAAT') }} saat)</strong><span>Herkes yazar. Her katılımcı en fazla bir fikir verebilir. Mesajlar silinmez.</span></li>
       <li><strong>Oyla (en fazla {{ ayarlar.TUR_SAYISI }} tur)</strong><span>Her turda az oy alan fikirler elenir: {{ parametre('ELEME_TUR1') }}, {{ parametre('ELEME_TUR2') }}, {{ parametre('ELEME_TUR3') }}, {{ parametre('ELEME_TUR4') }}.</span></li>
-      <li><strong>Karar</strong><span>Tek kalan ya da {{ parametre('ESIK_EZICI') }} oy alan fikir kabul edilir. Katılmayan, itiraz konusu açabilir.</span></li>
+      <li><strong>Karar</strong><span>Tek kalan fikir ya da {{ parametre('ESIK_EZICI') }} oy alan fikir kabul edilir. Katılmayan biri itiraz konusu açabilir.</span></li>
     </ol>
   </section>
 
@@ -60,7 +60,7 @@
   <section class="acilis-cagri">
     <div>
       <h2>Katılmak için üye ol</h2>
-      <p>Forumda yalnızca takma adın görünür. Adın, il ve ilçen ile doğum tarihin yalnızca konuların katılım kuralını kontrol etmek için istenir.</p>
+      <p>Forumda yalnızca takma adın görünür. Adın, il ve ilçen ile doğum tarihin yalnızca katılım kurallarını kontrol etmek için istenir.</p>
     </div>
     <a class="dugme buyuk" href="{{ url_for('hesap.kayit') }}">Üye ol</a>
   </section>

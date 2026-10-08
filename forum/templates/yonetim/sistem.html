@@ -44,24 +44,24 @@
 <section class="kart" id="defter">
   <h2>{{ ikon('zincir') }} Kayıt defteri</h2>
   <p class="{{ 'uyari basari' if defter_durumu.saglikli else 'uyari hata' }}">
-    {% if defter_durumu.saglikli %}{{ ikon('tik') }} Bütün düğümler aynı zincirde ({{ defter_durumu.uzunluk }} blok).
-    {% else %}{{ ikon('uyari') }} Uyumsuz düğüm var; aşağıdan onarabilirsin.{% endif %}</p>
+    {% if defter_durumu.saglikli %}{{ ikon('tik') }} Bütün kopyalar aynı zincirde ({{ defter_durumu.uzunluk }} blok).
+    {% else %}{{ ikon('uyari') }} Uyumsuz bir kopya var; aşağıdan onarabilirsin.{% endif %}</p>
   <div class="dugumler">
     {% for d in defter_durumu.dugumler %}
       <div class="kart dugum durum-{{ d.durum|lower }}">
-        <h3>{{ ikon('sunucu') }} Düğüm {{ d.ad }}</h3>
-        <p><span class="rozet dugum-{{ d.durum|lower }}">{{ {'UYUMLU': 'Uyumlu', 'BOZUK': 'Bozuk zincir', 'AYRISMIS': 'Ayrışmış', 'AZINLIKTA': 'Uzlaşma yok'}[d.durum] }}</span>
+        <h3>{{ ikon('sunucu') }} Kopya {{ d.ad }}</h3>
+        <p><span class="rozet dugum-{{ d.durum|lower }}">{{ {'UYUMLU': 'Uyumlu', 'BOZUK': 'Bozuk', 'AYRISMIS': 'Farklı', 'AZINLIKTA': 'Azınlıkta'}[d.durum] }}</span>
           <span class="soluk kucuk">{{ d.uzunluk }} blok</span></p>
         <div class="eylem-satiri">
-          <form method="post" action="{{ url_for('yonetim.defter_deneme', ad=d.ad, islem='boz') }}">{{ csrf() }}
-            <button class="dugme ince tehlike kucuk-dugme" data-onay="Deneme: {{ d.ad }} düğümündeki bir blok bozulsun mu?">Bozmayı dene</button></form>
+          {% if config.DEMO %}<form method="post" action="{{ url_for('yonetim.defter_deneme', ad=d.ad, islem='boz') }}">{{ csrf() }}
+            <button class="dugme ince tehlike kucuk-dugme" data-onay="Deneme: {{ d.ad }} düğümündeki bir blok bozulsun mu?">Bozmayı dene</button></form>{% endif %}
           {% if d.durum != 'UYUMLU' %}<form method="post" action="{{ url_for('yonetim.defter_deneme', ad=d.ad, islem='onar') }}">{{ csrf() }}
             <button class="dugme kucuk-dugme">Onar</button></form>{% endif %}
         </div>
       </div>
     {% endfor %}
   </div>
-  <p class="soluk kucuk">“Bozmayı dene”, sunumda sahteciliğin nasıl yakalandığını göstermek içindir: bir düğümdeki bloğu değiştirir, kayıt defteri sayfası bunu hemen gösterir, “Onar” çoğunluğun kopyasını geri yazar.</p>
+  <p class="soluk kucuk">“Bozmayı dene”, sunumda sahteliğin nasıl yakalandığını göstermek içindir. Bir kopyadaki kaydı değiştirir; sayfa bunu hemen gösterir. “Onar” ise çoğunluğun kopyasını geri yazar.</p>
   {% if tutarlilik %}
     <h3>Veritabanı ile karşılaştırma</h3>
     {% if tutarlilik.sorunlar %}

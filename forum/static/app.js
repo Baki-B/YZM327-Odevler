@@ -1,6 +1,8 @@
 // Forum arayüz yardımcıları. Satır içi betik yok (içerik güvenlik politikası: script-src 'self').
 (function () {
   "use strict";
+  // Uygulamanın kök yolu: sunucuda "", tarayıcı sürümünde (GitHub Pages) ör. "/YZM327-Odevler/app"
+  var KOK = document.body.getAttribute("data-kok") || "";
 
   // Açılır menüler (hesap, konu filtresi): dışarı tıklanınca kapansın
   document.addEventListener("click", function (e) {
@@ -108,7 +110,7 @@
       if (form.dataset.ust) veri.set("ust_id", form.dataset.ust);
       dugme.disabled = true;
       kutu.textContent = "Denetleniyor…";
-      fetch("/api/v1/denetim", {
+      fetch(KOK + "/api/v1/denetim", {
         method: "POST", body: veri, credentials: "same-origin",
         headers: { "X-CSRF-Token": form.querySelector("input[name=csrf]").value }
       }).then(function (y) { return y.json().then(function (j) { return { ok: y.ok, j: j }; }); })
@@ -156,8 +158,9 @@
   }
 
   // Uygulama (PWA): service worker kaydı
-  if ("serviceWorker" in navigator && window.isSecureContext) {
-    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(function () {});
+  // Tarayıcı sürümünde (data-sw="0") sayfaları kabuğun service worker'ı sunar; ikinci bir kayıt onu ezer.
+  if (document.body.getAttribute("data-sw") !== "0" && "serviceWorker" in navigator && window.isSecureContext) {
+    navigator.serviceWorker.register(KOK + "/sw.js", { scope: KOK + "/" }).catch(function () {});
   }
 
   // Android uygulaması (mobil/): geri tuşu önce sayfa geçmişinde geri gider, geçmiş bitince uygulamayı kapatır
@@ -224,7 +227,7 @@
     }
     function hata(e) { yaz(e && e.message ? e.message : "İşlem yapılamadı."); }
 
-    fetch("/api/v1/anlik", { credentials: "same-origin" }).then(function (y) { return y.json(); }).then(function (bilgi) {
+    fetch(KOK + "/api/v1/anlik", { credentials: "same-origin" }).then(function (y) { return y.json(); }).then(function (bilgi) {
       // 1) Android uygulaması: Firebase (FCM)
       var push = yerel && cap.Plugins.PushNotifications;
       if (push) {
@@ -236,7 +239,7 @@
           yaz(acik ? "Bu telefonda bildirimler açık." : "Bu telefonda bildirimler kapalı.");
         });
         push.addListener("registration", function (t) {
-          gonder("/api/v1/anlik/abone", { tur: "FCM", token: t.value, cihaz: "Android uygulaması" }).then(function () {
+          gonder(KOK + "/api/v1/anlik/abone", { tur: "FCM", token: t.value, cihaz: "Android uygulaması" }).then(function () {
             localStorage.setItem("anlik-fcm", t.value);
             goster(true);
             yaz("Bu telefonda bildirimler açık.");
@@ -250,7 +253,7 @@
           });
         });
         kapat.addEventListener("click", function () {
-          gonder("/api/v1/anlik/ayril", { adres: localStorage.getItem("anlik-fcm") }).then(function () {
+          gonder(KOK + "/api/v1/anlik/ayril", { adres: localStorage.getItem("anlik-fcm") }).then(function () {
             localStorage.removeItem("anlik-fcm");
             if (push.unregister) push.unregister();
             goster(false);
@@ -276,14 +279,14 @@
             var anahtar = new Uint8Array(ham.length);
             for (var i = 0; i < ham.length; i++) anahtar[i] = ham.charCodeAt(i);
             return kayit.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: anahtar }).then(function (ab) {
-              return gonder("/api/v1/anlik/abone", { tur: "WEB", abonelik: ab.toJSON(), cihaz: navigator.userAgent.slice(0, 80) });
+              return gonder(KOK + "/api/v1/anlik/abone", { tur: "WEB", abonelik: ab.toJSON(), cihaz: navigator.userAgent.slice(0, 80) });
             }).then(function () { goster(true); yaz("Bu cihazda bildirimler açık."); });
           }).catch(hata);
         });
         kapat.addEventListener("click", function () {
           kayit.pushManager.getSubscription().then(function (ab) {
             if (!ab) return;
-            return gonder("/api/v1/anlik/ayril", { adres: ab.endpoint }).then(function () { return ab.unsubscribe(); });
+            return gonder(KOK + "/api/v1/anlik/ayril", { adres: ab.endpoint }).then(function () { return ab.unsubscribe(); });
           }).then(function () { goster(false); yaz("Bu cihazda bildirimler kapalı."); }).catch(hata);
         });
       });

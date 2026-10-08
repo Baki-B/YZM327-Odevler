@@ -10,14 +10,19 @@ from flask import Blueprint, g, jsonify, request
 
 from .. import (anlik, arama, ayarlar, bildirimler, gundem, kategoriler, defter, graf, guvenlik, kararlar, konular, kullanicilar,
                 ontoloji, oylama, uygunluk, yonetmelik)
-from ..hatalar import KuralHatasi
+from ..denetim import mesaj_uyarilari
 from . import db_al, giris_gerekli
 
 bp = Blueprint("api", __name__, url_prefix="/api/v1")
 
 
 def _veri():
-    return request.get_json(silent=True) or request.form.to_dict()
+    """İstek gövdesi: JSON nesnesi ya da form verisi. Sayı ve mantıksal alanlar metne çevrilir, çünkü iş katmanı
+    metin bekler."""
+    veri = request.get_json(silent=True)
+    if not isinstance(veri, dict):
+        veri = request.form.to_dict()
+    return {k: str(v) if isinstance(v, (int, float, bool)) else v for k, v in veri.items()}
 
 
 def _yurttas(k):
@@ -41,11 +46,7 @@ def _konu(db, k, detay=False):
 def _teklif(db, t):
     d = {"id": t["id"], "tip": t["tip"], "baslik": oylama.teklif_basligi(db, t), "durum": t["durum"], "esik": t["esik"],
          "konu_id": t["konu_id"], "tur": t["tur_no"], "baslangic": t["baslangic"], "bitis": t["bitis"]}
-    if t["tip"] == "KARAR":
-        d["secenekler"] = [{"id": str(s["id"]), "metin": s["metin"]} for s in oylama.secenekler(db, t["id"])]
-        d["secenekler"].append({"id": oylama.CEKIMSER, "metin": ayarlar.SECIM_ADLARI[oylama.CEKIMSER]})
-    else:
-        d["secenekler"] = [{"id": s, "metin": ayarlar.SECIM_ADLARI[s]} for s in oylama.EVET_HAYIR]
+    d["secenekler"] = [{"id": a, "metin": m} for a, m, _ in oylama.turu(t).secenekler(db, t)]
     if t["durum"] != "ACIK" and t["sonuc"]:
         s = json.loads(t["sonuc"])
         d["sonuc"] = {k: s.get(k) for k in ("secenekler", "cekimser", "agirlik_oran", "kisi_oran", "yeter", "katilan",
@@ -151,7 +152,7 @@ def denetim():
     db = db_al()
     v = _veri()
     ust_id = v.get("ust_id") or v.get("ust")
-    rapor = konular.denetim_onizleme(db, v, int(ust_id) if ust_id else None)
+    rapor = konular.denetim_onizleme(db, v, ust_id)
     return jsonify(rapor)
 
 
@@ -163,7 +164,7 @@ def mesaj_yaz(konu_id):
     mesaj_id = konular.mesaj_yaz(db, g.kullanici, konu_id, v.get("tip", "ARGUMAN"), v.get("icerik"),
                                  v.get("ust_mesaj_id"))
     db.commit()
-    return jsonify(id=mesaj_id), 201
+    return jsonify(id=mesaj_id, uyarilar=mesaj_uyarilari(db, v.get("icerik"))), 201
 
 
 @bp.post("/konular/<int:konu_id>/fikir")
@@ -171,9 +172,10 @@ def mesaj_yaz(konu_id):
 def fikir_yaz(konu_id):
     """Kişi başı bir fikir: tartışma ve 1. tur boyunca yazılabilir."""
     db = db_al()
-    mesaj_id = konular.fikir_yaz(db, g.kullanici, konu_id, _veri().get("icerik"))
+    icerik = _veri().get("icerik")
+    mesaj_id = konular.fikir_yaz(db, g.kullanici, konu_id, icerik)
     db.commit()
-    return jsonify(id=mesaj_id), 201
+    return jsonify(id=mesaj_id, uyarilar=mesaj_uyarilari(db, icerik)), 201
 
 
 @bp.get("/oylamalar")
@@ -274,8 +276,3 @@ def ara():
                               "baglanti": s["baglanti"], "alinti": s["alinti"]}
                              for s in arama.ara(db, request.args.get("q", ""))])
 
-
-@bp.errorhandler(KuralHatasi)
-def kural_hatasi(e):
-    db_al().rollback()
-    return jsonify(hata=str(e)), 422

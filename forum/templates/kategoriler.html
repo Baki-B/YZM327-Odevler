@@ -74,7 +74,7 @@
             <option value="">Yeni ana kategori</option>
             {% for id, ad in ana_kategoriler %}<option value="{{ id }}">{{ ad }} altına alt kategori</option>{% endfor %}
           </select></label>
-        <label>Kavramlar <small>(isteğe bağlı, virgülle) Bu alandaki konularda geçen kelimeler; kategori denetimi bunlara bakar.</small>
+        <label>Kavramlar <small>(isteğe bağlı, virgülle) Bu alandaki konularda sık geçen kelimeler. Kategori denetimi bunlara bakar.</small>
           <input name="kavramlar" maxlength="400" placeholder="ör. futbol, turnuva, espor, satranç"></label>
         <label>Gerekçe <textarea name="gerekce" rows="3" required minlength="20" placeholder="Bu kategoriye neden ihtiyaç var? Hangi konular açılacak?"></textarea></label>
         <div><button class="dugme">Oylamaya sun</button></div>

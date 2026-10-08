@@ -3,12 +3,12 @@
 {% block icerik %}
 <section class="kart metin">
   <h1>{{ ikon('telefon') }} {{ ayarlar.SITE_ADI }} API (v1)</h1>
-  <p>Forumu mobil uygulamadan ya da kendi programından kullanmak için JSON tabanlı REST API. Kimlik doğrulaması için ya
+  <p>Forumu mobil uygulamadan ya da kendi programından kullanmak için JSON biçiminde bir API. Giriş için ya
     <code>POST /api/v1/giris</code> ile anahtar al, ya da profilinden anahtar oluştur. Anahtarı her istekte
-    <code>Authorization: Bearer &lt;anahtar&gt;</code> başlığıyla gönder. Kişisel veriler (ad, doğum tarihi, adres) API'de hiçbir zaman döndürülmez.
+    <code>Authorization: Bearer &lt;anahtar&gt;</code> başlığıyla gönder. Kişisel veriler (ad, doğum tarihi, adres) API'de hiçbir zaman görünmez.
     Hatalar <code>{"hata": "..."}</code> biçimindedir: 401 kimlik, 422 kural ihlali, 404 bulunamadı.</p>
 
-  <h2>Uç noktalar</h2>
+  <h2>Yollar</h2>
   <div class="tablo-kap"><table class="liste">
     <thead><tr><th>Yöntem</th><th>Yol</th><th>Açıklama</th><th>Kimlik</th></tr></thead>
     <tr><td>POST</td><td><code>/api/v1/giris</code></td><td><code>{takma_ad, sifre, cihaz}</code> → <code>{anahtar}</code></td><td>—</td></tr>
@@ -16,7 +16,7 @@
     <tr><td>GET</td><td><code>/api/v1/konular?durum=TARTISMA</code></td><td>Konu listesi (durum: TARTISMA, OYLAMA, KARARA_BAGLANDI, SONUCSUZ)</td><td>—</td></tr>
     <tr><td>GET</td><td><code>/api/v1/konular/&lt;id&gt;</code></td><td>Konu, mesajlar, fikirler, oylamalar, rolün</td><td>—</td></tr>
     <tr><td>POST</td><td><code>/api/v1/konular</code></td><td>Konu aç: <code>{baslik, aciklama, kategori_id, konum_id?, min_yas?, max_yas?, ust_id?, itiraz_id?}</code></td><td>{{ ikon('tik') }}</td></tr>
-    <tr><td>POST</td><td><code>/api/v1/denetim</code></td><td>Konuyu açmadan yönetmelik denetimi</td><td>{{ ikon('tik') }}</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/denetim</code></td><td>Konuyu açmadan yönetmeliğe uygunluk denetimi</td><td>{{ ikon('tik') }}</td></tr>
     <tr><td>POST</td><td><code>/api/v1/konular/&lt;id&gt;/mesajlar</code></td><td><code>{tip, icerik, ust_mesaj_id?}</code></td><td>{{ ikon('tik') }}</td></tr>
     <tr><td>POST</td><td><code>/api/v1/konular/&lt;id&gt;/fikir</code></td><td><code>{icerik}</code> · kişi başı bir fikir</td><td>{{ ikon('tik') }}</td></tr>
     <tr><td>GET</td><td><code>/api/v1/oylamalar</code></td><td>Süren oylamalar (kimlikle: oy hakkın ve ağırlığın)</td><td>—</td></tr>
@@ -24,10 +24,10 @@
     <tr><td>POST</td><td><code>/api/v1/oylamalar/&lt;id&gt;/oy</code></td><td><code>{secim, gerekce?}</code> → <code>{makbuz}</code> · fikir oylamasında <code>secim</code> fikrin numarası ya da <code>CEKIMSER</code></td><td>{{ ikon('tik') }}</td></tr>
     <tr><td>GET</td><td><code>/api/v1/kararlar</code></td><td>Kabul edilen fikirler</td><td>—</td></tr>
     <tr><td>GET</td><td><code>/api/v1/bildirimler</code></td><td>Son 50 bildirim</td><td>{{ ikon('tik') }}</td></tr>
-    <tr><td>GET</td><td><code>/api/v1/defter</code></td><td>Düğüm durumları ve son bloklar</td><td>—</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/defter</code></td><td>Kayıt defteri kopyalarının durumu ve son bloklar</td><td>—</td></tr>
     <tr><td>GET</td><td><code>/api/v1/graf</code></td><td>Üye ağı (düğümler, kenarlar)</td><td>—</td></tr>
     <tr><td>GET</td><td><code>/api/v1/yonetmelik</code></td><td>Maddeler ve parametreler</td><td>—</td></tr>
-    <tr><td>GET</td><td><code>/api/v1/ara?q=...</code></td><td>Tam metin arama</td><td>—</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/ara?q=...</code></td><td>Metin içinde arama</td><td>—</td></tr>
   </table></div>
 
   <h2>Örnek</h2>
@@ -40,7 +40,7 @@ curl -X POST {{ request.host_url }}api/v1/oylamalar/12/oy -H "Authorization: Bea
      -H "Content-Type: application/json" -d '{"secim": "EVET"}'</pre>
 
   <h2>Uygulama olarak kurmak</h2>
-  <p>Site telefona ve bilgisayara uygulama olarak kurulabilir. Telefonda tarayıcı menüsünden “Ana ekrana ekle”yi, bilgisayarda Chrome ya da Edge adres
-    çubuğundaki “Yükle” simgesini kullan. Uygulama kendi penceresinde açılır ve bağlantı kesilince çevrimdışı sayfası gösterir.</p>
+  <p>Siteyi telefona ya da bilgisayara uygulama gibi kurabilirsin. Telefonda tarayıcı menüsünden “Ana ekrana ekle”yi, bilgisayarda Chrome ya da Edge adres
+    çubuğundaki “Yükle” simgesini kullan. Bağlantı kesilirse uygulama çevrimdışı sayfasını gösterir.</p>
 </section>
 {% endblock %}

@@ -54,7 +54,7 @@
     <h2>{{ ikon('kum_saati') }} İlgilenmen gerekenler</h2>
     {% set d = p.dikkat %}
     {% if not d.defter.saglikli %}
-      <p class="uyari hata">{{ ikon('uyari') }} Kayıt defterinde uyumsuz düğüm var. <a href="{{ url_for('yonetim.sistem', _anchor='defter') }}">Sistem sayfasında onar →</a></p>
+      <p class="uyari hata">{{ ikon('uyari') }} Kayıt defterinde uyumsuz bir kopya var. <a href="{{ url_for('yonetim.sistem', _anchor='defter') }}">Sistem sayfasında onar →</a></p>
     {% endif %}
     {% if d.sikayet %}
       <p class="uyari">{{ ikon('bayrak') }} {{ d.sikayet }} içerik için bekleyen şikayet var. <a href="{{ url_for('yonetim.sikayet_listesi') }}">Şikayetlere git →</a></p>

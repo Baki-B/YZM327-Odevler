@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS kullanicilar (
     yonetici_mi        INTEGER NOT NULL DEFAULT 0,
     askida_bitis       TEXT,                          -- yönetici askıya aldıysa bitiş zamanı
     askida_neden       TEXT,
+    oturum_surumu      INTEGER NOT NULL DEFAULT 0,   -- şifre değişince artar; eski oturum çerezleri geçersiz olur
     olusturma          TEXT NOT NULL,
     son_giris          TEXT
 );
@@ -44,7 +45,7 @@ CREATE TABLE IF NOT EXISTS uzmanliklar (
     kaynak       TEXT NOT NULL,                       -- TOPLULUK (oylamayla)
     belge        TEXT
 );
--- Sosyal graf kenarı: takip. (Diğer kenarlar: devirler, yanıtlar, faydalı işaretleri, oy benzerliği.)
+-- Sosyal graf kenarı: takip. (Diğer kenarlar: devirler, yanıtlar; oy benzerliği yalnızca sunucuda hesaplanır, gösterilmez.)
 CREATE TABLE IF NOT EXISTS takipler (
     takip_eden_id    INTEGER NOT NULL REFERENCES kullanicilar(id),
     takip_edilen_id  INTEGER NOT NULL REFERENCES kullanicilar(id),

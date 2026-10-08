@@ -3,12 +3,12 @@
 {% block icerik %}
 <section class="kart metin">
   <h1>Nasıl işler?</h1>
-  <p>{{ ayarlar.SITE_ADI }}'da her üye konu açar. Konunun altında herkes tartışır ve isteyen bir fikir yazar.
-    Sonra fikirler oylanır: her turda az oy alanlar elenir, geriye kalan fikir kabul edilir ve konu kapanır.</p>
+  <p>{{ ayarlar.SITE_ADI }}'da her üye konu açar. Konunun altında herkes tartışır, isteyen de bir fikir yazar.
+    Sonra fikirler oylanır: her turda az oy alanlar elenir, sonunda kalan fikir kabul edilir.</p>
 
   <h2>Bir konunun yolculuğu</h2>
   <ol class="yolculuk">
-    <li><strong>Konu açılır.</strong> Her üye derdini (fikir, öneri, şikayet) yazıp konu açar. Konu hemen açılır; hakaret ya da kişisel veri varsa gönderilemez.</li>
+    <li><strong>Konu açılır.</strong> Her üye derdini (fikir, öneri ya da şikayet) yazıp konu açar. Konu hemen açılır. Kişisel veri içeren yazılar gönderilemez; hakaret içeren yazılarda uyarı çıkar.</li>
     <li><strong>Tartışma ({{ parametre('SURE_TARTISMA_SAAT') }} saat).</strong> Üyeler argüman, karşı argüman, soru ve kaynak yazar. Her katılımcı en fazla <strong>bir fikir</strong> verebilir; vermek zorunda değildir.</li>
     <li><strong>1. tur ({{ parametre('SURE_TUR1_SAAT') }} saat).</strong> Oylama açılır. Bu tur boyunca hâlâ fikir yazılabilir ve tartışma sürer. Tur bitince oranı {{ parametre('ELEME_TUR1') }} altında kalan fikirler elenir.</li>
     <li><strong>2. tur ({{ parametre('SURE_TUR_SAAT') }} saat).</strong> {{ parametre('ELEME_TUR2') }} altında kalanlar elenir.</li>
@@ -26,8 +26,8 @@
 
   <h2>Oylar nasıl sayılır?</h2>
   <ul>
-    <li><strong>Oran.</strong> Bir fikrin oranı iki ayrı hesaplanır: ağırlıklı oylardaki payı ve oy veren kişi sayısındaki payı. Küçük olan geçerlidir (çift çoğunluk).
-      Böylece birkaç ağır oy kalabalığı, kalabalık da uzmanları tek başına geçemez.</li>
+    <li><strong>Oran.</strong> Bir fikrin oranı iki şekilde hesaplanır: ağırlıklı oylardaki payı ve oy veren kişi sayısındaki payı. Küçük olan geçerlidir.
+      Böylece birkaç ağır oy kalabalığı, kalabalık da uzmanları tek başına alt edemez.</li>
     <li><strong>Çekimser.</strong> Çekimser oy toplamda sayılır; hiçbir fikre yazılmaz ama bütün fikirlerin oranını düşürür.</li>
     <li><strong>Oy ağırlığı.</strong> Konunun alanında uzman olan üyenin oyu {{ parametre('UZMAN_AGIRLIK') }}, diğer herkesin oyu 1 sayılır. Uzman oyları gerekçeli ve açıktır.</li>
     <li><strong>Yeter sayı.</strong> Oy hakkı olanların en az {{ parametre('YETER_SAYI_ORANI') }} kadarı (ve en az {{ parametre('MIN_KATILIM') }} kişi) oy vermelidir.</li>
@@ -39,26 +39,26 @@
     <thead><tr><th>Oylama</th><th>Eşik</th></tr></thead>
     {% for kod, t in tipler.items() if t.esik %}<tr><td>{{ t.ad }}</td><td>{{ parametre(t.esik) }}</td></tr>{% endfor %}
   </table></div>
-  <p class="soluk kucuk">Bu oylamalarda Evet / Hayır / Çekimser seçilir. Kabul için eşiğin hem ağırlıklı oylarda hem kişi sayısında sağlanması gerekir;
-    çekimserler paydada sayılır.</p>
+  <p class="soluk kucuk">Bu oylamalarda Evet, Hayır ya da Çekimser seçilir. Kabul için eşiğin hem ağırlıklı oylarda hem kişi sayısında sağlanması gerekir;
+    çekimserler hesapta sayılır.</p>
 
   <h2>Mesajlar</h2>
   <ul>
     <li><strong>Silinmez.</strong> Hiç kimse mesaj silemez; yönetici de silemez.</li>
-    <li><strong>Düzenlenebilir.</strong> Yazarı düzenleyebilir; eski hâli saklanır ve herkes “neyden düzenlendiğini” görebilir.</li>
+    <li><strong>Düzenlenebilir.</strong> Yazarı düzenleyebilir. Eski hâli saklanır ve herkes neyin değiştiğini görebilir.</li>
     <li><strong>Gizleme.</strong> Bir mesaj ancak oylamayla ve {{ parametre('ESIK_MESAJ_SILME') }} ile gizlenir; yerinde iz kalır.</li>
     <li><strong>Şikayet.</strong> Bir içerik en az {{ parametre('SIKAYET_TABANI') }} farklı üye tarafından şikayet edilmeden yöneticilere ulaşmaz.</li>
   </ul>
 
   <h2>Kategoriler</h2>
   <p>Konular 7 temel alanda (Bilim, Sağlık, Siyaset, Eğitim, Teknoloji, Ekonomi, Kültür ve Sanat) ve her konuya açık <strong>Genel</strong>
-    kategoride açılır. Forum üyelerle büyür: her üye <a href="{{ url_for('konular.kategori_sayfasi', _anchor='oner') }}">yeni bir ana ya da alt
+    kategoride açılır. Forumu üyeler büyütür: her üye <a href="{{ url_for('konular.kategori_sayfasi', _anchor='oner') }}">yeni bir ana ya da alt
     kategori önerebilir</a>; öneri bütün üyelerin oyuna sunulur ve {{ parametre('ESIK_KATEGORI') }} ile kabul edilirse kategori eklenir.
     Fikirleri önce Genel'de tartışmak iyi olur.</p>
 
   <h2>Gündem ve trendler</h2>
   <p>Konular bölümündeki <a href="{{ url_for('konular.kesfet') }}">Keşfet</a> sayfası ve konu akışının yan sütunu, şu an en çok konuşulan
-    konuları, öne çıkan kelimeleri, kategorilerin haftalık nabzını ve süresi dolmak üzere olan oylamaları gösterir. Bunlar yalnızca yol
+    konuları, öne çıkan kelimeleri, kategorilerin haftalık nabzını ve bitmek üzere olan oylamaları gösterir. Bunlar yalnızca yol
     gösterir; oylamaları etkilemez.</p>
 
   <h2>Uzmanlık</h2>
@@ -72,7 +72,7 @@
   <h2>Yönetici ve yapay zeka</h2>
   <ul>
     <li><strong>Yönetici</strong> yalnızca siteyi yönetir: üyeleri askıya alır, şikayetleri oylamaya taşır, kategorileri ve duyuruları düzenler.
-      İçerik silemez, uzman atayamaz, oylamaların süresine ve sonucuna dokunamaz. Her işlemi şeffaflık günlüğünde görünür.</li>
+      İçerik silemez, uzman atayamaz, oylamaların süresine ve sonucuna dokunamaz (tek istisna: sunum modundaki “Süreyi ilerlet”, yalnızca beklemeyi kısaltır). Her işlem şeffaflık günlüğünde görünür.</li>
     <li><strong>Yapay zeka (Bilge)</strong> yalnızca kısa özet yazar: tartışmayı ve her turun sonucunu özetler. Oy kullanmaz, kendisine oy devredilemez.</li>
   </ul>
 
@@ -90,17 +90,19 @@
     <tr><td>Bilgiler katılım kuralı olarak kullanılır</td><td>İl, ilçe ve yaş kuralı; kuralı sağlamayan üye konuyu okur ama yazamaz ve oy veremez.</td></tr>
     <tr><td>Herkes eşittir</td><td>Kurallar herkese aynı uygulanır; herkes bir fikir yazabilir.</td></tr>
     <tr><td>Bazıları daha eşittir</td><td>Uzmanın kendi alanındaki oyu {{ parametre('UZMAN_AGIRLIK') }} sayılır.</td></tr>
-    <tr><td>Kurallar ve uygunluk ontolojiyle ölçülür</td><td>Yönetmeliğin denetim maddeleri yeni konuları kategori kavramları, yer adları, benzer konular, hakaret ve kişisel veri açısından denetler.</td></tr>
+    <tr><td>Kurallar ve uygunluk ontolojiyle ölçülür</td><td>Yönetmeliğin denetim maddeleri yeni konuları kategori, yer adı, benzer konu, hakaret ve kişisel veri açısından kontrol eder.</td></tr>
     <tr><td>Tartışmalar silinmez</td><td>Mesajlar silinmez; düzenlenen mesajların eski sürümleri saklanır.</td></tr>
     <tr><td>Tartışmanın bir kısmını silmek oylamayla olur</td><td>Bir ya da birden fazla mesaj tek oylamayla gizlenir ({{ parametre('ESIK_MESAJ_SILME') }}); yerinde iz kalır.</td></tr>
     <tr><td>Oy hakkı devredilebilir</td><td>Oy devri: tüm forum, kategori ya da tek konu için; zincirleme; tavanı vardır.</td></tr>
     <tr><td>Bazı üyeler yapay zekadır</td><td>Yapay zeka üye (Bilge) tartışmaları ve tur sonuçlarını özetler.</td></tr>
-    <tr><td>Azınlık korunur</td><td>Herkes fikir yazabilir, çift çoğunluk aranır, sonuca katılmayan itiraz konusu açar, temel haklar {{ parametre('ESIK_TEMEL_HAK') }} ile değişir.</td></tr>
+    <tr><td>Azınlık korunur</td><td>Herkes fikir yazabilir, iki ölçüt birlikte aranır, sonuca katılmayan itiraz konusu açabilir, temel haklar {{ parametre('ESIK_TEMEL_HAK') }} ile değişir.</td></tr>
     <tr><td>Uzmanlar</td><td>Ön şart, kontenjan ve alanın katılımcılarının oyuyla uzmanlık.</td></tr>
     <tr><td>Uygulama ve web sitesi</td><td>Android uygulaması (web sitesiyle aynı hesap ve içerik), telefona kurulabilen web uygulaması ve <a href="{{ url_for('genel.api_belgeleri') }}">API</a>.</td></tr>
-    <tr><td>Dağıtık defter</td><td>Üç kopyalı hash zinciri, bozulma tespiti ve onarım, oy makbuzu (<a href="{{ url_for('genel.defter_sayfasi') }}">kayıt defteri</a>).</td></tr>
-    <tr><td>Kişiler bir graf üzerinde tutulur</td><td>Oy devri, yanıt, takip ve oy benzerliği ağı (<a href="{{ url_for('genel.graf_sayfasi') }}">üye ağı</a>).</td></tr>
+    <tr><td>Dağıtık defter</td><td>Üç kopyalı özet zinciri, bozulma tespiti ve onarım, oy makbuzu (<a href="{{ url_for('genel.defter_sayfasi') }}">kayıt defteri</a>).</td></tr>
+    <tr><td>Kişiler bir graf üzerinde tutulur</td><td>Oy devri, yanıt ve takip ağı; benzer oy verenlerden en az 3 kişilik görüş grupları (<a href="{{ url_for('genel.graf_sayfasi') }}">üye ağı</a>).</td></tr>
     <tr><td>Akran öğrenmesi</td><td>Argüman, karşı argüman, soru ve kaynak türünde mesajlar; tartışma özetleri.</td></tr>
+    <tr><td>Problem çerçeveleme analizi</td><td>Yapay zeka gerekli mi?, ölçütler, ölçülmüş başlangıç değeri, kısıtlar, paydaşlar ve ön otopsi: <code>docs/analiz.md</code>.</td></tr>
+    <tr><td>Tasarım ilkeleri ve desenleri</td><td>SOLID ve GoF desenlerinin (State, Strategy, Template Method, Chain of Responsibility, Adapter, Memento, Observer, Repository, Facade) koddaki karşılıkları: <code>docs/tasarim.md</code>.</td></tr>
   </table></div>
 </section>
 {% endblock %}

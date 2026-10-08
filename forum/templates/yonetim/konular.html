@@ -19,7 +19,7 @@
         <td class="genis">{{ k.mesaj_sayisi }}</td>
         {% if config.DEMO %}
         <td class="islem-hucresi">
-          {% if not k.silindi and k.durum in ayarlar.AKTIF_DURUMLAR %}
+          {% if durum_nesnesi(k).zamanli %}
             <form method="post" action="{{ url_for('yonetim.konu_ilerlet', konu_id=k.id) }}">{{ csrf() }}<input type="hidden" name="geri" value="{{ request.full_path }}">
               <button class="dugme ince kucuk-dugme" data-onay="Süre beklenmeden bir sonraki aşamaya geçilsin mi? (Yalnızca sunum kipi)">Süreyi ilerlet</button></form>
           {% else %}<span class="soluk kucuk">—</span>{% endif %}

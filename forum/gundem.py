@@ -25,6 +25,7 @@ dusuk onemli gerekli mumkun ozellikle yalnizca genelde kolay zor kotu ekstra her
 tartisalim tartisma tartismak istiyoruz isteyen olursa oldugu olan yapilabilir aslinda gerci bazen sanirim
 """.split())
 _KELIME = re.compile(r"[a-zçğıöşüâîû0-9]+")
+KISI_BASI_MESAJ = 3     # trend puanında bir kişinin en çok kaç mesajı sayılır
 
 
 def _once(**sure):
@@ -55,7 +56,9 @@ def _trend(db, esik, limit):
            FROM konular k WHERE k.silindi = 0""", {"e": esik}).fetchall()
     liste = []
     for r in satirlar:
-        puan = r["mesaj"] + 2 * r["fikir"] + 0.5 * r["oy"] + (3 if r["olusturma"] >= esik else 0)
+        # Mesajlar kişi başı en çok KISI_BASI_MESAJ kadar sayılır: tek kişi art arda yazarak konuyu öne çıkaramasın.
+        puan = (min(r["mesaj"], KISI_BASI_MESAJ * r["kisi"]) + 2 * r["fikir"] + 0.5 * r["oy"]
+                + (3 if r["olusturma"] >= esik else 0))
         if r["mesaj"] or r["oy"] or r["fikir"]:
             liste.append(dict(r, puan=puan))
     liste.sort(key=lambda r: (-r["puan"], -r["id"]))
@@ -75,10 +78,12 @@ def anahtar_kelimeler(db, gun=7, limit=14):
            WHERE m.gizli = 0 AND k.silindi = 0 AND m.tip NOT IN ('SISTEM', 'YZ') AND m.olusturma >= ?""", (esik,))]
     metinler += [(r["id"], f"{r['baslik']} {r['baslik']} {r['aciklama']}") for r in db.execute(
         "SELECT id, baslik, aciklama FROM konular WHERE silindi = 0 AND olusturma >= ?", (esik,))]
-    konular, adet, yazim = {}, {}, {}
+    konular, adet, yazim, koklar = {}, {}, {}, {}
     for konu_id, metin in metinler:
         for kelime in _KELIME.findall(ontoloji.tr_kucuk(metin)):
-            kok = ontoloji.katla(kelime)
+            kok = koklar.get(kelime)
+            if kok is None:     # aynı kelime çok sık geçer; katlama kelime başına bir kez yapılır
+                kok = koklar[kelime] = ontoloji.katla(kelime)
             if len(kok) < 4 or kok in DURAK or kok.isdigit() or (len(kok) >= 6 and kok.endswith(("sin", "sun"))):
                 continue
             konular.setdefault(kok, set()).add(konu_id)

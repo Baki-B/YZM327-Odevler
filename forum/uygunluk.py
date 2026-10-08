@@ -6,7 +6,6 @@ Temel kural: önce uygunluk, sonra ağırlık.
   3. Uzmanlık ve yönetmelik oylamalarında herkesin oyu 1'dir.
   Yapay zeka hesapları oy kullanmaz.
 """
-import json
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -42,7 +41,7 @@ def yas(dogum_tarihi, bugun=None):
 
 
 def etkin_konum_id(kullanici, an=None):
-    """Adres değişikliği 30 gün bekler; süre dolduysa yeni adres geçerlidir."""
+    """Adres değişikliği bekleme süresinin ardından geçerli olur; süre dolmadıysa eski adres kullanılır."""
     bekleyen = kullanici["bekleyen_konum_id"]
     if bekleyen and kullanici["konum_gecerlilik"] <= zaman.metin(an or zaman.simdi()):
         return bekleyen
@@ -135,17 +134,8 @@ def konu_baglami(konu):
     return Baglam(konu, konu["kategori_id"], konu["bilirkisi_agirlik"])
 
 
-def teklif_baglami(db, teklif):
-    if teklif["konu_id"]:
-        konu = db.execute("SELECT * FROM konular WHERE id = ?", (teklif["konu_id"],)).fetchone()
-        return konu_baglami(konu)
-    if teklif["tip"] in ("YONETMELIK", "KATEGORI"):
-        # Kurallar ve forumun yapısı karşısında eşitlik: herkesin oyu 1.
-        return Baglam(None, None, 1, esit_agirlik=True)
-    # Uzmanlık başvurusu: yalnızca o alanda yazmış üyeler oylar, herkes 1 oy, aday oy kullanamaz.
-    kategori_id = json.loads(teklif["veri"])["kategori_id"]
-    return Baglam(None, kategori_id, 1, {teklif["hedef_id"]}, esit_agirlik=True,
-                  secmenler=alanda_yazanlar(db, kategori_id))
+def askida_mi(kullanici, an=None):
+    return bool(kullanici and kullanici["askida_bitis"] and kullanici["askida_bitis"] > zaman.metin(an or zaman.simdi()))
 
 
 def katilabilir_mi(db, kullanici, baglam, an=None):
@@ -153,6 +143,8 @@ def katilabilir_mi(db, kullanici, baglam, an=None):
         return False, "Oy vermek için giriş yapmalısın."
     if kullanici["yz_mi"]:
         return False, "Yapay zeka hesapları oy kullanmaz."
+    if askida_mi(kullanici, an):              # askıdaki üye yeter sayıyı da şişirmesin
+        return False, "Hesabın askıda; askı bitene kadar oy kullanamazsın."
     if kullanici["id"] in baglam.haric:
         return False, "Kendi uzmanlık oylamanda oy kullanamazsın."
     if baglam.secmenler is not None and kullanici["id"] not in baglam.secmenler:

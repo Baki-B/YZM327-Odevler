@@ -1,0 +1,10 @@
+{# Oylama sayfasının KARAR türüne özgü bölümü (teklif.html bunu tür koduna göre içerir). #}
+{% if tur_bilgisi %}
+<div class="kutucuk">
+  <p><strong>{{ tur_bilgisi.no }}. tur kuralı:</strong>
+    {% if tur_bilgisi.son %}Son tur. En yüksek oranı alan fikir kabul edilir ve konu kapanır.
+    {% else %}Tur bitince oranı {{ tur_bilgisi.eleme }} altında kalan fikirler elenir. Geriye tek fikir kalırsa o kabul edilir.{% endif %}
+    Herhangi bir fikir {{ tur_bilgisi.ezici }} ya da daha fazla alırsa hemen kabul edilir.</p>
+  <p class="soluk kucuk">Bir fikrin oranı iki ayrı yoldan hesaplanır: ağırlıklı oylara ve kişi sayısına göre. Küçük olan geçerlidir. Çekimser oylar toplamda sayılır.</p>
+</div>
+{% endif %}

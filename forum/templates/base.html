@@ -15,8 +15,8 @@
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
   {% block ek_bas %}{% endblock %}
 </head>
-<body class="{{ 'mobil-uygulama' if mobil_uygulama }}">
-{#- Üç ana bölüm: Konular, Oylamalar, Meclis. Oylamalar ve Meclis'in sayfaları alt sekmelerde toplanır. -#}
+<body class="{{ 'mobil-uygulama' if mobil_uygulama }}" data-kok="{{ request.script_root }}" data-sw="{{ 0 if config.TARAYICI else 1 }}">
+{#- Üst menü: Konular, Oylamalar, Meclis. Oylamaların ve Meclis'in sayfaları alt sekmelerde toplanır. -#}
 {% set ep = request.endpoint or '' %}
 {% set oylama_sayfalari = [('oylamalar.gundem', 'Gündem'), ('oylamalar.kararlar_arsivi', 'Kararlar')] %}
 {% set meclis_sayfalari = [('genel.hakkinda', 'Nasıl işler?'), ('genel.yonetmelik_sayfasi', 'Yönetmelik'),
@@ -84,7 +84,7 @@
   </nav>
   {% endif %}
   {% if site_duyurusu %}<div class="uyari duyuru" role="note">{{ ikon('bilgi') }}<span>{{ site_duyurusu }}</span></div>{% endif %}
-  {% if askida and bolum != 'panel' %}<div class="uyari hata" role="note">{{ ikon('duraklat') }}<span>Hesabın {{ kullanici.askida_bitis|tarih }} tarihine kadar askıda: okuyabilirsin ama yazamaz ve oy veremezsin.</span></div>{% endif %}
+  {% if askida and bolum != 'panel' %}<div class="uyari hata" role="note">{{ ikon('duraklat') }}<span>Hesabın {{ kullanici.askida_bitis|tarih }} tarihine kadar askıda. Okuyabilirsin ama yazamaz ve oy veremezsin.</span></div>{% endif %}
   {% with mesajlar = get_flashed_messages(with_categories=true) %}
     {% for tur, m in mesajlar %}<div class="uyari {{ tur }}" role="status">{{ ikon({'basari': 'tik', 'hata': 'uyari'}.get(tur, 'bilgi')) }}<span>{{ m }}</span></div>{% endfor %}
   {% endwith %}

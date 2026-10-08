@@ -6,9 +6,10 @@ sunucu --demo ile başlatılırsa "süreyi ilerlet" düğmeleri görünür (her 
 """
 from flask import Blueprint, Response, current_app, flash, g, redirect, render_template, request, url_for
 
-from .. import (ayarlar, defter, gunluk, konular, kullanicilar, ontoloji, oylama, sikayetler, uzmanlik, yonetim,
+from .. import (ayarlar, defter, gorevler, gunluk, kullanicilar, ontoloji, oylama, sikayetler, uzmanlik, yonetim,
                zaman)
 from ..hatalar import KuralHatasi
+from ..metin import site_ici_yol_mu
 from . import db_al, sayfa_no, yonetici_gerekli
 from .yardimcilar import sayfala
 
@@ -23,7 +24,8 @@ def _yalniz_yonetici():
 
 def _geri(varsayilan):
     hedef = request.form.get("geri") or ""
-    return redirect(hedef if hedef.startswith("/yonetim") else varsayilan)
+    # `geri` uygulama içi yoldur (request.full_path); alt yolda çalışırken önek eklenir (bkz. hesap._guvenli_adres)
+    return redirect(request.script_root + hedef if hedef.startswith("/yonetim") and site_ici_yol_mu(hedef) else varsayilan)
 
 
 # --- Pano ---
@@ -94,7 +96,7 @@ KONU_FILTRELERI = [("", "Tümü")] + list(ayarlar.KONU_DURUMLARI.items()) + [("S
 
 def _demo_olmali():
     if not current_app.config.get("DEMO"):
-        raise KuralHatasi("Süre yalnızca sunum kipinde (--demo) ilerletilebilir.")
+        raise KuralHatasi("Bu işlem yalnızca sunum kipinde (--demo) yapılabilir.")
 
 
 @bp.get("/konular")
@@ -120,15 +122,7 @@ def konu_ilerlet(konu_id):
     """Sunum kipi: tartışma süresini beklemeden oylamayı başlatır ya da açık turu sonuçlandırır."""
     _demo_olmali()
     db = db_al()
-    k = konular.konu_getir(db, konu_id)
-    if k["durum"] == "TARTISMA":
-        konular.oylamayi_baslat(db, konu_id)
-    elif k["durum"] == "OYLAMA":
-        t = oylama.acik_teklif(db, "KARAR", konu_id=konu_id)
-        if t:
-            oylama.sonuclandir(db, t["id"])
-    else:
-        raise KuralHatasi("Bu konu kapanmış.")
+    k = gorevler.konuyu_ilerlet(db, konu_id)
     gunluk.kaydet(db, g.kullanici["id"], "SURE", f"Sunum kipi: #{konu_id} “{k['baslik']}” için süre ilerletildi")
     db.commit()
     flash("Süre ilerletildi.", "bilgi")
@@ -139,7 +133,7 @@ def konu_ilerlet(konu_id):
 def oylamalar():
     db = db_al()
     acik = [{"t": t, "baslik": oylama.teklif_basligi(db, t),
-             "oy": db.execute("SELECT COUNT(*) FROM oylar WHERE teklif_id = ?", (t["id"],)).fetchone()[0]}
+             "oy": oylama.oy_sayisi(db, t["id"])}
             for t in db.execute("SELECT * FROM teklifler WHERE durum = 'ACIK' ORDER BY bitis")]
     biten = [{"t": t, "baslik": oylama.teklif_basligi(db, t)}
              for t in db.execute("SELECT * FROM teklifler WHERE durum != 'ACIK' ORDER BY id DESC LIMIT 20")]
@@ -240,7 +234,7 @@ def sistem():
     return render_template(
         "yonetim/sistem.html", duyuru=yonetim.site_ayari(db, "duyuru"), kayit_acik=yonetim.site_ayari(db, "kayit_acik") == "1",
         yz_hesaplari=db.execute("SELECT * FROM kullanicilar WHERE yz_mi = 1 ORDER BY takma_ad").fetchall(),
-        defter_durumu=defter.durum(db.defter_klasoru),
+        defter_durumu=defter.durum(db.defter_klasoru, tam=bool(request.args.get("denetle"))),
         tutarlilik=defter.tutarlilik(db) if request.args.get("denetle") else None)
 
 
@@ -271,14 +265,19 @@ def defter_deneme(ad, islem):
     if ad not in ayarlar.DEFTER_DUGUMLERI or islem not in ("boz", "onar"):
         raise KuralHatasi("Geçersiz işlem.")
     if islem == "boz":
+        _demo_olmali()          # kurcalama denemesi yalnızca sunum kipinde: gerçek defter geri dönüşsüz bozulmasın
         no = defter.boz_demo(db.defter_klasoru, ad)
-        flash(f"Deneme: {ad} düğümündeki #{no} numaralı blok bozuldu. Kayıt defteri sayfası bu bozulmayı göstermeli.", "hata")
+        if no is None:
+            flash(f"{ad} düğümünde başlangıç bloğundan başka blok yok; bozulacak bir şey yok.", "bilgi")
+        else:
+            flash(f"Deneme: {ad} düğümündeki #{no} numaralı blok bozuldu. Kayıt defteri sayfası bu bozulmayı "
+                  "göstermeli.", "hata")
     else:
         try:
             defter.onar(db.defter_klasoru, ad)
         except ValueError as e:
             raise KuralHatasi(str(e))
-        flash(f"{ad} düğümü çoğunluk zincirinden onarıldı.", "basari")
+        flash(f"{ad} düğümü, çoğunluk zincirindeki kopyayla onarıldı.", "basari")
     return redirect(url_for("yonetim.sistem", _anchor="defter"))
 
 

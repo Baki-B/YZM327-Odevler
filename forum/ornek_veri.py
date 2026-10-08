@@ -1,14 +1,13 @@
-"""Demo verisi: son iki haftada yaşanmış gibi görünen, dolu bir forum.
+"""Demo verisi: son iki haftada oluşmuş gibi görünen, dolu bir forum.
 
-Veriler doğrudan iş mantığı fonksiyonlarıyla, geçmiş zamanlara ayarlanmış bir saatle ve zaman sırasıyla oluşturulur;
-yani yönetmelik denetimi, tur tur eleme, ezici üstünlük, çekimser, kategori önerileri, şikayet tabanı ve defter
-kayıtları gerçekten çalışır; trendler, kategori nabzı ve etkinlik grafikleri de gerçek zamanlarla dolar.
+Kayıtlar iş mantığı fonksiyonlarıyla, geçmiş zamanlara ayarlanmış bir saatle ve zaman sırasıyla oluşturulur. Bu sayede
+yönetmelik denetimi, eleme turları, ezici üstünlük, kategori önerileri, şikayetler ve defter gerçekten çalışır.
 Bütün demo hesaplarının şifresi: forum1234
 """
 from datetime import date, timedelta
 
-from . import (devir, graf, kategoriler, konular, kullanicilar, oylama, sikayetler, uzmanlik, veritabani, yonetmelik,
-               yz, zaman)
+from . import (devir, graf, guvenlik, kategoriler, konular, kullanicilar, oylama, sikayetler, uzmanlik, veritabani,
+               yonetmelik, yz, zaman)
 
 SIFRE = "forum1234"
 
@@ -43,6 +42,16 @@ def gerekirse_yukle(yol):
         db.close()
 
 
+def demo_hesabi_var_mi(yol):
+    """Şifresi hâlâ demo şifresi olan bir yönetici hesabı var mı? (ağa açılırken uyarmak için)"""
+    db = veritabani.baglan(yol)
+    try:
+        return any(guvenlik.sifre_dogru_mu(r["sifre_hash"], SIFRE) for r in
+                   db.execute("SELECT sifre_hash FROM kullanicilar WHERE yonetici_mi = 1 AND yz_mi = 0"))
+    finally:
+        db.close()
+
+
 KISILER = [
     ("yonetici", "Forum Yöneticisi", 36, "İstanbul", "Şişli"),
     ("ayse", "Ayşe Yılmaz", 21, "İstanbul", "Kadıköy"),
@@ -73,7 +82,7 @@ def _senaryo(db, gercek):  # noqa: C901 — tek parça, zaman sırasıyla okunan
     simdi = gercek()
 
     def saat(h):
-        """Saati h saat öncesine ayarlar; sonraki bütün kayıtlar o zamanda yapılmış olur."""
+        """Saati h saat öncesine ayarlar; sonraki kayıtlar o zamanda yapılmış gibi yazılır."""
         an = simdi - timedelta(hours=h)
         zaman.simdi = lambda: an
 
@@ -257,7 +266,7 @@ def _senaryo(db, gercek):  # noqa: C901 — tek parça, zaman sırasıyla okunan
     tartisma(k3, [
         (77, "dr.deniz", "ARGUMAN", "Baklagil ve tahıl birlikte tüketildiğinde tam protein sağlar. Haftada iki gün etsiz menü "
                                     "sağlık açısından olumludur.", f1),
-        (76, "can", "KARSI_ARGUMAN", "Sporcu öğrencilerin protein ihtiyacı yüksek; iki gün az gelebilir.", f1),
+        (76, "can", "KARSI_ARGUMAN", "Sporcu öğrencilerin protein ihtiyacı yüksek; haftada iki gün etsiz menü yetersiz kalabilir.", f1),
         (74, "zeynep", "ARGUMAN", "Seçenek sunmak farklı beslenme tercihlerine saygı gösterir.", f2),
         (73, "kaan.hoca", "SORU", "Her gün iki ana yemek çıkarmanın yemekhane bütçesine maliyeti ne olur?", None),
         (72.6, "mehmet", "KAYNAK", "Dünya Sağlık Örgütü'nün sağlıklı beslenme önerileri, haftalık menüde baklagil ve sebzenin "

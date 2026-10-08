@@ -10,7 +10,7 @@ Yönetici uzman atayamaz. Yapay zeka hesapları da aynı şartlarla, bir üyenin
 """
 from datetime import timedelta
 
-from . import bildirimler, defter, gunluk, ontoloji, oylama, uygunluk, yonetmelik, zaman
+from . import bildirimler, defter, denetim, gunluk, ontoloji, oylama, uygunluk, yonetmelik, zaman
 from .hatalar import KuralHatasi
 
 
@@ -85,7 +85,7 @@ def basvur(db, basvuran, kategori_id, gerekce, aday_id=None):
     gerekce = (gerekce or "").strip()
     if len(gerekce) < 20:
         raise KuralHatasi("Gerekçeye eğitimi, deneyimi ya da alandaki katkıyı yaz (en az 20 karakter).")
-    yonetmelik.mesaj_denetle(db, gerekce)
+    denetim.mesaj_denetle(db, gerekce)
     return oylama.teklif_ac(db, "UZMANLIK", basvuran["id"], hedef_id=aday["id"], gerekce=gerekce,
                             veri={"kategori_id": kategori_id})
 

@@ -4,8 +4,8 @@
 {% block icerik %}
 <section class="kart">
   <h1>Yönetmelik</h1>
-  <p>Forumun kuralları. Her kural üyelerin oylamasıyla değişebilir; maddelerdeki sayılar aşağıdaki parametrelerden gelir ve
-    parametre değişince maddeler de güncellenir. Temel hak maddeleri ve korunan parametreler ancak {{ parametre('ESIK_TEMEL_HAK') }} ile değişir.</p>
+  <p>Forumun kuralları. Her kural üyelerin oylamasıyla değişebilir. Maddelerdeki sayılar aşağıdaki parametrelerden gelir;
+    parametre değişince madde de güncellenir. Temel hak maddeleri ve korunan parametreler ancak {{ parametre('ESIK_TEMEL_HAK') }} ile değişir.</p>
 </section>
 
 {% for tur, ad, liste in gruplar if liste %}

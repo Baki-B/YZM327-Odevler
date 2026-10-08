@@ -50,10 +50,10 @@ KATEGORILER = {
     "Kültür ve Sanat": ["Edebiyat", "Müzik", "Sinema"],
     "Genel": [],
 }
-KATEGORI_SURUMU = "2"   # site_ayarlari'nda tutulur; eski kurulumların kategori ağacı bir kez yeniye taşınır
+KATEGORI_SURUMU = "2"   # site_ayarlari'nda tutulur; değiştiğinde kategori ağacı yeni sürüme taşınır
 
-# Eski ağaçtan (Şehir, Kampüs Yaşamı) yeniye: (eski ana, eski alt) → (yeni ana, yeni alt). Konular, uzmanlıklar ve
-# devirler yeni kategoriye bağlanır; hiçbir konu kaybolmaz.
+# Eski kategorilerin yeni karşılıkları: (eski ana, eski alt) → (yeni ana, yeni alt). Konular, uzmanlıklar ve devirler
+# yeni kategoriye bağlanır; hiçbir konu kaybolmaz.
 ESKI_KATEGORILER = {
     ("Şehir", None): ("Siyaset", "Yerel Yönetim"),
     ("Şehir", "Ulaşım"): ("Siyaset", "Ulaşım"),
@@ -174,8 +174,8 @@ def _kategori_bul(db, ad_, ust_id):
 
 
 def _kategori_agacini_kur(db):
-    """Temel ağacı kurar (eksikleri ekler) ve eski ağaçtan kalan kategorileri yenilerine bağlar. Bir kez çalışır;
-    yöneticinin ya da topluluğun eklediği kategorilere dokunmaz."""
+    """Temel ağacı kurar (eksikleri ekler) ve eski kategorileri yenilerine bağlar. Yönetici ya da topluluk tarafından
+    eklenen kategorilere dokunmaz."""
     from . import zaman
     an = zaman.simdi_metin()
     for alan, alt_alanlar in KATEGORILER.items():
@@ -327,11 +327,32 @@ def kategori_iliskisi(db, metin, kategori_id):
     return terimler, eslesme
 
 
+def alan_puanlari(db, eslesme):
+    """{ana alan id: (eşleşen farklı kavram sayısı, bunlardan alt kategori düzeyinde olanların sayısı)}.
+    Aynı kavram iki alt kategoride geçse de (ör. "kampus": Üniversite ve Kampüs Yaşamı) bir kez sayılır."""
+    alanlar = {}
+    for kid, terimler in eslesme.items():
+        yol = atalar(db, "kategoriler", kid)
+        tum, alt = alanlar.setdefault(yol[0], (set(), set()))
+        tum.update(terimler)
+        if len(yol) > 1:
+            alt.update(terimler)
+    return {kok: (len(tum), len(alt)) for kok, (tum, alt) in alanlar.items()}
+
+
 def en_uygun_kategori(db, metin):
+    """Metne en uygun kategori. Önce ana alan seçilir: alt kategorileriyle birlikte en çok farklı kavramı eşleşen alan;
+    eşitlikte alt kategori düzeyinde daha çok eşleşen alan. Sonra o alanın içinde en çok eşleşen, eşitlikte en derindeki
+    kategori döner. Her kategori tek başına yarıştırılırsa "belediye meclis toplantıları canlı yayınlansın" metninde
+    Siyaset ve Yerel Yönetim birer eşleşmeyle Biyoloji'ye (canlı) eşit kalır ve kazananı sözlük sırası belirlerdi.
+    Tam eşitlikte kazananı kategori sırası belirler; bu durumda D3 yalnızca uyarı verir."""
     eslesme = kategori_eslesmeleri(db, metin)
     if not eslesme:
         return None, []
-    kid = max(eslesme, key=lambda k: (len(eslesme[k]), dugum(db, "kategoriler", k)["ust_id"] is not None))
+    puanlar = alan_puanlari(db, eslesme)
+    kok = max(puanlar, key=puanlar.get)
+    kid = max((k for k in eslesme if atalar(db, "kategoriler", k)[0] == kok),
+              key=lambda k: (len(eslesme[k]), len(atalar(db, "kategoriler", k))))
     return kid, eslesme[kid]
 
 

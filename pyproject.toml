@@ -1,0 +1,19 @@
+# Araç ayarları. Bağımlılıklar requirements.txt'tedir (python -m pip install -r requirements.txt).
+# Testler unittest ile yazılmıştır; pytest ile de çalışır:
+#   python -m unittest discover testler   ya da   python -m pytest   ya da   uv run pytest
+[project]
+name = "agora"
+version = "1.0.0"
+description = "Konuların tartışılıp fikirlerin tur tur oylanarak karara bağlandığı forum (YZM327 ödevi)"
+requires-python = ">=3.11"
+dependencies = ["Flask==3.1.3", "Werkzeug==3.1.9"]
+
+[dependency-groups]
+dev = ["pytest==8.4.2", "pyflakes==3.4.0"]
+
+[tool.uv]
+package = false      # paket olarak kurulmaz; uv yalnızca bağımlılıkları kurar (uv run pytest)
+
+[tool.pytest.ini_options]
+testpaths = ["testler"]
+python_files = ["test_*.py"]

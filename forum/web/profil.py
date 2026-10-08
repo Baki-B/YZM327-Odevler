@@ -2,6 +2,7 @@ from flask import Blueprint, abort, flash, g, redirect, render_template, request
 
 from .. import (bildirimler, devir, graf, guvenlik, kullanicilar, ontoloji, oylama, sikayetler, uygunluk, uzmanlik,
                 yonetim)
+from ..metin import site_ici_yol_mu
 from . import db_al, giris_gerekli, sayfa_no
 from .yardimcilar import sayfa_bilgisi
 
@@ -114,7 +115,8 @@ def sifre():
     f = request.form
     kullanicilar.sifre_degistir(db, g.kullanici, f.get("eski"), f.get("yeni"), f.get("yeni_tekrar"))
     db.commit()
-    flash("Şifren değişti.", "basari")
+    session["surum"] = kullanicilar.getir(db, g.kullanici["id"])["oturum_surumu"]    # bu oturum açık kalır
+    flash("Şifren değişti. Diğer cihazlardaki oturumlar ve API anahtarları kapatıldı.", "basari")
     return redirect(url_for("profil.guvenlik_sayfasi"))
 
 
@@ -135,7 +137,7 @@ def devir_ekle():
     f = request.form
     kapsam = f.get("kapsam")
     kapsam_id = {"KATEGORI": f.get("kategori_id"), "KONU": f.get("konu_id")}.get(kapsam, 0)
-    devir.devir_ekle(db, g.kullanici, f.get("alan", ""), kapsam, int(kapsam_id or 0))
+    devir.devir_ekle(db, g.kullanici, f.get("alan", ""), kapsam, kapsam_id)
     db.commit()
     flash("Oy devrin kaydedildi. Bir oylamada kendin oy verirsen o oylama için devir geçersiz olur.", "basari")
     return redirect(url_for("profil.devir_sayfasi"))
@@ -238,7 +240,8 @@ def bildirim_ac(bildirim_id):
     db = db_al()
     hedef = bildirimler.okundu_yap(db, g.kullanici["id"], bildirim_id)
     db.commit()
-    return redirect(hedef if hedef and hedef.startswith("/") else url_for("profil.bildirim_listesi"))
+    # Bağlantı uygulama içi yol olarak saklanır; alt yolda önek eklenir (bkz. hesap._guvenli_adres)
+    return redirect(request.script_root + hedef if site_ici_yol_mu(hedef) else url_for("profil.bildirim_listesi"))
 
 
 @bp.post("/bildirimler/okundu")

@@ -2,23 +2,17 @@
 
 * Parametreler (eşikler, süreler, yeter sayı...) veritabanında durur ve oylamayla değişir.
 * Maddeler dört türdür: TEMEL_HAK (korunan), USUL, DENETIM (otomatik uygulanır), BEYAN (topluluk normu).
-* Denetim maddeleri ontolojiyi kullanarak konuları ve mesajları denetler (ENGEL / UYARI / KAPALI).
+* Denetim maddeleri ontolojiyi kullanarak konuları ve mesajları denetler (ENGEL / UYARI / KAPALI); denetim motoru
+  denetim.py'dedir (Chain of Responsibility). Bu modül maddelerin metnini, parametre deposunu ve değişiklik akışını taşır.
 """
 import json
 import re
 
-from . import ayarlar, gunluk, ontoloji, zaman
+from . import ayarlar, denetim, gunluk, zaman
 from .hatalar import KuralHatasi
+from .metin import yuzde
 
-KABA_IFADELER = ["aptal", "salak", "gerizekal", "geri zekal", "cahil", "ahmak", "beyinsiz", "serefsiz",
-                 "haysiyetsiz", "mankafa", "dangalak", "embesil"]
-KISISEL_VERI_DESENLERI = {
-    "telefon numarası": re.compile(r"(\+90|0)?\s?5\d{2}[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}"),
-    "T.C. kimlik numarası": re.compile(r"\b[1-9]\d{10}\b"),
-    "e-posta adresi": re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"),
-}
-
-# (kod, tür, başlık, metin şablonu, ciddiyet, korunan). {KOD} yerine parametrenin güncel değeri yazılır.
+# (kod, tür, başlık, metin şablonu, ciddiyet, korunan). {PARAMETRE} yerine parametrenin güncel değeri yazılır.
 MADDELER = [
     ("T1", "TEMEL_HAK", "Kurallar karşısında eşitlik",
      "Kurallar her üyeye aynı uygulanır. Bir konunun katılım kuralını sağlayan her üye o konuda yazabilir, "
@@ -71,10 +65,12 @@ MADDELER = [
      "Üyeler bir mesajı ya da konuyu şikayet edebilir. Şikayet, en az {SIKAYET_TABANI} farklı üye aynı içeriği "
      "şikayet edince yöneticilere ulaşır. Yönetici içeriği kendisi gizleyemez; oylamaya sunar.", None, False),
     ("U11", "USUL", "Kategoriler",
-     "Konular 7 temel alanda ve Genel kategoride açılır. Genel her konuya açıktır. Her üye yeni bir ana ya da alt "
+     "Konular 7 temel alanda ve Genel kategoride açılır. Genel kategori her konuya açıktır. Her üye yeni bir ana ya da alt "
      "kategori önerebilir; öneri bütün üyelerin oyuna sunulur ve {ESIK_KATEGORI} ile kabul edilirse kategori eklenir. "
      "Bu oylamada herkesin oyu 1 sayılır.", None, False),
-    ("D1", "DENETIM", "Saygılı dil", "Konular ve mesajlar hakaret içeremez.", "ENGEL", False),
+    # D1 varsayılan olarak yalnızca uyarır; kesinlik yayın ölçütünün altında kaldığı için (docs/analiz.md 6.5 ve 11).
+    # Topluluk yönetmelik oylamasıyla ENGEL'e çekebilir.
+    ("D1", "DENETIM", "Saygılı dil", "Konular ve mesajlar hakaret içeremez.", "UYARI", False),
     ("D2", "DENETIM", "Kişisel veri",
      "Telefon numarası, T.C. kimlik numarası, e-posta adresi gibi kişisel veriler paylaşılamaz.", "ENGEL", False),
     ("D3", "DENETIM", "Kategoriye uygunluk",
@@ -85,7 +81,7 @@ MADDELER = [
      "Aynı konuda açık bir konu varsa yenisi yerine o konu kullanılmalıdır.", "UYARI", False),
     ("D6", "DENETIM", "Alt konu ilişkisi",
      "Alt konu, üst konuyla aynı alanda olmalıdır.", "UYARI", False),
-    ("D7", "DENETIM", "Açıklık", "Konunun açıklaması derdi anlaşılır biçimde anlatmalıdır (en az 40 karakter).",
+    ("D7", "DENETIM", "Açıklık", "Konunun açıklaması derdini anlaşılır biçimde anlatmalıdır (en az 40 karakter).",
      "UYARI", False),
     ("B1", "BEYAN", "Tartışma kültürü", "Kişilere değil fikirlere karşı çıkılır.", None, False),
 ]
@@ -95,8 +91,8 @@ CIDDIYETLER = {"ENGEL": "Engeller", "UYARI": "Uyarır", "KAPALI": "Kapalı"}
 
 
 def yukle(db):
-    """İlk kurulumda parametreleri ve maddeleri yükler. Kurulu veritabanında koddaki tanımlarla eşitler:
-    eksik parametre ve madde eklenir, kalkan parametre silinir, açıklama ve madde metinleri tazelenir.
+    """İlk kurulumda parametreleri ve maddeleri yükler. Kurulu veritabanını koddaki tanımlarla eşitler: eksik
+    parametre ve madde eklenir, artık kullanılmayan parametre silinir, açıklama ve madde metinleri güncellenir.
     Oylamayla değişmiş değerlere, ciddiyetlere ve sonradan eklenen beyan maddelerine dokunulmaz."""
     mevcut = {r[0] for r in db.execute("SELECT kod FROM parametreler")}
     for kod, deger_, tur, aciklama, korunan in ayarlar.VARSAYILAN_PARAMETRELER:
@@ -142,7 +138,7 @@ def deger_metni(tur, deger_):
     if tur == "esik":
         return ayarlar.ESIKLER[deger_]["ad"].lower() + f" ({ayarlar.ESIKLER[deger_]['kisa']})"
     if tur == "oran":
-        return f"%{round(float(deger_) * 100)}"
+        return yuzde(float(deger_))
     return str(deger_)
 
 
@@ -161,7 +157,7 @@ def maddeler(db):
     liste = []
     for m in db.execute("SELECT * FROM yonetmelik_maddeleri ORDER BY CASE tur WHEN 'TEMEL_HAK' THEN 1 WHEN 'USUL' THEN 2 WHEN 'DENETIM' THEN 3 ELSE 4 END, CAST(substr(kod, 2) AS INTEGER)"):
         d = dict(m)
-        d["metin_goster"] = re.sub(r"\{([A-Z_]+)\}", lambda e: parametre_metni(db, e.group(1)), m["metin"])
+        d["metin_goster"] = re.sub(r"\{([A-Z][A-Z0-9_]*)\}", lambda e: parametre_metni(db, e.group(1)), m["metin"])
         liste.append(d)
     return liste
 
@@ -173,118 +169,30 @@ def ciddiyet(db, kod):
     return db.onbellek["ciddiyet"].get(kod, "KAPALI")
 
 
-def _madde_basligi(db, kod):
+def madde_basligi(db, kod):
     r = db.execute("SELECT baslik FROM yonetmelik_maddeleri WHERE kod = ?", (kod,)).fetchone()
     return r["baslik"] if r else kod
 
 
-# --- Denetim ---
-
-def kaba_ifadeler(metin):
-    katli = ontoloji.katla(metin)
-    return [k for k in KABA_IFADELER if k in katli]
-
-
-def kisisel_veriler(metin):
-    return [ad for ad, desen in KISISEL_VERI_DESENLERI.items() if desen.search(metin)]
-
-
-def _bulgu(db, kod, gecti, mesaj):
-    return {"kod": kod, "baslik": _madde_basligi(db, kod), "ciddiyet": ciddiyet(db, kod), "gecti": gecti,
-            "mesaj": mesaj}
-
-
-def denetle(db, baslik, aciklama, kategori_id, konum_id=None, ust=None, haric_konu_id=None):
-    """Bir konuyu yönetmeliğin denetim maddelerine göre denetler ve bir rapor döndürür."""
-    metin = f"{baslik}\n{aciklama}"
-    bulgular = []
-
-    kaba = kaba_ifadeler(metin)
-    bulgular.append(_bulgu(db, "D1", not kaba, "Kaba ifade bulunamadı." if not kaba
-                           else f"Kaba ifade var: {', '.join(kaba)}. Kişiye değil fikre yönelik yaz."))
-    kisisel = kisisel_veriler(metin)
-    bulgular.append(_bulgu(db, "D2", not kisisel, "Kişisel veri bulunamadı." if not kisisel
-                           else f"Metinde {', '.join(kisisel)} var. Kişisel verileri kaldır."))
-
-    terimler, _ = ontoloji.kategori_iliskisi(db, metin, kategori_id)
-    oneri_id, oneri_terimler = ontoloji.en_uygun_kategori(db, metin)
-    kategori_adi = ontoloji.yol_metni(db, "kategoriler", kategori_id)
-    genel = ontoloji.genel_mi(db, kategori_id)
-    if genel:
-        terimler, oneri_id = ["genel"], None
-        mesaj = f"“{kategori_adi}” her konuya açık."
-    elif terimler:
-        mesaj = f"“{kategori_adi}” kavramlarıyla ilişkili: {', '.join(terimler[:6])}."
-    elif oneri_id:
-        mesaj = (f"“{kategori_adi}” ile ilgili bir kavram yok. Metin daha çok "
-                 f"“{ontoloji.yol_metni(db, 'kategoriler', oneri_id)}” kategorisine uyuyor ({', '.join(oneri_terimler[:4])}).")
-    else:
-        mesaj = "Metin hiçbir kategoriyle eşleşmedi. Açıklamaya konunun alanıyla ilgili ayrıntı ekle."
-    bulgular.append(_bulgu(db, "D3", bool(terimler), mesaj))
-    if genel:
-        terimler = []
-
-    yerler = ontoloji.metindeki_yerler(db, metin)
-    if not yerler:
-        bulgulu, mesaj = True, "Metinde belirli bir yer adı geçmiyor."
-    elif konum_id is None:
-        adlar = ", ".join(ontoloji.yol_metni(db, "konumlar", y) for y in yerler[:3])
-        bulgulu, mesaj = False, (f"Metinde {adlar} geçiyor ama katılım herkese açık. Konu yalnızca orayı "
-                                 "ilgilendiriyorsa katılımı oranın sakinleriyle sınırlayabilirsin.")
-    else:
-        uyumsuz = [y for y in yerler if not (ontoloji.altinda_mi(db, "konumlar", y, konum_id)
-                                            or ontoloji.altinda_mi(db, "konumlar", konum_id, y))]
-        bulgulu = not uyumsuz
-        mesaj = ("Metindeki yer adları katılım kuralıyla uyumlu." if bulgulu else
-                 f"Katılım {ontoloji.yol_metni(db, 'konumlar', konum_id)} sakinlerine açık ama metinde "
-                 f"{', '.join(ontoloji.yol_metni(db, 'konumlar', y) for y in uyumsuz[:3])} geçiyor.")
-    bulgular.append(_bulgu(db, "D4", bulgulu, mesaj))
-
-    benzer = None
-    for k in db.execute("SELECT id, baslik FROM konular WHERE silindi = 0 AND durum != 'SONUCSUZ' AND id != ?",
-                        (haric_konu_id or 0,)):
-        oran = ontoloji.benzerlik_orani(baslik, k["baslik"])
-        if oran >= 0.5 and (benzer is None or oran > benzer[1]):
-            benzer = (k, oran)
-    bulgular.append(_bulgu(db, "D5", benzer is None, "Benzer bir konu bulunamadı." if benzer is None else
-                           f"#{benzer[0]['id']} “{benzer[0]['baslik']}” ile %{round(benzer[1] * 100)} benzer."))
-
-    if ust is not None:
-        ayni_alan = (ontoloji.altinda_mi(db, "kategoriler", kategori_id, ust["kategori_id"])
-                     or ontoloji.altinda_mi(db, "kategoriler", ust["kategori_id"], kategori_id))
-        ortak = ontoloji.anlamli_kelimeler(metin) & ontoloji.anlamli_kelimeler(f"{ust['baslik']} {ust['aciklama']}")
-        gecti = ayni_alan or bool(ortak)
-        bulgular.append(_bulgu(db, "D6", gecti, "Üst konuyla aynı alanda." if ayni_alan else
-                               (f"Üst konuyla ortak kavramlar: {', '.join(sorted(ortak)[:5])}." if ortak else
-                                "Üst konuyla alanı da kavramları da ortak değil.")))
-
-    kisa = len(aciklama.strip()) < 40
-    bulgular.append(_bulgu(db, "D7", not kisa, "Açıklama yeterli uzunlukta." if not kisa else
-                           "Açıklama çok kısa. Derdini ve nedenini anlat."))
-
-    etkin = [b for b in bulgular if b["ciddiyet"] != "KAPALI"]
-    return {
-        "bulgular": bulgular,
-        "engel": [b for b in etkin if not b["gecti"] and b["ciddiyet"] == "ENGEL"],
-        "uyarilar": [b for b in etkin if not b["gecti"] and b["ciddiyet"] == "UYARI"],
-        "puan": round(100 * sum(1 for b in etkin if b["gecti"]) / len(etkin)) if etkin else 100,
-        "onerilen_kategori": oneri_id if not terimler and not genel else None,
-        "zaman": zaman.simdi_metin(),
-    }
-
-
-def mesaj_denetle(db, icerik):
-    """Mesajlar için sadece ENGEL maddeleri uygulanır (hakaret, kişisel veri)."""
-    sorunlar = []
-    if ciddiyet(db, "D1") == "ENGEL" and kaba_ifadeler(icerik):
-        sorunlar.append("Mesajında kaba ifade var; kişiye değil fikre yönelik yaz.")
-    if ciddiyet(db, "D2") == "ENGEL" and kisisel_veriler(icerik):
-        sorunlar.append("Mesajında kişisel veri var (" + ", ".join(kisisel_veriler(icerik)) + "); kaldırıp tekrar gönder.")
-    if sorunlar:
-        raise KuralHatasi(" ".join(sorunlar))
-
-
 # --- Yönetmelik değişikliği ---
+
+def _aralik_dogrula(db, p, yeni):
+    """Sayı ve oran parametreleri: türü, anlamlı aralığı ve parametreler arası tutarlılık."""
+    alt, ust = ayarlar.PARAMETRE_ARALIKLARI[p["kod"]]
+    try:
+        deger_ = float(yeni) if p["tur"] == "oran" else int(yeni)
+    except ValueError:
+        raise KuralHatasi("Oran ondalık sayı olmalı (ör. 0.25)." if p["tur"] == "oran" else "Geçerli bir tam sayı gir.")
+    if not alt <= deger_ <= ust:
+        raise KuralHatasi(f"{p['aciklama']}: değer {deger_metni(p['tur'], alt)} ile {deger_metni(p['tur'], ust)} "
+                          "arasında olmalı.")
+    # Eleme eşiği ezici üstünlükten küçük olmalı; yoksa eleme turundan geçen her fikir zaten kazanmış olurdu.
+    elemeler = [deger(db, k) for k in ayarlar.ELEME_PARAMETRELERI.values() if k != p["kod"]]
+    if p["kod"] in ayarlar.ELEME_PARAMETRELERI.values() and deger_ >= deger(db, "ESIK_EZICI"):
+        raise KuralHatasi("Eleme eşiği ezici üstünlük oranından küçük olmalı.")
+    if p["kod"] == "ESIK_EZICI" and any(e >= deger_ for e in elemeler):
+        raise KuralHatasi("Ezici üstünlük oranı bütün eleme eşiklerinden büyük olmalı.")
+
 
 def degisiklik_dogrula(db, veri):
     """Değişiklik önerisini doğrular; (açıklama, korunan_mu) döndürür."""
@@ -294,20 +202,11 @@ def degisiklik_dogrula(db, veri):
         if not p:
             raise KuralHatasi("Parametre bulunamadı.")
         yeni = str(veri.get("yeni", "")).strip()
-        if p["tur"] == "esik" and yeni not in ayarlar.ESIKLER:
-            raise KuralHatasi("Geçersiz eşik.")
-        if p["tur"] == "oran":
-            try:
-                if not 0.01 <= float(yeni) <= 1:
-                    raise ValueError
-            except ValueError:
-                raise KuralHatasi("Oran 0.01 ile 1 arasında olmalı (ör. 0.25).")
-        if p["tur"] == "sayi":
-            try:
-                if not 0 <= int(yeni) <= 10000:
-                    raise ValueError
-            except ValueError:
-                raise KuralHatasi("Geçerli bir sayı gir.")
+        if p["tur"] == "esik":
+            if yeni not in ayarlar.ESIKLER:
+                raise KuralHatasi("Geçersiz eşik.")
+        else:
+            _aralik_dogrula(db, p, yeni)
         if yeni == p["deger"]:
             raise KuralHatasi("Yeni değer mevcut değerle aynı.")
         veri["yeni"] = yeni
@@ -323,7 +222,7 @@ def degisiklik_dogrula(db, veri):
         baslik, metin = (veri.get("baslik") or "").strip(), (veri.get("metin") or "").strip()
         if not 5 <= len(baslik) <= 80 or not 20 <= len(metin) <= 1000:
             raise KuralHatasi("Beyan maddesinin başlığı 5–80, metni 20–1000 karakter olmalı.")
-        kaba = kaba_ifadeler(metin + baslik)
+        kaba = denetim.kaba_ifadeler(f"{baslik} {metin}")
         if kaba:
             raise KuralHatasi("Beyan maddesi kaba ifade içeremez.")
         veri.update(baslik=baslik, metin=metin)
@@ -339,7 +238,7 @@ def degisiklik_teklif_et(db, kullanici, veri, gerekce):
     gerekce = (gerekce or "").strip()
     if len(gerekce) < 20:
         raise KuralHatasi("Değişikliğin gerekçesini en az 20 karakterle yaz.")
-    mesaj_denetle(db, gerekce)
+    denetim.mesaj_denetle(db, gerekce)
     veri = dict(veri)
     aciklama, korunan = degisiklik_dogrula(db, veri)
     veri["aciklama"] = aciklama

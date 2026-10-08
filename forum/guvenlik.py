@@ -1,5 +1,6 @@
 """Güvenlik: giriş denemesi sınırı, şifre kurtarma kodu, API anahtarları."""
 import hashlib
+import os
 import secrets
 from datetime import timedelta
 
@@ -8,10 +9,19 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from . import ayarlar, zaman
 from .hatalar import KuralHatasi
 
+# Şifre özeti yöntemi. Üretimde Werkzeug'ün scrypt'i kullanılır; testler her scrypt çağrısı ~0,1 sn sürdüğü için
+# bunu hızlı bir yönteme çevirir.
+SIFRE_YONTEMI = os.environ.get("FORUM_SIFRE_YONTEMI", "scrypt")
+
 
 # --- Kaba kuvvet saldırısına karşı giriş sınırı ---
 
+def _anahtar(anahtar):
+    return anahtar[:200]          # uzun takma ad denemeleriyle tablo şişirilemesin
+
+
 def giris_kilitli_mi(db, anahtar):
+    anahtar = _anahtar(anahtar)
     r = db.execute("SELECT * FROM giris_denemeleri WHERE anahtar = ?", (anahtar,)).fetchone()
     if r and r["kilit_bitis"] and r["kilit_bitis"] > zaman.simdi_metin():
         kalan = zaman.coz(r["kilit_bitis"]) - zaman.simdi()
@@ -19,6 +29,7 @@ def giris_kilitli_mi(db, anahtar):
 
 
 def hatali_giris(db, anahtar):
+    anahtar = _anahtar(anahtar)
     r = db.execute("SELECT * FROM giris_denemeleri WHERE anahtar = ?", (anahtar,)).fetchone()
     sayi = (r["sayi"] if r and not r["kilit_bitis"] else 0) + 1
     kilit = None
@@ -32,7 +43,22 @@ def hatali_giris(db, anahtar):
 
 
 def basarili_giris(db, anahtar):
-    db.execute("DELETE FROM giris_denemeleri WHERE anahtar = ?", (anahtar,))
+    db.execute("DELETE FROM giris_denemeleri WHERE anahtar = ?", (_anahtar(anahtar),))
+
+
+def hiz_siniri(db, anahtar, sinir, dakika, mesaj):
+    """Aynı anahtarla (ör. bir IP'den yeni üyelik) `dakika` içinde en fazla `sinir` işlem. Aşılırsa KuralHatasi.
+    giris_denemeleri tablosu kullanılır; kilit_bitis sütunu burada pencerenin bitişidir."""
+    anahtar, simdi = _anahtar(anahtar), zaman.simdi()
+    r = db.execute("SELECT * FROM giris_denemeleri WHERE anahtar = ?", (anahtar,)).fetchone()
+    if r and r["kilit_bitis"] and r["kilit_bitis"] > zaman.metin(simdi):
+        if r["sayi"] >= sinir:
+            raise KuralHatasi(mesaj)
+        db.execute("UPDATE giris_denemeleri SET sayi = sayi + 1 WHERE anahtar = ?", (anahtar,))
+        return
+    db.execute("INSERT INTO giris_denemeleri (anahtar, sayi, kilit_bitis) VALUES (?, 1, ?) ON CONFLICT (anahtar) "
+               "DO UPDATE SET sayi = 1, kilit_bitis = excluded.kilit_bitis",
+               (anahtar, zaman.metin(simdi + timedelta(minutes=dakika))))
 
 
 # --- Şifre ---
@@ -47,7 +73,7 @@ def sifre_kontrol(sifre, tekrar):
 
 
 def sifre_hash(sifre):
-    return generate_password_hash(sifre)
+    return generate_password_hash(sifre, method=SIFRE_YONTEMI)
 
 
 def sifre_dogru_mu(hash_, sifre):
@@ -62,7 +88,7 @@ def kurtarma_kodu_uret():
 
 
 def kurtarma_hash(kod):
-    return generate_password_hash(kod.strip().upper())
+    return generate_password_hash(kod.strip().upper(), method=SIFRE_YONTEMI)
 
 
 def kurtarma_dogru_mu(hash_, kod):
@@ -76,7 +102,9 @@ def _anahtar_ozeti(anahtar):
 
 
 def api_anahtari_olustur(db, kullanici_id, ad):
-    ad = (ad or "").strip() or "Uygulama"
+    """Aynı adlı (aynı cihazın) eski anahtarı yenisiyle değiştirir; mobil uygulama her girişte kilitlenmesin."""
+    ad = ((ad or "").strip() or "Uygulama")[:40]
+    db.execute("DELETE FROM api_anahtarlari WHERE kullanici_id = ? AND ad = ?", (kullanici_id, ad))
     if db.execute("SELECT COUNT(*) FROM api_anahtarlari WHERE kullanici_id = ?", (kullanici_id,)).fetchone()[0] >= 5:
         raise KuralHatasi("En fazla 5 API anahtarın olabilir; önce birini sil.")
     anahtar = "agr_" + secrets.token_urlsafe(32)
@@ -100,3 +128,9 @@ def api_anahtarlari(db, kullanici_id):
 
 def api_anahtari_sil(db, kullanici_id, anahtar_id):
     db.execute("DELETE FROM api_anahtarlari WHERE id = ? AND kullanici_id = ?", (anahtar_id, kullanici_id))
+
+
+def oturumlari_kapat(db, kullanici_id):
+    """Şifre değişince: eski oturum çerezleri (sürüm) ve bütün API anahtarları geçersiz olur."""
+    db.execute("UPDATE kullanicilar SET oturum_surumu = oturum_surumu + 1 WHERE id = ?", (kullanici_id,))
+    db.execute("DELETE FROM api_anahtarlari WHERE kullanici_id = ?", (kullanici_id,))

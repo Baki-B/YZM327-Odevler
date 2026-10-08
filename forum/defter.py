@@ -9,19 +9,36 @@ hash zincirine eklenir. Zincir birden fazla düğümde (A, B, C düğümleri) ay
   * Veritabanı defterle karşılaştırılır: silinen ya da gizlice değiştirilen mesaj/oy yakalanır.
 
 Kişisel veri deftere yazılmaz: mesajların sadece SHA-256 özeti, oyların sadece taahhüdü yazılır.
+
+Tasarım desenleri:
+  * **Repository** — bir düğümün blokları `DugumDeposu` arayüzünün arkasındadır. Üretimde `SqliteDugumDeposu`,
+    testlerde `BellekDugumDeposu` kullanılır.
+  * **Observer** — defter, veritabanının "işlem kaydedildi" olayına abone olur (`veritabani.commit_aboneligi`).
+    Veritabanı katmanı defteri tanımaz.
+
+Defter işlevlerinin `kaynak` parametresi bir klasör yolu (üretim) ya da `DugumDeposu` listesidir (test).
 """
 import hashlib
 import json
+import logging
 import os
 import random
 import sqlite3
 import threading
+import time
+import weakref
+from abc import ABC, abstractmethod
 from collections import Counter
+from contextlib import contextmanager
 
-from . import ayarlar, zaman
+from . import ayarlar, veritabani, zaman
 
-_KILIT = threading.Lock()
+_KILIT = threading.RLock()     # yazma, onarım ve doğrulama önbelleği aynı kilitle korunur
+log = logging.getLogger(__name__)
 BASLANGIC_HASH = "0" * 64
+# Deftere yazılabilen blok türleri (tek doğruluk kaynağı: defter sayfasındaki süzgeç de buradan gelir).
+BLOK_TURLERI = ("KONU", "KONU_DUZENLEME", "KONU_DURUM", "MESAJ", "MESAJ_DUZENLEME", "GIZLEME", "TEKLIF", "OY", "SONUC",
+                "KARAR", "DEVIR", "DEVIR_GERI", "UYE", "UZMANLIK", "KATEGORI", "YONETIM")
 BASLANGIC_ZAMANI = "2026-01-01 00:00:00"
 
 
@@ -35,39 +52,260 @@ def blok_hash(no, zaman_, tur, veri, onceki):
 
 def ekle(db, tur, veri):
     """Kaydı işlem kuyruğuna ekler; veritabanı commit edilince düğümlere yazılır."""
+    if tur not in BLOK_TURLERI:
+        raise ValueError(f"Bilinmeyen defter bloğu türü: {tur}")
     if db.defter_klasoru:
         db.defter_kuyrugu.append((tur, json.dumps(veri, ensure_ascii=False, sort_keys=True), zaman.simdi_metin()))
 
 
-# --- Düğümler ---
-
-def _dugum_yolu(klasor, ad):
-    return os.path.join(klasor, f"{ad}.db")
-
-
-def _baglan(klasor, ad):
-    os.makedirs(klasor, exist_ok=True)
-    c = sqlite3.connect(_dugum_yolu(klasor, ad), timeout=10)
-    c.row_factory = sqlite3.Row
-    c.execute("""CREATE TABLE IF NOT EXISTS bloklar (
-                   no INTEGER PRIMARY KEY, zaman TEXT NOT NULL, tur TEXT NOT NULL,
-                   veri TEXT NOT NULL, onceki TEXT NOT NULL, hash TEXT NOT NULL)""")
-    if c.execute("SELECT COUNT(*) FROM bloklar").fetchone()[0] == 0:
-        z = BASLANGIC_ZAMANI   # sabit: bütün düğümlerin başlangıç bloğu birebir aynı olmalı
-        veri = json.dumps({"ad": ayarlar.SITE_ADI + " dağıtık defteri", "dugumler": ayarlar.DEFTER_DUGUMLERI}, ensure_ascii=False)
-        c.execute("INSERT INTO bloklar VALUES (0, ?, 'BASLANGIC', ?, ?, ?)",
-                  (z, veri, BASLANGIC_HASH, blok_hash(0, z, "BASLANGIC", veri, BASLANGIC_HASH)))
-        c.commit()
-    return c
-
-
-def _zincir(klasor, ad):
-    c = _baglan(klasor, ad)
+@veritabani.commit_aboneligi
+def _islem_kaydedildi(db):
+    """Observer: işlem kaydedilince kuyruktaki blokları düğümlere yazar. Geri alınan işlemin kuyruğu bağlantı
+    tarafından zaten boşaltılmıştır (rollback), deftere girmez."""
+    if not (db.defter_kuyrugu and db.defter_klasoru):
+        return
+    kuyruk, db.defter_kuyrugu = db.defter_kuyrugu, []
     try:
-        return [dict(r) for r in c.execute("SELECT * FROM bloklar ORDER BY no")]
-    finally:
-        c.close()
+        dugumlere_yaz(db.defter_klasoru, kuyruk)
+    except Exception:
+        # Veri artık kalıcı; istek hata vermez (kullanıcı tekrar denerse çift kayıt oluşurdu). Eksik bloğu
+        # tutarlılık denetimi gösterir.
+        log.exception("Kayıt defterine %d blok yazılamadı", len(kuyruk))
 
+
+# --- Düğüm depoları (Repository) ---
+
+def baslangic_blogu():
+    """Bütün düğümlerde birebir aynı olan 0 numaralı blok (zamanı sabittir)."""
+    veri = json.dumps({"ad": ayarlar.SITE_ADI + " dağıtık defteri", "dugumler": ayarlar.DEFTER_DUGUMLERI},
+                      ensure_ascii=False)
+    return {"no": 0, "zaman": BASLANGIC_ZAMANI, "tur": "BASLANGIC", "veri": veri, "onceki": BASLANGIC_HASH,
+            "hash": blok_hash(0, BASLANGIC_ZAMANI, "BASLANGIC", veri, BASLANGIC_HASH)}
+
+
+class YinelenenBlok(Exception):
+    """Eklenmek istenen numarada zaten bir blok var. Bütün depo gerçeklemeleri aynı hatayı verir (Liskov)."""
+
+
+class DugumDeposu(ABC):
+    """Bir düğümün blok deposu. Boş bir depo ilk okunduğunda başlangıç bloğuyla açılır.
+
+    Soyut olan yalnızca dört temel işlemdir (oku, ekle, yeniden kur, sürüm). Sorgu işlemlerinin (son blok, sayfa,
+    türe göre süzme, arama) doğru ama yavaş varsayılanları burada bütün zincirden hesaplanır; SQLite deposu bunları
+    SQL ile hızlı yapar. İki gerçekleme aynı sonucu verir (testlerde karşılaştırılır)."""
+
+    def __init__(self, ad):
+        self.ad = ad
+
+    @abstractmethod
+    def bloklar(self):
+        """Bütün bloklar, numara sırasıyla (sözlük listesi)."""
+
+    @abstractmethod
+    def ekle(self, yeni):
+        """Blokları zincirin sonuna ekler; hepsi ya eklenir ya hiçbiri. Aynı numaralı bir blok zaten varsa YinelenenBlok."""
+
+    @abstractmethod
+    def yeniden_kur(self, zincir):
+        """Depodaki zinciri verilen zincirle değiştirir (onarım)."""
+
+    @abstractmethod
+    def veri_degistir(self, no, veri):
+        """Bir bloğun verisini hash'ine dokunmadan değiştirir. SADECE kurcalama gösterimi (boz_demo) içindir."""
+
+    @abstractmethod
+    def surum(self):
+        """Depo her değiştiğinde (kim değiştirirse değiştirsin) değişen bir değer. Doğrulama önbelleği buna bağlıdır."""
+
+    def son_blok(self):
+        return self.bloklar()[-1]
+
+    def blok(self, no):
+        return next((b for b in self.bloklar() if b["no"] == no), None)
+
+    def sayfa(self, tur, atla, boy):
+        """En yeniden eskiye (tur verilirse yalnız o türden) bloklar: (liste, toplam). atla ≥ 0 olmalı."""
+        liste = [b for b in reversed(self.bloklar()) if tur is None or b["tur"] == tur]
+        return liste[atla:atla + boy], len(liste)
+
+    def turdeki(self, turler):
+        return [b for b in self.bloklar() if b["tur"] in turler]
+
+    def bul(self, anahtar):
+        """Numarası anahtar olan ya da hash'i anahtarla başlayan ilk blok."""
+        return next((b for b in self.bloklar() if b["hash"].startswith(anahtar) or str(b["no"]) == anahtar), None)
+
+
+_EKLE = "INSERT INTO bloklar VALUES (:no, :zaman, :tur, :veri, :onceki, :hash)"
+
+
+class SqliteDugumDeposu(DugumDeposu):
+    """Üretim deposu: her düğüm klasörde ayrı bir SQLite dosyasıdır (A.db, B.db, C.db)."""
+
+    def __init__(self, klasor, ad):
+        super().__init__(ad)
+        self.yol = os.path.join(klasor, f"{ad}.db")
+
+    def _baglan(self):
+        os.makedirs(os.path.dirname(self.yol), exist_ok=True)
+        c = sqlite3.connect(self.yol, timeout=10)
+        c.row_factory = sqlite3.Row
+        c.execute("""CREATE TABLE IF NOT EXISTS bloklar (
+                       no INTEGER PRIMARY KEY, zaman TEXT NOT NULL, tur TEXT NOT NULL,
+                       veri TEXT NOT NULL, onceki TEXT NOT NULL, hash TEXT NOT NULL)""")
+        if c.execute("SELECT 1 FROM bloklar LIMIT 1").fetchone() is None:     # COUNT(*) tüm tabloyu tarar
+            c.execute(_EKLE, baslangic_blogu())
+            c.commit()
+        return c
+
+    def _oku(self, sql, parametre=()):
+        c = self._baglan()
+        try:
+            return [dict(r) for r in c.execute(sql, parametre)]
+        finally:
+            c.close()
+
+    def _yaz(self, sql_ler):
+        c = self._baglan()
+        try:
+            for sql, parametre in sql_ler:
+                (c.executemany if isinstance(parametre, list) else c.execute)(sql, parametre)
+            c.commit()
+        finally:
+            c.close()
+
+    def bloklar(self):
+        return self._oku("SELECT * FROM bloklar ORDER BY no")
+
+    def ekle(self, yeni):
+        try:
+            self._yaz([(_EKLE, list(yeni))])
+        except sqlite3.IntegrityError as hata:              # birincil anahtar (no) çakıştı; işlem geri alındı
+            raise YinelenenBlok("Bu numarada bir blok zaten var.") from hata
+
+    def yeniden_kur(self, zincir):
+        self._yaz([("DELETE FROM bloklar", ()), (_EKLE, list(zincir))])
+
+    def veri_degistir(self, no, veri):
+        self._yaz([("UPDATE bloklar SET veri = ? WHERE no = ?", (veri, no))])
+
+    def surum(self):
+        """Depo sürümü: SQLite başlığındaki değişiklik sayacı, dosya kimliği (inode), boyu, değişiklik ve durum değişim
+        zamanları (mtime, ctime), varsa WAL dosyasının boyu ve zamanı. Ham bayt değişikliği sayacı artırmaz; mtime geri
+        alınabildiği için ctime de tutulur. (Windows'ta ctime oluşturma zamanıdır; oradaki güvence önbellek ömrüdür,
+        bkz. _dugum_durumu.) Dosya yoksa None."""
+        try:
+            with open(self.yol, "rb") as f:
+                baslik = f.read(28)
+            bilgi = os.stat(self.yol)
+        except FileNotFoundError:
+            return None
+        try:
+            wal = os.stat(self.yol + "-wal")
+            wal = (wal.st_size, wal.st_mtime_ns, wal.st_ctime_ns)
+        except FileNotFoundError:
+            wal = None
+        return baslik[24:28], bilgi.st_ino, bilgi.st_size, bilgi.st_mtime_ns, bilgi.st_ctime_ns, wal
+
+    def son_blok(self):
+        return self._oku("SELECT * FROM bloklar ORDER BY no DESC LIMIT 1")[0]
+
+    def blok(self, no):
+        r = self._oku("SELECT * FROM bloklar WHERE no = ?", (no,))
+        return r[0] if r else None
+
+    def sayfa(self, tur, atla, boy):
+        kosul = "WHERE ? IS NULL OR tur = ?"
+        c = self._baglan()
+        try:       # liste ve toplam aynı bağlantıdan, arada yazma araya girmesin
+            toplam = c.execute(f"SELECT COUNT(*) FROM bloklar {kosul}", (tur, tur)).fetchone()[0]
+            if atla >= toplam:
+                return [], toplam
+            liste = [dict(r) for r in c.execute(f"SELECT * FROM bloklar {kosul} ORDER BY no DESC LIMIT ? OFFSET ?",
+                                                (tur, tur, boy, atla))]
+            return liste, toplam
+        finally:
+            c.close()
+
+    def turdeki(self, turler):
+        return self._oku(f"SELECT * FROM bloklar WHERE tur IN ({','.join('?' * len(turler))}) ORDER BY no",
+                         tuple(turler))
+
+    def bul(self, anahtar):
+        r = self._oku("SELECT * FROM bloklar WHERE substr(hash, 1, length(?)) = ? OR CAST(no AS TEXT) = ? "
+                      "ORDER BY no LIMIT 1", (anahtar, anahtar, anahtar))
+        return r[0] if r else None
+
+
+class BellekDugumDeposu(DugumDeposu):
+    """Test deposu (sahte depo): bloklar bellekte bir listede durur; disk ya da SQLite gerekmez."""
+
+    def __init__(self, ad):
+        super().__init__(ad)
+        self._bloklar = []
+        self._surum = 0
+
+    def _degisti(self):
+        self._surum += 1
+
+    def _ac(self):
+        if not self._bloklar:
+            self._bloklar.append(baslangic_blogu())
+            self._degisti()
+
+    def bloklar(self):
+        self._ac()
+        return [dict(b) for b in self._bloklar]
+
+    def ekle(self, yeni):
+        self._ac()
+        var = {b["no"] for b in self._bloklar}
+        yeni = [dict(b) for b in yeni]
+        if any(b["no"] in var for b in yeni) or len({b["no"] for b in yeni}) != len(yeni):
+            raise YinelenenBlok("Bu numarada bir blok zaten var.")   # SQLite deposundaki birincil anahtarın karşılığı
+        self._bloklar.extend(yeni)
+        self._degisti()
+
+    def yeniden_kur(self, zincir):
+        self._bloklar = [dict(b) for b in zincir]
+        self._degisti()
+
+    def veri_degistir(self, no, veri):
+        self._ac()
+        for b in self._bloklar:
+            if b["no"] == no:
+                b["veri"] = veri
+                self._degisti()
+
+    def surum(self):
+        return self._surum
+
+    def son_blok(self):
+        self._ac()
+        return dict(self._bloklar[-1])
+
+
+def bellek_depolari():
+    """Her düğüm için boş bir bellek deposu (testler için)."""
+    return [BellekDugumDeposu(ad) for ad in ayarlar.DEFTER_DUGUMLERI]
+
+
+_SQLITE_DEPOLARI = {}     # klasör → {ad: depo}; aynı nesneler kullanılır ki doğrulama önbelleği korunsun
+
+
+def _depolar(kaynak):
+    """kaynak: klasör yolu → SQLite depoları; DugumDeposu listesi ya da {ad: depo} → olduğu gibi. Döner: {ad: depo}."""
+    if isinstance(kaynak, (str, os.PathLike)):
+        klasor = os.path.abspath(kaynak)
+        if klasor not in _SQLITE_DEPOLARI:
+            _SQLITE_DEPOLARI[klasor] = {ad: SqliteDugumDeposu(klasor, ad) for ad in ayarlar.DEFTER_DUGUMLERI}
+        return _SQLITE_DEPOLARI[klasor]
+    if isinstance(kaynak, dict):
+        return kaynak
+    return {d.ad: d for d in kaynak}
+
+
+# --- Doğrulama ve uzlaşma ---
 
 def zinciri_dogrula(bloklar):
     """(geçerli_mi, ilk bozuk blok no)."""
@@ -80,21 +318,56 @@ def zinciri_dogrula(bloklar):
     return True, None
 
 
-def _uzlasma(klasor):
-    """Geçerli zincirlerin baş hash'lerine göre çoğunluk zinciri: (baş hash, zincir, düğüm durumları)."""
-    zincirler, durumlar = {}, []
-    for ad in ayarlar.DEFTER_DUGUMLERI:
-        z = _zincir(klasor, ad)
-        gecerli, bozuk = zinciri_dogrula(z)
-        zincirler[ad] = z
-        durumlar.append({"ad": ad, "uzunluk": len(z), "bas": z[-1]["hash"] if z else None,
-                         "gecerli": gecerli, "bozuk_blok": bozuk})
+# Düğüm başına son tam doğrulamanın sonucu, düğümün o anki sürümüyle birlikte. Sürüm değişmedikçe zincir yeniden
+# okunup hash'lenmez. Her yazmada üç zincirin tam doğrulaması 50.000 blokta yarım saniye sürer (bkz.
+# olcum/gecikme_olcumu.py). Defterin kendi eklemeleri önbelleği günceller; dosyayı dışarıdan değiştirmek sürümü
+# değiştirir ve bir sonraki okumada tam doğrulama yapılır. Sürümün göremeyeceği değişikliklere (disk bozulması;
+# Windows'ta zamanı geri alınmış ham bayt değişikliği) karşı iki güvence: bir sonuç en fazla DOGRULAMA_OMRU saniye
+# kullanılır ve "denetle" istekleri (tam=True) önbelleği hiç kullanmaz.
+_DOGRULAMA = weakref.WeakKeyDictionary()
+DOGRULAMA_OMRU = 600
+_saat = time.monotonic      # testler değiştirir
+
+
+def _dugum_durumu(depo, tam=False):
+    with _KILIT:
+        surum = depo.surum()
+        d = _DOGRULAMA.get(depo)
+        if tam or d is None or d["surum"] != surum or _saat() - d["dogrulama"] > DOGRULAMA_OMRU:
+            z = depo.bloklar()
+            gecerli, bozuk = zinciri_dogrula(z)
+            d = {"surum": surum, "uzunluk": len(z), "bas": z[-1]["hash"] if z else None, "gecerli": gecerli,
+                 "bozuk_blok": bozuk, "dogrulama": _saat()}
+            _DOGRULAMA[depo] = d
+        return dict(d)
+
+
+def _eklendi(depo, yeni):
+    """Defterin kendi eklemesinden sonra: eklenen bloklar zaten doğru hesaplandı, önbellek ilerletilir."""
+    d = _DOGRULAMA.get(depo)
+    if d is not None:
+        d.update(surum=depo.surum(), uzunluk=yeni[-1]["no"] + 1, bas=yeni[-1]["hash"])
+
+
+def _uzlasma(kaynak, tam=False):
+    """Geçerli zincirlerin baş hash'lerine göre çoğunluk: (çoğunluk baş hash'i ya da None, okunacak depo ya da None,
+    düğüm durumları). Okunacak depo, en çok düğümün paylaştığı geçerli zincirdeki ilk düğümdür. Düğümler kilit altında
+    okunur: bir yazmanın ortasında okunan düğümler yanlışlıkla "ayrışmış" görünmesin. tam=True: önbellek kullanılmaz."""
+    depolar = _depolar(kaynak)
+    durumlar = []
+    with _KILIT:
+        for ad, depo in depolar.items():
+            d = _dugum_durumu(depo, tam)
+            durumlar.append({"ad": ad, "uzunluk": d["uzunluk"], "bas": d["bas"], "gecerli": d["gecerli"],
+                             "bozuk_blok": d["bozuk_blok"]})
     sayac = Counter(d["bas"] for d in durumlar if d["gecerli"])
     if not sayac:
-        return None, [], durumlar
+        for d in durumlar:
+            d["durum"] = "BOZUK"
+        return None, None, durumlar
     bas, oy = sayac.most_common(1)[0]
-    cogunluk = oy > len(ayarlar.DEFTER_DUGUMLERI) // 2
-    kaynak = next(d["ad"] for d in durumlar if d["gecerli"] and d["bas"] == bas)
+    cogunluk = oy > len(depolar) // 2
+    kaynak_adi = next(d["ad"] for d in durumlar if d["gecerli"] and d["bas"] == bas)
     for d in durumlar:
         if not d["gecerli"]:
             d["durum"] = "BOZUK"
@@ -102,15 +375,40 @@ def _uzlasma(klasor):
             d["durum"] = "UYUMLU" if cogunluk else "AZINLIKTA"
         else:
             d["durum"] = "AYRISMIS"
-    return (bas if cogunluk else None), zincirler[kaynak], durumlar
+    return (bas if cogunluk else None), depolar[kaynak_adi], durumlar
 
 
-def dugumlere_yaz(klasor, kuyruk):
-    with _KILIT:
-        bas, zincir, durumlar = _uzlasma(klasor)
-        if not zincir:
+@contextmanager
+def _surecler_arasi_kilit(depolar):
+    """Birden çok sunucu süreci (ör. WSGI işçileri) aynı düğümlere yazarsa aynı numaralı bloğu iki kez ekleyip zinciri
+    bölebilir. Yazmalar, düğüm klasöründeki kilit.db üzerinde BEGIN IMMEDIATE ile sıraya girer; bu SQLite'ın dosya
+    kilididir ve Windows'ta da çalışır. Bellek depolarında gerekmez."""
+    klasorler = sorted({os.path.dirname(d.yol) for d in depolar.values() if isinstance(d, SqliteDugumDeposu)})
+    if not klasorler:
+        yield
+        return
+    os.makedirs(klasorler[0], exist_ok=True)
+    c = sqlite3.connect(os.path.join(klasorler[0], "kilit.db"), timeout=30, isolation_level=None)
+    try:
+        c.execute("BEGIN IMMEDIATE")
+        yield
+    finally:
+        c.close()          # açık işlem kapanışta geri alınır, kilit bırakılır
+
+
+def dugumlere_yaz(kaynak, kuyruk):
+    """kuyruk: (tür, veri_json, zaman) üçlüleri. Bloklar çoğunluk zincirinin sonuna eklenir ve o zincirdeki
+    bütün düğümlere yazılır. Zincirin yalnızca son bloğu okunur."""
+    if not kuyruk:
+        return
+    depolar = _depolar(kaynak)
+    with _KILIT, _surecler_arasi_kilit(depolar):
+        _, okunan, durumlar = _uzlasma(depolar)
+        if okunan is None:
+            log.error("Kayıt defterinde sağlam düğüm yok; %d blok yazılamadı", len(kuyruk))
             return
-        son = zincir[-1]
+        son = okunan.son_blok()
+        bas_hash = son["hash"]
         yeni = []
         for tur, veri, z in kuyruk:
             no = son["no"] + 1
@@ -118,92 +416,99 @@ def dugumlere_yaz(klasor, kuyruk):
             son = {"no": no, "zaman": z, "tur": tur, "veri": veri, "onceki": son["hash"], "hash": h}
             yeni.append(son)
         for d in durumlar:
-            if d["bas"] != zincir[-1]["hash"] or not d["gecerli"]:
+            if d["bas"] != bas_hash or not d["gecerli"]:
                 continue   # bozuk ya da ayrışmış düğüme yazılmaz; önce onarılmalı
-            c = _baglan(klasor, d["ad"])
-            c.executemany("INSERT INTO bloklar VALUES (:no, :zaman, :tur, :veri, :onceki, :hash)", yeni)
-            c.commit()
-            c.close()
+            depolar[d["ad"]].ekle(yeni)
+            _eklendi(depolar[d["ad"]], yeni)
 
 
-def durum(klasor):
-    bas, zincir, durumlar = _uzlasma(klasor)
-    return {"bas": bas, "uzunluk": len(zincir), "dugumler": durumlar,
+def _uzunluk(okunan, durumlar):
+    return next((d["uzunluk"] for d in durumlar if okunan and d["ad"] == okunan.ad), 0)
+
+
+def durum(kaynak, tam=False):
+    """tam=True: düğümler önbelleğe bakılmadan baştan doğrulanır ("denetle" istekleri)."""
+    bas, okunan, durumlar = _uzlasma(kaynak, tam)
+    return {"bas": bas, "uzunluk": _uzunluk(okunan, durumlar), "dugumler": durumlar,
             "saglikli": all(d.get("durum") == "UYUMLU" for d in durumlar)}
 
 
-def onar(klasor, ad):
+def onar(kaynak, ad):
     """Bozuk/ayrışmış düğümü çoğunluk zincirinden yeniden kurar."""
-    with _KILIT:
-        bas, zincir, _ = _uzlasma(klasor)
+    depolar = _depolar(kaynak)
+    with _KILIT, _surecler_arasi_kilit(depolar):
+        bas, okunan, _ = _uzlasma(depolar, tam=True)       # onarım kaynağı önbelleğe güvenilmeden seçilir
         if bas is None:
             raise ValueError("Çoğunluk sağlanamıyor; onarım için en az iki sağlam düğüm gerekli.")
-        c = _baglan(klasor, ad)
-        c.execute("DELETE FROM bloklar")
-        c.executemany("INSERT INTO bloklar VALUES (:no, :zaman, :tur, :veri, :onceki, :hash)", zincir)
-        c.commit()
-        c.close()
+        depolar[ad].yeniden_kur(okunan.bloklar())
 
 
-def boz_demo(klasor, ad):
-    """SADECE DEMO: bir düğümdeki rastgele bir bloğun verisini hash'i güncellemeden değiştirir."""
+def boz_demo(kaynak, ad):
+    """SADECE DEMO: bir düğümdeki rastgele bir bloğun verisini hash'i güncellemeden değiştirir.
+    Döner: bozulan bloğun numarası (başlangıç bloğundan başka blok yoksa None)."""
     with _KILIT:
-        c = _baglan(klasor, ad)
-        adaylar = [r["no"] for r in c.execute("SELECT no FROM bloklar WHERE no > 0")]
-        if adaylar:
-            no = random.choice(adaylar)
-            c.execute("UPDATE bloklar SET veri = json_set(veri, '$.kurcalandi', 1) WHERE no = ?", (no,))
-            c.commit()
-        c.close()
-        return adaylar and no
+        depo = _depolar(kaynak)[ad]
+        adaylar = [b for b in depo.bloklar() if b["no"] > 0]      # yalnızca demo: bütün zinciri okumak sorun değil
+        if not adaylar:
+            return None
+        blok = random.choice(adaylar)
+        veri = json.loads(blok["veri"])
+        veri["kurcalandi"] = 1
+        depo.veri_degistir(blok["no"], json.dumps(veri, ensure_ascii=False, sort_keys=True))
+        return blok["no"]
 
 
 # --- Okuma ---
 
-def bloklar(klasor, sayfa=1, boy=25, tur=None):
-    _, zincir, _ = _uzlasma(klasor)
-    liste = [b for b in reversed(zincir) if tur is None or b["tur"] == tur]
-    toplam = len(liste)
-    secilen = liste[(sayfa - 1) * boy: sayfa * boy]
-    for b in secilen:
+def _json_ekle(b):
+    if b is not None:
         b["veri_json"] = json.loads(b["veri"])
-    return secilen, toplam
+    return b
 
 
-def blok_bul(klasor, anahtar):
-    _, zincir, _ = _uzlasma(klasor)
-    for b in zincir:
-        if b["hash"].startswith(anahtar) or str(b["no"]) == anahtar:
-            b["veri_json"] = json.loads(b["veri"])
-            return b
-    return None
+def bloklar(kaynak, sayfa=1, boy=25, tur=None):
+    _, okunan, _ = _uzlasma(kaynak)
+    if okunan is None:
+        return [], 0
+    secilen, toplam = okunan.sayfa(tur, (max(1, sayfa) - 1) * boy, boy)
+    return [_json_ekle(b) for b in secilen], toplam
+
+
+def blok_bul(kaynak, anahtar):
+    _, okunan, _ = _uzlasma(kaynak)
+    return _json_ekle(okunan.bul(anahtar)) if okunan else None
 
 
 def taahhut(teklif_id, secim, makbuz):
     return ozet(f"{teklif_id}|{secim}|{makbuz}")
 
 
-def makbuz_dogrula(klasor, teklif_id, makbuz, secenekler):
-    """Makbuz koduyla, oyun deftere hangi seçimle yazıldığını bulur (seçim sadece makbuz sahibince bilinir)."""
+def makbuz_dogrula(kaynak, teklif_id, makbuz, secenekler):
+    """Makbuz koduyla, oyun deftere hangi seçimle yazıldığını bulur (seçim sadece makbuz sahibince bilinir).
+    Döner: None ya da (blok, seçim, güncel_mi). Oy sonradan değiştirildiyse eski makbuzun bloğu güncel değildir."""
     olasi = {taahhut(teklif_id, s, makbuz.strip()): s for s in secenekler}
-    _, zincir, _ = _uzlasma(klasor)
-    bulunan = None
-    for b in zincir:
-        if b["tur"] != "OY":
-            continue
+    _, okunan, _ = _uzlasma(kaynak)
+    bulunan, son_oy = None, {}
+    for b in okunan.turdeki(("OY",)) if okunan else []:
         v = json.loads(b["veri"])
-        if v.get("teklif") == teklif_id and v.get("taahhut") in olasi:
-            bulunan = (b, olasi[v["taahhut"]])
-    return bulunan
+        if v.get("teklif") != teklif_id:
+            continue
+        son_oy[v.get("yurttas")] = b["no"]
+        if v.get("taahhut") in olasi:
+            bulunan = (b, olasi[v["taahhut"]], v.get("yurttas"))
+    if not bulunan:
+        return None
+    blok, secim, yurttas = bulunan
+    return blok, secim, son_oy[yurttas] == blok["no"]
 
 
 # --- Veritabanı ile tutarlılık denetimi ---
 
 def tutarlilik(db):
     """Veritabanındaki mesajları, oyları ve sonuçları defterle karşılaştırır."""
-    _, zincir, _ = _uzlasma(db.defter_klasoru)
+    _, okunan, _ = _uzlasma(db.defter_klasoru)
     mesaj_ozetleri, oylar, sonuclar = {}, {}, {}
-    for b in zincir:
+    for b in okunan.turdeki(("MESAJ", "MESAJ_DUZENLEME", "OY", "SONUC")) if okunan else []:
         v = json.loads(b["veri"])
         if b["tur"] in ("MESAJ", "MESAJ_DUZENLEME"):
             mesaj_ozetleri[v["mesaj"]] = v["ozet"]
