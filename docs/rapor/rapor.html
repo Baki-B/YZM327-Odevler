@@ -79,21 +79,21 @@
   Çerçeveleme, <strong>S01</strong> YZ Mühendisliğine Giriş, <strong>S02</strong> Temel Modelleri Anlamak (ör. TD-43 = 43. slayt).</div>
 
 <h2>1. Proje ve ödev gereksinimleri</h2>
-<p>Agora'da her üye konu açar. Konu 24 saat tartışılır; bu sürede her katılımcı <strong>bir</strong> fikir yazabilir. Ardından en fazla
-  beş turluk fikir oylaması başlar: her turda eşiğin altında kalan fikirler elenir (%5, %5, %10, %20), %75'i bulan ya da tek başına
-  kalan fikir hemen kabul edilir, beşinci turda en çok oyu alan kazanır. Bir fikrin oranı, <strong>ağırlıklı oy payı ile kişi payının
-  küçüğüdür</strong> (çift çoğunluk); çekimserler paydada sayılır. Mesajlar silinmez; gizleme ve konu kaldırma 3/4 oylamayla olur. Her olay
-  üç düğümlü bir kayıt defterine yazılır; kurcalama tespit edilip onarılır, oy veren makbuz koduyla oyunun doğru yazıldığını doğrular.</p>
+<p>Agora'da her üye konu açar. Konu 24 saat tartışılır; bu sürede her katılımcı <strong>bir</strong> fikir yazabilir. Sonra en fazla
+  beş turluk oylama başlar: her turda eşiğin altında kalan fikirler elenir (%5, %5, %10, %20); %75'e ulaşan ya da tek kalan fikir
+  hemen kabul edilir, beşinci turda en çok oyu alan kazanır. Bir fikrin oranı, <strong>ağırlıklı oy payı ile kişi payından küçük
+  olanıdır</strong> (çift çoğunluk); çekimserler paydada sayılır. Mesajlar silinmez; gizleme ve konu kaldırma 3/4 oylamayla olur. Her olay
+  üç düğümlü bir kayıt defterine yazılır.</p>
 <table class="sik">
   <tr><th style="width:31%">Gereksinim</th><th>Karşılığı</th></tr>
   <tr><td>Konu açma, düzenleme, silme; alt konu</td><td>Hemen açılır; tartışmada düzenlenir (eski hâli görünür); kaldırma 3/4 oylamayla; alt konu kuralı yalnızca daraltır</td></tr>
   <tr><td>Çoğunluk kararı, sonunda uzlaşma</td><td>5 tur eleme, %75 ezici üstünlük, "tek kalan", yeter sayı; tek fikir karar olur, katılmayan itiraz konusu açar</td></tr>
-  <tr><td>Kayıt bilgileri katılım kuralı</td><td>Konum ağacı (il › ilçe) ve yaş kuralı; sağlamayan <em>gözlemci</em> olur (okur, oy veremez); görünen yalnızca takma ad</td></tr>
+  <tr><td>Kayıt bilgileri katılım kuralı</td><td>Konum ağacı (il › ilçe) ve yaş kuralı; sağlamayan <em>gözlemci</em> olur (okur, oy veremez); yalnızca takma ad görünür</td></tr>
   <tr><td>Herkes eşit, bazıları daha eşit</td><td>Uzmanlık ön şart + kontenjan + alanın oylamasıyla; uzman oyu 10 sayılır ama çift oranla dengelenir</td></tr>
-  <tr><td>Ontolojiyle ölçüm, yönetmelik denetimi</td><td>D1–D7: kişisel veri engellenir; hakaret, kategori, konum, benzer konu, alt konu, açıklık için uyarılır; ciddiyet oylanır</td></tr>
+  <tr><td>Ontolojiyle ölçüm, yönetmelik denetimi</td><td>D1–D7: kişisel veri engellenir; hakaret, kategori, konum, benzer konu, alt konu ve açıklık için uyarılır</td></tr>
   <tr><td>Silinmeyen tartışma; oy devri; azınlık</td><td>Düzenleme geçmişi, gizleme oylaması; tavanlı oy devri (genel/kategori/konu); itiraz, korunan maddeler 3/4, gizli oy</td></tr>
   <tr><td>YZ üye; kişiler grafta; dağıtık defter</td><td>YZ üye özet yazar, oy vermez; üye ağı, PageRank, Gini; hash zinciri, 3 düğüm, uzlaşma, onarım</td></tr>
-  <tr><td>Uygulama + web sitesi</td><td>Sunucu sürümü, <strong>sunucusuz tarayıcı sürümü (GitHub Pages)</strong>, PWA, Expo Go ve Android uygulaması, REST API</td></tr>
+  <tr><td>Uygulama + web sitesi</td><td>Sunucu sürümü, <strong>sunucusuz tarayıcı sürümü (GitHub Pages)</strong>, PWA, Expo Go, Android uygulaması, REST API</td></tr>
   <tr><td>Ders: çerçeveleme; SOLID/GoF; S02 laboratuvar</td><td>Bölüm 4 (<code>docs/analiz.md</code>), Bölüm 3 (<code>docs/tasarim.md</code> 8), Bölüm 7 (<code>laboratuvar/</code>)</td></tr>
 </table>
 
@@ -134,14 +134,14 @@
 <div>
 <h3>Tutarlılık ve eşzamanlılık</h3>
 <ul>
-  <li>Yazan her istek baştan <code>BEGIN IMMEDIATE</code> ile sıraya girer. Oy yalnızca tur hâlâ açıksa yazılır (koşullu INSERT). Kişi başı tek fikir kısmi tekil indeksle korunur (8 iş parçacıklı test).</li>
+  <li>Yazma yapan her istek başta <code>BEGIN IMMEDIATE</code> ile sıraya girer. Oy yalnızca tur açıksa yazılır (koşullu INSERT); kişi başına tek fikir kısmi tekil indeksle korunur (8 iş parçacıklı test).</li>
   <li>Zamanlayıcı her konuyu ayrı kayıt noktasında (SAVEPOINT) işler: biri hata verirse yalnızca o geri alınır.</li>
-  <li>Yan etkiler (defter bloğu, bildirim) kuyruğa alınır, yalnızca <em>commit</em> başarılıysa gerçekleşir.</li>
+  <li>Yan etkiler (defter bloğu, bildirim) kuyruğa alınır; yalnızca <em>commit</em> başarılı olursa yapılır.</li>
 </ul>
 <h3>Dağıtık kayıt defteri</h3>
 <ul>
-  <li>Her blok öncekinin SHA-256 özetini taşır; üç düğümde çoğunluk uzlaşması, bozuk düğümün tespiti ve onarımı.</li>
-  <li>Oy taahhüdü = SHA-256(teklif | seçim | makbuz): seçim deftere açık yazılmaz, makbuz sahibi doğrulayabilir.</li>
+  <li>Her blok öncekinin SHA-256 özetini taşır; üç düğüm çoğunlukla uzlaşır, bozuk düğüm bulunup onarılır.</li>
+  <li>Oy taahhüdü = SHA-256(teklif | seçim | makbuz): seçim deftere açık yazılmaz; makbuz sahibi oyunun doğru yazıldığını doğrulayabilir.</li>
   <li>Doğrulama sonucu düğümün <em>sürümüyle</em> (SQLite değişiklik sayacı, inode, ctime) önbelleğe alınır; kurcalama yine yakalanır.</li>
 </ul>
 </div>
@@ -149,61 +149,61 @@
 <h3>Güvenlik ve kişisel veri (KVKK)</h3>
 <ul>
   <li>scrypt şifre özeti, CSRF, CSP, HttpOnly çerez; şifre değişince eski oturum ve API anahtarları düşer.</li>
-  <li>Açık yönlendirme ve SSRF engeli, kayıt/giriş hız sınırları, büyük metinle hizmet reddine karşı sınır.</li>
+  <li>Açık yönlendirme ve SSRF engeli, kayıt/giriş hız sınırları, büyük metne boyut sınırı.</li>
   <li>Kişisel veri forumda görünmez, API'de dönmez; deftere yalnızca özet ve taahhüt yazılır. İki kişilik görüş grubu gösterilmez (k-anonimlik ≥ 3).</li>
 </ul>
 <h3>Yapay zeka üye: neden kural tabanlı?</h3>
-<p>Özet, oy vermeden önce okunur; bir dil modelinin uydurabileceği tek bir sayı (halüsinasyon, S02-43) kararı etkiler. Mesajı dış servise
-  göndermek kişisel veriyi dışarı çıkarır; her çağrı ücretli ve yavaştır (S01-34, 35), Türkçe aynı anlamı 1,4–1,7 kat daha çok tokenla
-  taşır (Bölüm 7). Bu yüzden özetteki her sayı veritabanından gelir; oranlar yuvarlanmaz, <em>kesilir</em> (%74,9 asla "%75" olmaz) ve
+<p>Özet oylamadan önce okunur; modelin uydurduğu tek bir sayı (halüsinasyon, S02-43) bile kararı etkiler. Dış servise mesaj
+  göndermek kişisel veriyi dışarı çıkarır, her çağrı ücretli ve yavaştır (S01-34, 35), Türkçe aynı anlamı 1,4–1,7 kat daha çok tokenla
+  taşır (Bölüm 7). Bu yüzden özetteki her sayı veritabanından gelir; oranlar <em>kesilir</em>, yuvarlanmaz (%74,9 asla "%75" olmaz) ve
   aynı veri hep aynı özeti verir (testli).</p>
 </div>
 </div>
 
 <!-- ============================== 3 ============================== -->
 <h2>3. Tasarım ilkeleri (SOLID) ve tasarım desenleri</h2>
-<p>Desenler yalnızca kodda somut bir sorunu çözdükleri yerde kullanıldı (TD-3: "desen amaç değil araçtır"; TD-57: YAGNI/KISS). Her GoF
-  deseninin davranışı testle korunur; sınıf diyagramları ve sınırları <code>docs/tasarim.md</code> 8. bölümdedir.</p>
+<p>Desenler yalnızca somut bir sorunu çözdükleri yerde kullanıldı (TD-3: "desen amaç değil araçtır"; TD-57: YAGNI/KISS). Her GoF
+  deseni testle korunur; sınıf diyagramları <code>docs/tasarim.md</code> 8. bölümdedir.</p>
 <table class="sik">
   <tr><th style="width:17%">İlke (TD-9…12)</th><th style="width:41%">Önce (ihlal)</th><th>Şimdi</th></tr>
   <tr><td><strong>S</strong> Tek sorumluluk</td><td>150 satırlık <code>web.kur()</code> kimlik, CSRF, zamanlayıcı, hata sayfaları ve filtreleri birlikte yapıyordu; denetim yönetmelik modülüne gömülüydü</td><td><code>istek.py</code>, <code>hata_sayfalari.py</code>, <code>sablon.py</code>, <code>denetim.py</code>, <code>gorunum.py</code>, <code>metin.py</code></td></tr>
   <tr><td><strong>O</strong> Açık/kapalı</td><td>Yeni oylama türü 5 dosyada <code>if tip == …</code> dalı demekti</td><td>Yeni tür = yeni sınıf + <code>@kaydet</code>; yeni denetim maddesi = yeni halka; yeni kanal = yeni adaptör</td></tr>
   <tr><td><strong>L</strong> Liskov</td><td>Kapalı bildirim kanalı abone kabul edip her gönderimde hata veriyordu</td><td>Bütün türler şablon yöntemde aynı kullanılır; SQLite ve bellek depoları aynı sonucu verir (testli)</td></tr>
   <tr><td><strong>I</strong> Arayüz ayrımı</td><td>—</td><td>Küçük arayüzler: <code>AnlikKanal</code> 3, <code>DenetimKurali</code> 1, <code>DugumDeposu</code> 5 soyut yöntem. İstisna: <code>TeklifTuru</code> 18 yöntem (4 soyut), bilerek bölünmedi</td></tr>
-  <tr><td><strong>D</strong> Bağımlılığın tersine çevrilmesi</td><td>Veritabanı (altyapı) defteri (üst katman) içe aktarıyordu; şifre yöntemi ve saat sabitti</td><td>Commit aboneliği (Observer); iş modülleri bağlantıyı parametre alır; şifre yöntemi, saat ve kanallar testte değiştirilebilir (test dikişi)</td></tr>
+  <tr><td><strong>D</strong> Bağımlılığın tersine çevrilmesi</td><td>Veritabanı (altyapı) defteri (üst katman) içe aktarıyordu; şifre yöntemi ve saat sabitti</td><td>Commit aboneliği (Observer); iş modülleri bağlantıyı parametre alır; şifre yöntemi, saat ve kanallar testte değiştirilebilir</td></tr>
 </table>
 <table class="sik">
   <tr><th style="width:17%">GoF deseni</th><th style="width:36%">Çözdüğü sorun</th><th>Agora'daki karşılığı</th></tr>
-  <tr><td><strong>State</strong> (TD-43)</td><td><code>durum == …</code> kontrolleri dağınıktı; unutulan biri kaldırılmış konunun geçmişini okunur bırakıyordu</td><td><code>konu_durumlari.py</code>: 5 durum sınıfı, izinler ve geçiş tablosu; geçişi yapan üç işlem tabloya danışır. Fark (TD-48): geçişi durum nesnesi değil, <code>konular.py</code> yapar</td></tr>
+  <tr><td><strong>State</strong> (TD-43)</td><td><code>durum == …</code> kontrolleri dağınıktı; unutulan biri kaldırılmış konunun geçmişini açık bırakıyordu</td><td><code>konu_durumlari.py</code>: 5 durum sınıfı, izinler ve geçiş tablosu; geçişi yapan üç işlem tabloya danışır. Fark (TD-48): geçişi durum nesnesi değil, <code>konular.py</code> yapar</td></tr>
   <tr><td><strong>Strategy</strong> + <strong>Template Method</strong> (TD-36, 41)</td><td>Altı oylama türünün sonuç kuralları <code>if/elif</code> zincirindeydi</td><td><code>teklif_turleri.py</code>: 6 strateji, <code>@kaydet</code> kaydı; <code>oylama.sonuclandir</code> iskeleti: sayım → durum → tamamla → bildir → uygula</td></tr>
-  <tr><td><strong>Chain of Responsibility</strong> (TD-44)</td><td>D1–D7 tek 77 satırlık fonksiyondaydı, mesaj denetimi bunları yeniden yazıyordu</td><td><code>denetim.py</code>: her madde bir halka; web'de istek öncesi zincir</td></tr>
-  <tr><td><strong>Adapter</strong> (TD-24)</td><td>Web Push ve Firebase farklı arayüzler, çağıran iki dalı da biliyordu</td><td><code>anlik.py</code>: <code>AnlikKanal</code> ← <code>WebPushKanali</code>, <code>FcmKanali</code> (testte sahte kanal)</td></tr>
+  <tr><td><strong>Chain of Responsibility</strong> (TD-44)</td><td>D1–D7 tek 77 satırlık fonksiyondaydı; mesaj denetimi bunları yeniden yazıyordu</td><td><code>denetim.py</code>: her madde bir halka; web'de istek öncesi zincir</td></tr>
+  <tr><td><strong>Adapter</strong> (TD-24)</td><td>Web Push ve Firebase arayüzleri farklıydı; çağıran ikisini de bilmek zorundaydı</td><td><code>anlik.py</code>: <code>AnlikKanal</code> ← <code>WebPushKanali</code>, <code>FcmKanali</code> (testte sahte kanal)</td></tr>
   <tr><td><strong>Memento</strong> (TD-47)</td><td>Bir konunun hatası zamanlayıcının bütün işini geri alıyordu</td><td><code>kayit_noktasi()</code> (SAVEPOINT) + <code>KuyrukHatirasi</code>: bağlantının kuyrukları hatıradan geri yüklenir</td></tr>
   <tr><td><strong>Observer</strong> (TD-38)</td><td>Altyapı katmanı üst katmanı çağırıyordu</td><td><code>veritabani.commit_aboneligi</code>; defter abone</td></tr>
-  <tr><td><strong>Repository</strong> (TD-51)</td><td>Düğüm dosyası erişimi uzlaşma mantığına gömülüydü; test için disk gerekiyordu</td><td>Yalnızca defter düğümleri: <code>DugumDeposu</code> ← <code>SqliteDugumDeposu</code>, <code>BellekDugumDeposu</code>. Forum verisi doğrudan SQLite'ta</td></tr>
-  <tr><td><strong>Facade</strong> (TD-28)</td><td>Konu sayfası rotası alt sistemleri tek tek çağırıyor, iş kuralı içeriyordu</td><td><code>gorunum.konu_sayfasi()</code> 7 alt sistemi toplar; kural saf işlev</td></tr>
+  <tr><td><strong>Repository</strong> (TD-51)</td><td>Düğüm dosyası erişimi uzlaşma mantığına gömülüydü; test için disk gerekiyordu</td><td>Yalnızca defter düğümlerinde: <code>DugumDeposu</code> ← <code>SqliteDugumDeposu</code>, <code>BellekDugumDeposu</code>. Forum verisi doğrudan SQLite'ta</td></tr>
+  <tr><td><strong>Facade</strong> (TD-28)</td><td>Konu sayfası rotası alt sistemleri tek tek çağırıyor ve iş kuralı içeriyordu</td><td><code>gorunum.konu_sayfasi()</code> 7 alt sistemi toplar; kural saf işlev</td></tr>
 </table>
-<p><strong>GoF sayılmayan, Python'un hafif karşılıkları</strong> (TD-26: <code>@decorator</code> fonksiyon, GoF Decorator nesne sarmalar):
-  kayıt (<code>@kaydet</code>), fabrika işlevi (<code>tur(kod)</code>), <code>@giris_gerekli</code>, commit sonrası iş kuyruğu, test dikişleri
+<p><strong>GoF olmayan, Python'un hafif karşılıkları</strong> (TD-26: <code>@decorator</code> bir fonksiyondur, GoF Decorator nesneyi sarar):
+  <code>@kaydet</code> kaydı, fabrika işlevi <code>tur(kod)</code>, <code>@giris_gerekli</code>, commit sonrası iş kuyruğu, test dikişleri
   (şifre yöntemi, saat, kanal: test süresi ~60 sn'den ~12 sn'ye).</p>
 <div class="iki">
 <div class="kutu"><p><strong>Giderilen anti-desenler (TD-57):</strong> God function (<code>web.kur</code>, <code>yonetmelik.denetle</code>),
-  uzun durum zincirleri, kopya kod (güvenli yönlendirme kontrolünün beş kopyasından biri açık yönlendirme açığı içeriyordu), ölü kod,
-  modül düzeyinde içe aktarma döngüsü (<code>oy_kurallari.py</code> ile kırıldı, testli), doğrulanmamış yapılandırma. Gizli global
-  durum azaltıldı; kalanlar belgelendi.</p></div>
+  uzun durum zincirleri, kopya kod (yönlendirme kontrolünün beş kopyasından biri açık yönlendirme açığı içeriyordu), ölü kod,
+  içe aktarma döngüsü (<code>oy_kurallari.py</code> ile kırıldı, testli), doğrulanmamış yapılandırma. Gizli global
+  durum azaldı, kalanlar belgelendi.</p></div>
 <div class="kutu"><p><strong>Bilerek kullanılmayanlar:</strong> Singleton (Python modülü zaten tekildir), Builder, Abstract Factory,
-  Visitor, Mediator (çözecekleri bir sorun yok). <strong>Tartışma soruları (TD-59):</strong> Python, Iterator, Command, Observer ve
+  Visitor, Mediator (çözecekleri sorun yok). <strong>Tartışma soruları (TD-59):</strong> Python, Iterator, Command, Observer ve
   Factory'yi fonksiyon, kapanış ve sözlükle hafifletir. Flask'ta: <code>before_request</code> zinciri (CoR), <code>@route</code> kaydı
   (Registry), <code>Flask</code> nesnesi (Facade), <code>request</code>/<code>g</code> (Proxy).</p></div>
 </div>
-<p><strong>Ödev slaytının (TD-59) maddeleri</strong> bir ML servisi içindir; Agora'da en yakın karşılıkları: yapılandırmadan seçim → oylama
-  türleri; Pipeline → denetim zinciri (ölçüm betiği üretimdeki aynı kodu çağırır); Repository → defter düğümleri; Observer → commit aboneliği;
-  Facade → konu sayfası; sahte depoyla birim testi → <code>BellekDugumDeposu</code>, <code>SahteKanal</code>.</p>
+<p><strong>Ödev slaytı (TD-59)</strong> bir ML servisi içindir; Agora'daki karşılıkları: yapılandırmadan seçim → oylama
+  türleri; Pipeline → denetim zinciri; Repository → defter düğümleri; Observer → commit aboneliği;
+  Facade → konu sayfası; sahte depo → <code>BellekDugumDeposu</code>, <code>SahteKanal</code>.</p>
 
 <!-- ============================== 4 ============================== -->
 <h2>4. Problem çerçeveleme analizi (Hafta 2)</h2>
 <p>"Bir forum yapın" isteğinin arkasındaki altı dertten üçü YZ ile ilgili değil (söz eşitsizliği, süresiz tartışma, sayıma güvensizlik):
-  bunlar süreç ve kriptografiyle çözüldü. Üçü YZ adayı: uzun tartışmanın özeti, içerik denetimi, tekrar eden konu. <strong>Kararı model
+  bunlar süreç ve kriptografiyle çözüldü. Üçü YZ adayı: tartışma özeti, içerik denetimi, tekrar eden konu. <strong>Kararı model
   değil, insanlar verir.</strong> Her bileşen H2-9'daki karar ağacından geçirildi:</p>
 <table class="sik">
   <tr><th style="width:22%">Bileşen</th><th style="width:20%">Görev türü</th><th>"YZ gerekli mi?" sonucu</th></tr>
@@ -214,27 +214,27 @@
   <tr><td>YZ özeti</td><td>Üretim</td><td>Sayılar: <strong>kural</strong>. İçerik: yalnızca <strong>insan onaylı</strong> dil modeli (yapılandırılmış çıktı, sayı sadakati denetimi; S01-32 "emekle")</td></tr>
 </table>
 <div class="kutu tanim"><p><strong>Tek cümlelik problem tanımı (H2-50: kullanıcı, karar, görev, metrik, temel çizgi).</strong> Forumda konu ya da mesaj
-  yazan üye, metninin bir kişiyi aşağılayıp aşağılamadığını (D1) ve kişisel veri içerip içermediğini (D2) göndermeden önce görüp düzeltsin
-  diye her metin ikili sınıflandırılır; başarı, kurallar dondurulduktan sonra yazılmış görülmemiş bir kümede D1 kesinliği ve F1'inin ≥ 0,80,
-  D2 duyarlılığının ≥ 0,80 olmasıdır; temel çizgiler "hep temiz" (F1 = 0) ve rastgele tahmindir (F1 ≈ 0,50); bir model bugünkü kuralı aynı
+  yazan üye, metninin bir kişiyi aşağılayıp aşağılamadığını (D1) ve kişisel veri içerip içermediğini (D2) göndermeden önce görüp düzeltebilsin
+  diye her metin ikili sınıflandırılır. Başarı: kurallar dondurulduktan sonra yazılmış, görülmemiş bir kümede D1 kesinliği ve F1'i ≥ 0,80,
+  D2 duyarlılığı ≥ 0,80 olmalıdır. Temel çizgiler "hep temiz" (F1 = 0) ve rastgele tahmindir (F1 ≈ 0,50); bir model, bugünkü kuralı aynı
   türden bir kümede en az +0,10 F1 geçmedikçe onun yerine geçmez.</p></div>
 <table class="sik">
   <tr><th style="width:25%">Kanvas kutusu (H2-48)</th><th>Agora</th></tr>
-  <tr><td>1. İş hedefi ve değer</td><td>Topluluk kararlarının adil, şeffaf ve en geç 7 günde alınması; iş metriği: karara bağlanma oranı</td></tr>
-  <tr><td>2. Karar ve eylem</td><td>Kararı üyeler oyla verir; sistem kararı hazırlar: denetim yazana anında geri bildirim verir, özet tur sonunda yazılır</td></tr>
+  <tr><td>1. İş hedefi ve değer</td><td>Topluluk kararlarının adil, şeffaf ve en geç 7 günde alınması; metrik: karara bağlanma oranı</td></tr>
+  <tr><td>2. Karar ve eylem</td><td>Kararı üyeler oyla verir; sistem hazırlar: denetim yazana anında geri bildirim verir, özet tur sonunda yazılır</td></tr>
   <tr><td>3. ML görevi</td><td>Çekirdekte yok. Destek: D1/D2 ikili, D3 7 sınıflı sınıflandırma, D5 benzerlik, özet = üretim</td></tr>
-  <tr><td>4. Veri</td><td>Etiketli forum verisi yok. Ölçüm için 166 örnek (geliştirme 85, test 43, görülmemiş son küme 38); örnekleri kuralları geliştiren YZ asistanı yazdı</td></tr>
+  <tr><td>4. Veri</td><td>Etiketli forum verisi yok. Ölçüm için 166 örnek (geliştirme 85, test 43, görülmemiş son küme 38); örnekleri kuralları geliştiren YZ yazdı</td></tr>
   <tr><td>5. Metrikler</td><td>Model: D1 kesinlik (F0,5), D2 duyarlılık (F2), D3 makro F1. Ürün: katılım, karara kadar süre. Koruyucu: oy gücü Gini, defter tutarsızlığı = 0, YZ sayı sadakati %100, p95 gecikme</td></tr>
   <tr><td>6. Temel çizgi</td><td>Çoğunluk sınıfı (F1 0), rastgele (F1 ≈ 0,50), bugünkü kural (aşağıda); insan (gizleme oylaması) ölçülmedi</td></tr>
-  <tr><td>7. Kısıtlar</td><td>Sunucu bütçesi, GPU ve dış API yok; sunucuda p95 &lt; 200 ms; KVKK; gizli oy; açıklanabilirlik</td></tr>
-  <tr><td>8. Riskler ve başarı</td><td>Ön-otopsi (H2-47, olasılık × etki sıralı): en büyük risk katılımsızlık (9); sonra oy devriyle güç toplama, sahte hesap, defterin büyümesi (bulundu, düzeltildi). Yayın ölçütü önceden yazıldı (H2-43)</td></tr>
+  <tr><td>7. Kısıtlar</td><td>Sunucu bütçesi, GPU ve dış API yok; p95 &lt; 200 ms; KVKK; gizli oy; açıklanabilirlik</td></tr>
+  <tr><td>8. Riskler ve başarı</td><td>Ön-otopsi (H2-47, olasılık × etki): en büyük risk katılımsızlık (9); sonra oy devriyle güç toplama, sahte hesap, defterin büyümesi (düzeltildi). Yayın ölçütü önceden yazıldı (H2-43)</td></tr>
 </table>
 <p><strong>Metrikler (H2-25, H2-35).</strong> İş: karara bağlanma ve itiraz oranı; ürün: karara kadar süre, katılım, fikir başına yanıt
-  (<code>olcum/urun_metrikleri.py</code>). Goodhart'a karşı trend puanında kişi başı en çok 3 mesaj sayılır. <strong>Model → ürün → iş
-  (S01-20):</strong> D1 kesinliği düşerse meşru mesajlar durur, katılım ve karara bağlanma düşer.</p>
+  (<code>olcum/urun_metrikleri.py</code>). Goodhart'a karşı trend puanında kişi başına en çok 3 mesaj sayılır. <strong>Model → ürün → iş
+  (S01-20):</strong> D1 kesinliği düşerse meşru mesajlar durur, katılım ve karara bağlanma azalır.</p>
 <h3>Temel çizgi, ölçüm ve karar (H2-37…56)</h3>
-<p>Kurallar "aptal" temel çizgilerle aynı örneklerde ölçüldü (rastgele = 1000 tohumun ortalaması); hata analizinden dil kuralına dayanan
-  düzeltmeler çıktı ("ahmak → ahmağın", IBAN). Kurallar dondurulduktan sonra yazılıp <strong>ölçülmeden önce commit edilen</strong> son küme,
+<p>Kurallar "aptal" temel çizgilerle aynı örneklerde ölçüldü (rastgele = 1000 tohumun ortalaması). Hata analizi dil kuralına dayanan
+  düzeltmeler getirdi ("ahmak → ahmağın", IBAN). Kurallar dondurulduktan sonra yazılan ve <strong>ölçümden önce commit edilen</strong> son küme,
   önceki sonuçların iyimser olduğunu gösterdi:</p>
 <table class="sik">
   <tr><th>Madde · öncelikli metrik</th><th class="s">n (VAR)</th><th class="s">Çoğunluk</th><th class="s">Rastgele</th><th class="s">Kural · test</th><th class="s">Kural · son küme</th><th class="s">DP/YP/YN/DN</th><th>Yayın ölçütü</th></tr>
@@ -254,32 +254,32 @@
   <tr><td>Siyaset</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>2</td><td>·</td><td>·</td><td>1,00</td></tr>
   <tr><td>Teknoloji</td><td>1</td><td>·</td><td>1</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>0,00</td></tr>
 </table>
-<p class="kucuk">Son küme, karışıklık matrisi. Eğitim sütunu 7 hatanın 5'ini topluyor: "kampüs", "yurt", "laboratuvar" gibi her konuda geçen kelimeler metni Eğitim'e çekiyor.</p>
+<p class="kucuk">Son küme, karışıklık matrisi. Eğitim sütunu 7 hatanın 5'ini topluyor: "kampüs", "yurt", "laboratuvar" gibi sık geçen kelimeler metni Eğitim'e çekiyor.</p>
 </div>
 <div>
 <table class="sik">
   <tr><th>Hata örneği (son küme)</th><th>Neden</th></tr>
-  <tr><td>"<em>Aptal telefonlar</em> dönemine dönmek ister misiniz?" D1: YOK → engel</td><td>Kelime kişiyi değil nesneyi niteliyor; liste bağlamı bilmiyor</td></tr>
+  <tr><td>"<em>Aptal telefonlar</em> dönemine dönmek ister misiniz?" D1: YOK → engel</td><td>Kelime kişiyi değil nesneyi niteliyor; liste bağlamı bilmez</td></tr>
   <tr><td>"Kafana taş mı düştü?" D1: VAR → kaçtı</td><td>Deyimsel hakaret, listede kelime yok</td></tr>
   <tr><td>"Moda Caddesi No 15 Daire 7…" D2: VAR → kaçtı</td><td>Serbest biçimli adres</td></tr>
-  <tr><td>"Yurtlarda grip aşısı kampanyası" D3: Sağlık → Eğitim</td><td>Yalnızca "yurt" eşleşti; "grip", "aşı" kavram listesinde yok</td></tr>
+  <tr><td>"Yurtlarda grip aşısı kampanyası" D3: Sağlık → Eğitim</td><td>Yalnızca "yurt" eşleşti; "grip" ve "aşı" listede yok</td></tr>
 </table>
 </div>
 </div>
 <p><strong>Karar (ölçüt önceden yazılmıştı, H2-43; hedef kaydırılmadı).</strong> D2 sağladı ve engellemeye devam eder. D1'in yanlış engel
   oranı %29: yanlış engel 5, kaçak 1 birim sayılırsa (H2-31) engelleyen kural 12, "hep temiz" 7 birim tutar. Bu yüzden <strong>D1'in
   varsayılanı "Uyarır" yapıldı</strong>: metin yayımlanır, yazana uyarı gösterilir, kaçanı topluluk gizler (S01-32 "emekle"); topluluk
-  isterse oylamayla "Engeller"e çeker (H2-29). D3 zaten yalnızca uyarır. Sonraki adım veri toplamaktır; bir model kuralı yeni ve görülmemiş
-  bir kümede +0,10 F1 farkla geçmedikçe yerine geçmez. Not: örnekleri ve kuralları aynı YZ asistanı yazdığı için sayılar iyimser olabilir.</p>
+  isterse oylamayla "Engeller"e çeker (H2-29). D3 zaten yalnızca uyarır. Sonraki adım veri toplamaktır; model, kuralı
+  +0,10 F1 geçmedikçe yerine geçmez. Not: örnekleri ve kuralları aynı YZ yazdığı için sayılar iyimser olabilir.</p>
 
 <!-- ============================== 5–8 ============================== -->
 <h2>5. Kalite güvencesi ve ölçülen başarım</h2>
 <div class="iki">
 <div>
 <ul>
-  <li><strong>201 otomatik test</strong> (~12 sn): <code>python -m unittest discover testler</code>, <code>pytest</code> ya da <code>uv run pytest</code>. GitHub Actions her gönderimde testleri, statik denetimi (pyflakes) ve ölçümü çalıştırır.</li>
-  <li><strong>Hata önce test:</strong> düzeltme testlerinin düzeltmeden önceki kodda kırmızı olduğu git geçmişiyle denetlendi (ör. 9/9, 7/7).</li>
-  <li><strong>Bağımsız inceleme:</strong> üç tur YZ inceleme ajanı; bulgular kodla doğrulandıktan sonra uygulandı. 1. tur (ilke başına 10 ajan): 30 hata. 2. tur: önbellekte gizlenen kurcalama, bölünen zincir, hizmet reddi. 3. tur (ders sunumu başına): State'in atlanan iki geçişi, içe aktarma döngüsü, Pages'te 4 hatalı yönlendirme, D1 kararı, mini laboratuvar.</li>
+  <li><strong>201 otomatik test</strong> (~12 sn): <code>pytest</code>, <code>uv run pytest</code> ya da <code>python -m unittest discover testler</code>. GitHub Actions her gönderimde testleri, pyflakes denetimini ve ölçümü çalıştırır.</li>
+  <li><strong>Önce test:</strong> düzeltme testlerinin, düzeltmeden önceki kodda başarısız olduğu git geçmişiyle denetlendi (ör. 9/9, 7/7).</li>
+  <li><strong>İnceleme:</strong> üç tur; her bulgu kodla doğrulandıktan sonra uygulandı. 1. tur (ilke başına 10 inceleme): 30 hata. 2. tur: önbellekte gizlenen kurcalama, bölünen zincir, hizmet reddi. 3. tur (ders sunumu başına): State'in atlanan iki geçişi, içe aktarma döngüsü, Pages'te 4 hatalı yönlendirme, D1 kararı, mini laboratuvar.</li>
 </ul>
 </div>
 <div>
@@ -290,32 +290,32 @@
   <tr><td>Kayıt defteri sayfası, +50.000 blok (p95)</td><td class="s">1.145,5</td><td class="s">11,7</td></tr>
   <tr><td>Konu akışı, 1.019 konu (p50)</td><td class="s">77</td><td class="s">48,7</td></tr>
 </table>
-<p class="kucuk">Hedef p95 &lt; 200 ms. "Önce": her yazmada üç zincirin baştan doğrulanması (O(n)); düzeltme: düğüm sürümüne bağlı doğrulama önbelleği. Önceki ölçümler o günkü p95 formülüyle alındı (bir sıra yukarıdan okuyordu); büyüklük sırası değişmez. Komut: <code>python olcum/gecikme_olcumu.py</code>.</p>
+<p class="kucuk">Hedef p95 &lt; 200 ms. "Önce": her yazmada üç zincir baştan doğrulanıyordu (O(n)); düzeltme: düğüm sürümüne bağlı doğrulama önbelleği. Eski ölçümler o günkü p95 formülüyle alındı; büyüklük sırası aynıdır. Komut: <code>python olcum/gecikme_olcumu.py</code>.</p>
 </div>
 </div>
 
 <h2>6. Dağıtım: her an açılabilen sürüm ve mobil</h2>
 <ul>
-  <li><strong>Sunucu sürümü:</strong> <code>python calistir.py</code> (Windows'ta <code>baslat.bat</code>); demo verisi ve sunum kipi (<code>--demo</code>) ile.</li>
-  <li><strong>Tarayıcı sürümü (GitHub Pages):</strong> Pages Python çalıştıramaz; <em>aynı kod</em> ziyaretçinin tarayıcısında, WebAssembly üzerindeki
-    Python'da (Pyodide) bir Web Worker içinde çalışır. Sunucu yoktur: service worker çerçevedeki sayfanın her isteğini yakalayıp (kabuk sayfası
-    üzerinden) Flask'a iletir, yanıt sunucudan gelmiş gibi döner; veritabanı ve defter IndexedDB'de kalıcıdır. İlk açılış ~15 MB ve yerel ağda ~5 sn; ilk ziyaretten sonra önbellekten ve çevrimdışı açılır (HTTP önbelleği kapalıyken de sınandı).
-    Pyodide siteyle birlikte sunulur, derleme betiği her indirmenin SHA-256 özetini doğrular. Her ziyaretçinin kendi demo kopyası olur.</li>
+  <li><strong>Sunucu sürümü:</strong> <code>python calistir.py</code> (Windows'ta <code>baslat.bat</code>); demo verisi ve sunum kipi için <code>--demo</code>.</li>
+  <li><strong>Tarayıcı sürümü (GitHub Pages):</strong> Pages Python çalıştıramaz; bu yüzden <em>aynı kod</em> ziyaretçinin tarayıcısında, WebAssembly üzerindeki
+    Python'da (Pyodide) bir Web Worker içinde çalışır. Sunucu yoktur: service worker sayfanın her isteğini yakalayıp
+    Flask'a iletir; veritabanı ve defter IndexedDB'de saklanır. İlk açılış ~15 MB ve yerel ağda ~5 sn sürer; sonra önbellekten ve çevrimdışı açılır.
+    Pyodide siteyle birlikte sunulur; derleme betiği her indirmenin SHA-256 özetini doğrular.</li>
   <li><strong>Mobil:</strong> aynı adres telefonda <em>Ana ekrana ekle</em> ile tam ekran, çevrimdışı çalışan bir uygulama (PWA) olur (Android ve iPhone).
-    Ayrıca Expo Go uygulaması (sunucuya ya da sunucusuz demoya bağlanır) ve Capacitor ile Android APK.</li>
+    Ayrıca Expo Go (sunucuya ya da sunucusuz demoya bağlanır) ve Capacitor ile Android APK var.</li>
 </ul>
 
 <h2>7. Mini laboratuvar (S02-50, S01-49)</h2>
 <div class="iki">
 <div>
 <ul>
-  <li><strong>Token oranı (tiktoken):</strong> 10 Türkçe cümle İngilizce çevirisinden ortalama <strong>1,69</strong> (cl100k) ve <strong>1,36</strong> (o200k)
-    kat daha çok token tutuyor; tek kelime "Avrupalılaştıramadıklarımızdan" 14 ve 12 token. Maliyet, gecikme ve bağlam aynı oranda artar (S02-4…6).</li>
-  <li><strong>Sıcaklık:</strong> güncel Claude modelleri sıcaklığı reddediyor (400); API anahtarı olmadığından ölçüm yerel kelime ikilisi
+  <li><strong>Token oranı (tiktoken):</strong> 10 Türkçe cümle, İngilizce çevirisinden ortalama <strong>1,69</strong> (cl100k) ve <strong>1,36</strong> (o200k)
+    kat fazla token tutuyor; tek kelime "Avrupalılaştıramadıklarımızdan" 14 ve 12 token. Maliyet, gecikme ve bağlam aynı oranda artar (S02-4…6).</li>
+  <li><strong>Sıcaklık:</strong> güncel Claude modelleri sıcaklığı reddediyor (400); API anahtarı olmadığından ölçüm yerel bir kelime ikilisi
     modelinde yapıldı: 10 denemede T = 0 / 0,7 / 1,5 için <strong>1 / 9 / 10</strong> farklı yanıt.</li>
-  <li><strong>YZ'nin önerdiği import'lar:</strong> 7 paket ve 8 import'un hepsi gerçek; ama çalıştırınca iki gizli gereksinim ve bir anlam kayması çıktı (S02-47).</li>
+  <li><strong>YZ'nin önerdiği import'lar:</strong> 7 paket ve 8 import'un hepsi gerçek; çalıştırınca iki gizli gereksinim ve bir anlam kayması çıktı (S02-47).</li>
   <li><strong>YZ'nin yazdığı testler (S01-49, soru 6):</strong> T.C. kimlik denetiminin 16 testinin <strong>16'sı doğru</strong> (kâhin: forumun testli
-    işlevi), ama mutasyon testinde 10 hatadan biri yakalanmadı: "10. hane hatalı" testi 11. haneyi de bozduğu için 10. hane kuralını hiç sınamıyor.</li>
+    işlevi); ama mutasyon testinde 10 hatadan biri yakalanmadı, çünkü "10. hane hatalı" testi 11. haneyi de bozuyor.</li>
 </ul>
 </div>
 <div>
@@ -325,13 +325,13 @@
 </div>
 
 <h2>8. Sınırlar ve YZ kullanım beyanı</h2>
-<p><strong>Sınırlar:</strong> D1 ve D3 kural tabanlı temel çizgidir. Kişinin gerçek kimliği teyit edilmez (sahte hesaba karşı yalnızca hız
+<p><strong>Sınırlar:</strong> D1 ve D3 kural tabanlı temel çizgidir. Gerçek kimlik doğrulanmaz (sahte hesaba karşı yalnızca hız
   sınırı); yedek şifrelenmez; SQLite saniyede ~100 yazmayla sınırlıdır; tarayıcı sürümü kişisel bir demodur. Bu yüzden ders demosu "yayın"
   değil, prototiptir (<code>docs/analiz.md</code> 11).</p>
-<div class="kutu"><p><strong>YZ kullanım beyanı (S01-46, 47; H2-59).</strong> Forumun ilk sürümü öğrencinin commit'idir (1 Ekim 2026). Sonraki bütün
-  commit'lerde Claude Code (Anthropic) kodlama ajanı kullanıldı: belgeler, SOLID/GoF düzenlemeleri, hata düzeltmeleri ve testleri, ölçüm
-  betikleri ve örnekleri, tarayıcı sürümü, mini laboratuvar, bu rapor. Öğrencinin rolü: ürün fikri ve ilk sürüm, hedef ve ders kaynakları,
-  kapsam kararları, gözden geçirme ve teslim. Testleri de YZ yazdığı için düzeltme testlerinin eski kodda kırmızı olduğu ayrıca denetlendi;
+<div class="kutu"><p><strong>YZ kullanım beyanı (S01-46, 47; H2-59).</strong> İlk sürüm öğrencinin commit'idir (1 Ekim 2026). Sonraki
+  commit'lerde Claude Code (Anthropic) kodlama aracı kullanıldı: belgeler, SOLID/GoF düzenlemeleri, hata düzeltmeleri ve testleri, ölçüm
+  betikleri ve örnekleri, tarayıcı sürümü, mini laboratuvar, bu rapor. Öğrenci ürün fikrini, ilk sürümü, hedefleri, ders kaynaklarını,
+  kapsam kararlarını, gözden geçirmeyi ve teslimi üstlendi. Testleri de YZ yazdığı için düzeltme testlerinin eski kodda başarısız olduğu ayrıca denetlendi;
   ölçütler sonuçlardan önce yazıldı. Ayrıntı: README.</p></div>
 <p class="kucuk"><strong>Kaynaklar:</strong> ders sunumları (S01, S02, H2, TD); Huyen, <em>Designing Machine Learning Systems</em> (2022) ve
   <em>AI Engineering</em> (2025); Gamma vd., <em>Design Patterns</em> (1994).</p>
