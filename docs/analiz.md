@@ -6,7 +6,7 @@ sonra metrikler, temel çizgi (baseline), kısıtlar, paydaşlar ve ön-otopsi. 
 **TD** = *Yazılım Tasarım Desenleri* (numaralar slayt numarasıdır).
 
 Belgedeki başarım sayıları (kesinlik, duyarlılık, gecikme, ürün metrikleri) `olcum/` klasöründeki betiklerle **ölçülmüştür**;
-tahmin değildir. Her tablonun altında hangi komutla yeniden üretileceği yazar. Hedef değerler ve hata maliyeti birimleri (5.3)
+tahmin değildir. Sayıların nasıl yeniden üretileceği ilgili bölümlerde yazar. Hedef değerler ve hata maliyeti birimleri (5.3)
 ise varsayımdır; paydaşlarla belirlenmelidir.
 
 | Betik | Ne ölçer |
@@ -110,7 +110,7 @@ Bu karar S01-19'un ölçütüne de uyar: ML, öğrenilecek karmaşık bir örün
   tabanlı özet yazılır (**sayı sadakati** koruyucu metriği, 5. bölüm).
 - Özet, katılımcılardan biri onaylamadan yayımlanmaz. Onaylanan/düzeltilen özetler etiketli veri olur (veri çarkı, S01-33).
 - *Yürü*'ye geçiş ölçütü: onaylayanların taslağı değiştirmeden kabul oranı ≥ %95 (eşik S01-32'den; ölçümün en az 4 hafta
-  sürmesi bizim eklememiz, mevsimsel konu farklarını görmek için).
+  sürmesi bu belgenin eklemesi, mevsimsel konu farklarını görmek için).
 - Aynı ilke bugün denetimde uygulandı: ölçülen güveni yetmeyen D1 "engelle" (koş) yerine "uyar" (emekle) düzeyine çekildi (6.5).
 
 ---
@@ -225,10 +225,10 @@ Denetim kurallarının bir olasılık eşiği yok; ama **ciddiyet** (Engeller / 
 
 ### 6.2 Ölçüm düzeneği
 
-- **Veri özeti (H2-53).** Örnekler gerçek forum mesajı değildir. Üç kümeyi de, kuralları geliştiren YZ kodlama asistanı yazıp
+- **Veri özeti (H2-53).** Örnekler gerçek forum mesajı değildir. Üç kümeyi bir YZ kodlama asistanı yazıp
   etiketledi (YZ kullanım beyanı, README); etiketler kurallar çalıştırılmadan **önce** yazıldı. Kuralları ve örnekleri aynı
-  yazar yazdığı için "hiç görülmemiş" son küme bile yazarın dil alışkanlıklarını taşır; gerçek kullanıcı mesajlarındaki başarım
-  daha düşük olabilir. Örnekler küçük; sonuçlar kesin başarım değil, bir referans noktası.
+  yazar yazdığı için son küme bile yazarın dil alışkanlıklarını taşır; gerçek kullanıcı mesajlarındaki başarım
+  daha düşük olabilir. Örnekler küçük; sonuçlar kesin başarım değil, bir referans noktasıdır.
 
   | Küme | D1 örnek (VAR / YOK) | D2 örnek (VAR / YOK) | D3 örnek (7 sınıfın her biri) | Medyan uzunluk D1 / D2 / D3 (karakter) |
   |---|---|---|---|---|
@@ -247,7 +247,7 @@ Denetim kurallarının bir olasılık eşiği yok; ama **ciddiyet** (Engeller / 
   bir hata (aynı kavramın iki alt kategoride iki kez sayılması) test kümesindeki bir örnekte fark edilip düzeltildi. (3) Test kümesi
   ile düzeltmeler aynı commit'te olduğu için sıralama git geçmişinden doğrulanamaz. Bu yüzden test kümesindeki artış **iyimserdir**;
   dürüst bir sonraki adım, kurallar artık değişmeyecekken yeni ve hiç görülmemiş bir test kümesi yazıp bir kez ölçmektir
-  (yapıldı: 6.5).
+  (6.5'te yapıldı).
   6.4'teki "bilerek düzeltilmeyen" tablosunda test kümesinden gelen örnekler yalnızca belgelendi, kurallara yansıtılmadı.
 - Ölçüm koda bağlandı: `testler/test_olcum.py`, kuralların temel çizgileri geçtiğini ve test kümesinde 11. bölümdeki yayın
   ölçütlerinin altına düşülmediğini her test çalıştırmasında denetler (koruyucu).
@@ -278,8 +278,8 @@ Geliştirme kümesinde (iyimser, çünkü iyileştirmeler bu kümeye bakılarak 
 D3 doğruluk 0,86 → 0,89.
 
 **Yorum.** Dengeli (yarısı VAR) bir kümede rastgele tahminin beklenen kesinliği VAR oranına (~0,5), beklenen duyarlılığı 0,5'e
-eşittir; F1'i ≈ 0,48–0,50. (Bu belgenin önceki sürümü tek bir tohumla çekilmiş rastgele tahmini gösteriyordu ve 10–20 örnekte
-F1 0,62–0,73 çıkmıştı; bu şanstı, beklenen değer değildi.) Gerçek forumda mesajların çok büyük kısmı temizdir (dengesiz sınıf,
+eşittir; F1'i ≈ 0,48–0,50. (Tek bir tohumla çekilen rastgele tahmin 10–20 örnekte
+F1 0,62–0,73 verebilir; bu şanstır, beklenen değer değildir.) Gerçek forumda mesajların çok büyük kısmı temizdir (dengesiz sınıf,
 H2-27): VAR oranı %2 ise rastgelenin kesinliği 0,02'ye, F1'i ≈ 0,04'e düşer; "hep temiz" temel çizgisi %98 doğruluk alır ama
 tek hakareti yakalamaz. Bu yüzden doğruluk değil, kesinlik ve duyarlılık raporlanır. `testler/test_olcum.py`, kuralın her
 kümede iki temel çizgiyi de en az +0,10 F1 farkla geçtiğini denetler.
@@ -295,7 +295,7 @@ Kuralın yanıldığı örnekler tek tek okundu. Belirli cümleleri ezberleyen d
 | "Telefonum 0 (532) 123-45-67." → kaçtı | Parantezli yazım | Desen parantezi kabul ediyor |
 | "Belediye meclis toplantıları internetten **canlı** yayınlansın." → Bilim | Her alt kategori tek başına yarışıyordu: Siyaset (meclis) ve Yerel Yönetim (belediye) birer eşleşmeyle Biyoloji'ye (canlı) eşit kaldı, kazananı sözlük sırası belirledi | Eşleşmeler önce **ana alan** düzeyinde toplanıyor (`ontoloji.alan_puanlari`). Tam eşitlikte (aynı sayıda kavram, aynı sayıda alt kategori eşleşmesi) kazananı hâlâ kategori sırası belirler; D3 yalnızca uyarı olduğu için kabul edildi |
 
-İkinci inceleme turunda (bağımsız gözden geçirme) bulunan ve düzeltilenler — ölçüm kümelerinde örnekleri yoktu, ölçüm sonucu değişmedi:
+Sonradan bulunan ve düzeltilenler (ölçüm kümelerinde örneği yoktu; ölçüm sonucu değişmedi):
 
 | Durum | Düzeltme |
 |---|---|
@@ -317,8 +317,8 @@ Bilerek düzeltilmeyen hatalar (kuralın sınırı; düzeltmek ezberlemek olurdu
 
 ### 6.5 Son ölçüm: hiç görülmemiş küme (kurallar donduruldu)
 
-6.2'deki dürüstlük notunun önerdiği adım uygulandı. Kurallar artık değişmeyecekken `olcum/son_test.csv` (D1: 13, D2: 11, D3: 14
-örnek) yazıldı ve **ölçülmeden önce commit edildi** (`dfa996e`). Sıralama bu kez git geçmişinden doğrulanabilir. Sonra
+6.2'deki dürüstlük notunun önerdiği adım uygulandı. Kurallar donduktan sonra `olcum/son_test.csv` (D1: 13, D2: 11, D3: 14
+örnek) yazıldı ve **ölçülmeden önce commit edildi** (`dfa996e`). Sıralama git geçmişinden doğrulanabilir. Küme
 bir kez ölçüldü (`python olcum/denetim_olcumu.py`):
 
 | Madde | Örnek (VAR) | Öncelikli metrik | Test kümesi (iyimser) | **Son küme** | DP / YP / YN / DN (son küme) | Çoğunluk sınıfı | Rastgele (beklenen) | Yayın ölçütü (11. bölüm) |
@@ -421,7 +421,7 @@ Eğitim sütunu yedi hatanın beşini topluyor: Eğitim'in kesinliği 0,29'a dü
 | API: konu listesi | 2,2 | 2,4 | 2,6 |
 | Oy verme (commit + 3 düğüme yazım) | 7,4 | 10,1 | 10,3 |
 
-**Defter büyüyünce (bulundu ve düzeltildi).** `--defter-blok` ile defter yapay olarak büyütüldü. Önceden her yazma ve her defter
+**Defter büyüyünce.** `--defter-blok` ile defter yapay olarak büyütüldü. Önceden her yazma ve her defter
 sayfası üç düğümün bütün zincirini baştan okuyup SHA-256 ile yeniden doğruluyordu (O(n)):
 
 | Defterdeki blok | Oy verme p95 — önce | Oy verme p95 — şimdi | Defter sayfası p95 — önce | şimdi |
@@ -431,7 +431,7 @@ sayfası üç düğümün bütün zincirini baştan okuyup SHA-256 ile yeniden d
 | +50.000 | **645,2** | **9,5** | **1.145,5** | **11,7** |
 
 "Önce" sütunları düzeltmeden önceki kodla (commit `a266e48`) aynı komutla ölçüldü; o sürümde p95 formülündeki bir yuvarlama hatası
-(ikinci inceleme turunda düzeltildi) değerleri bir sıra yukarıdan okuyordu, büyüklük sırası değişmez. "Şimdi" sütunları:
+(sonradan düzeltildi) değerleri bir sıra yukarıdan okuyordu, büyüklük sırası değişmez. "Şimdi" sütunları:
 `python olcum/gecikme_olcumu.py 60` ve `python olcum/gecikme_olcumu.py 30 --defter-blok N`.
 
 Düzeltme (`defter.py`): düğüm başına tam doğrulamanın sonucu, düğümün **sürümüyle** birlikte saklanır; sürüm değişmedikçe zincir
@@ -498,11 +498,11 @@ O = olasılık, E = etki (Y yüksek = 3, O orta = 2, D düşük = 1). Risk = O �
 | C | Kimse oy vermedi, turlar sonuçsuz kaldı | Y | Y | **9** | Bildirimler, oy devri, yeter sayı ayarı; metrik: yeter sayıya ulaşamayan tur oranı | Uygulandı, ölçülüyor |
 | A | Bir grup oy devriyle gücü topladı | O | Y | 6 | Devir tavanı (MAX_DEVIR), döngü yasağı, koruyucu metrik Gini | Uygulandı, ölçülüyor |
 | B | Sahte hesaplarla oylama ele geçirildi (Sybil) | O | Y | 6 | Bir adresten saatte en fazla 20 kayıt; yaş/konum kuralı | **Kısmi**: hesaplar şifreyle korunuyor ama kişinin gerçek kimliği teyit edilmiyor. Gerçek kullanımda okul e-postası ya da e-Devlet ile kimlik teyidi gerekir |
-| F | Defter büyüdü, site yavaşladı | Y | O | 6 | Doğrulama önbelleği | **Bulundu ve düzeltildi** (8.2) |
+| F | Defter büyüdü, site yavaşladı | Y | O | 6 | Doğrulama önbelleği | **Düzeltildi** (8.2) |
 | I | Forum demo şifreleriyle yayına alındı | O | Y | 6 | Ağa açılırken uyarı; `--demo-verisiz` | Uygulandı |
 | D | Denetim meşru mesajları engelledi, üyeler küstü | O | O | 4 | Ölçüm (6. bölüm); ciddiyet oylamayla değiştirilebilir | **Gerçekleşti ve önlendi:** görülmemiş kümede D1'in yanlış engel oranı %29 çıktı; varsayılanı "Uyarır" yapıldı (6.5) |
 | H | Tek fikir + çok çekimser oyla zayıf bir fikir "tek kalan" olarak karar oldu | O | O | 4 | Ödev şartnamesindeki kural; yeter sayı ve itiraz konusu dengeler | Bilerek korundu; izlenecek metrik: tek kalanla kabul edilen kararların oranı |
-| J | Çok uzun bir gerekçeyle sunucu saniyelerce kilitlendi (hizmet reddi) | O | O | 4 | Desenler kelime/rakam sınırında başlar; serbest metinlere 5.000 karakter sınırı | **Bulundu ve düzeltildi** (ikinci inceleme turu) |
+| J | Çok uzun bir gerekçeyle sunucu saniyelerce kilitlendi (hizmet reddi) | O | O | 4 | Desenler kelime/rakam sınırında başlar; serbest metinlere 5.000 karakter sınırı | **Düzeltildi** (sonradan) |
 | E | YZ özeti yanlış sayı yazdı, karar etkilendi | D | Y | 3 | Kural tabanlı özet, sayılar veritabanından, kesme ile yuvarlama | Uygulandı, testli |
 | G | Yedek dosyası sızdı (gizli oylar + kişisel veri) | D | Y | 3 | Yedeği yalnızca yönetici indirir | **Açık risk**: yedek şifrelenmiyor |
 

@@ -39,7 +39,7 @@ Türkçe metin sığar. Bir dönemde 100.000 soru yanıtlayan bir öğrenci işl
    ve ince ayarla uyarlar. Örnek: duygu analizi için sıfırdan sınıflandırıcı eğitmek yerine bir modele örnekli istem yazmak.
 2. *Değerlendirme çok daha zor:* çıktı açık uçludur (özet, yanıt); tek doğru cevap yoktur. Örnek: Agora'nın kural tabanlı
    özetinde sayı sadakati bir testle denetlenebiliyor; serbest metin özetinde aynı denetim yapılamaz (`docs/analiz.md` 3).
-3. *Çıkarım optimizasyonu ve sıra:* modeller büyük olduğu için gecikme ve maliyet ön plandadır; ve iş önce üründen başlar
+3. *Çıkarım optimizasyonu ve sıra:* modeller büyük olduğu için gecikme ve maliyet ön plandadır. İş de önce üründen başlar
    (demo → veri → model), geleneksel ML'deki veri → model → ürün sırasının tersine.
 
 **S01-49 / 4. "Ortalama gecikme" neden yanıltıcıdır?** Ortalama birkaç uç değerle bozulur. Slayttaki örnekte (S01-24)

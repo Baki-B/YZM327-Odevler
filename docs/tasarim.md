@@ -193,7 +193,7 @@ dönüşmesi, şu an mecliste olan konular, üyelik çağrısı) gösterir; giri
 Konu akışı `/konular` adresindedir. Giriş, üye ol ve şifre sıfırlama sayfaları solda kaktüs yeşili bir tanıtım paneli,
 sağda form olan iki sütunlu bir kabuk kullanır (`giris_kabugu` makrosu).
 
-Konu sayfasının sağ sütunu da beş kutudan üçe indi (senin durumun + oy ağırlıkları, işlemler, bu konudaki oylamalar ve alt konular).
+Konu sayfasının sağ sütunu beş kutu yerine üçe indirildi: üyenin durumu ve oy ağırlıkları, işlemler, bu konudaki oylamalar ve alt konular.
 
 | Renk | Nerede |
 |---|---|
@@ -204,7 +204,7 @@ Konu sayfasının sağ sütunu da beş kutudan üçe indi (senin durumun + oy a�
   (`#2c2a27`); başka renk yoktur.
 - Kırmızı olmadığı için durumlar ikon ve dolgu biçimiyle ayrılır (oylamada = açık yeşil + nokta, sonuçlandı = koyu yeşil + ✓,
   olumsuz = kesikli çerçeve + ✕). Konu kartındaki yedi nokta (tartışma, beş tur, karar), konunun hangi aşamada olduğunu gösterir.
-- Emojiler işletim sistemine göre renkli çizildiği için tek renkli çizgi ikonlarla (`web/ikonlar.py`) değiştirildi.
+- Emojiler işletim sistemine göre renkli çizildiği için tek renkli çizgi ikonlar kullanıldı (`web/ikonlar.py`).
 - Logo: kaktüs yeşili zemin üzerinde, yivli Dor sütunlu taş beyazı bir meclis binası.
 
 ## 7. Temel kararlar ve gerekçeleri
@@ -464,8 +464,6 @@ classDiagram
 
 ### 8.4 Ödev slaytındaki gereksinimlerin karşılığı (TD-59)
 
-| Slayttaki madde | Agora'daki karşılığı |
-|---|---|
 Slayttaki maddeler bir ML sistemi içindir; Agora'da ML modeli yok (analiz.md 3. bölüm). Bu yüzden karşılıklar birebir değil,
 en yakın benzerdir; nerede eksik kaldığı da yazıldı.
 
