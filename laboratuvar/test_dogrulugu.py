@@ -3,7 +3,7 @@ gerçekten doğruydu?"
 
     python laboratuvar/test_dogrulugu.py
 
-yz_testleri/ klasöründe bir kodlama ajanının T.C. kimlik numarası denetimi için yazdığı fonksiyon ve 16 test, ilk öneri
+yz_testleri/ klasöründe bir YZ kodlama aracının T.C. kimlik numarası denetimi için yazdığı fonksiyon ve 16 test, ilk öneri
 olarak değiştirilmeden duruyor. Betik iki soruyu ayrı ayrı yanıtlar:
 
 1. Doğruluk: her testin beklediği sonuç, tanıma göre doğru mu? Kâhin (oracle) olarak YZ'nin kodu değil, forumun kendi

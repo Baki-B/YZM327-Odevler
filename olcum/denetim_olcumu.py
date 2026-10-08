@@ -7,12 +7,12 @@ Bu betik kural tabanlı denetimi iki "aptal" temel çizgiyle aynı örnekler üz
   * çoğunluk sınıfı: D1/D2 için "hep temiz" (hiçbir şeyi engelleme), D3 için "hep en sık kategori"
   * rastgele: sınıflardan birini eşit olasılıkla seç. Tek bir çekim 10–20 örnekte çok oynak olduğu için
     RASTGELE_TOHUM tohumun ortalaması verilir (beklenen değer; tohumlar sabit, sonuç tekrarlanabilir)
-Üç örnek kümesi vardır. Örnekleri ve etiketleri, kuralları geliştiren YZ asistanı kurallar çalıştırılmadan önce yazdı
+Üç örnek kümesi vardır. Örnekler ve etiketler, kurallar çalıştırılmadan önce yazıldı
 (docs/analiz.md 6.2):
   * gelistirme.csv — hata analizi bu kümede yapılır; kurallar bu kümedeki hatalara bakılarak iyileştirilir.
   * test.csv — kurallar değiştirilmeden ÖNCE yazıldı ve kurallar ona bakılarak ayarlanmaz ("test seti kutsaldır").
     Bir iyileştirmenin gerçek etkisi bu kümedeki değişimdir; geliştirme kümesindeki artış iyimserdir.
-  * son_test.csv — kurallar dondurulduktan sonra yazıldı ve ölçülmeden önce commit edildi; bir kez ölçüldü
+  * son_test.csv — kurallar dondurulduktan sonra, ölçülmeden önce yazıldı; bir kez ölçüldü
     (docs/analiz.md 6.5). Kurallar bu kümeye bakılarak hiç değiştirilmez.
 Örnek sayıları küçüktür; sonuçlar kesin başarım değil, bir referans noktasıdır.
 """

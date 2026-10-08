@@ -1,7 +1,4 @@
-"""Yazılım mühendisliği incelemesinde bulunan hataların düzeltmelerini koruyan testler.
-
-Her test önce hatayı yeniden üretecek biçimde yazıldı (düzeltmeden önce başarısız oluyordu), sonra kod düzeltildi.
-"""
+"""Hata düzeltmelerinin geri dönmesini engelleyen regresyon testleri."""
 import logging
 import os
 import sys
@@ -31,7 +28,7 @@ class GirdiAyristirma(Ortam):
                 tamsayi(bozuk)
 
     def test_bozuk_sayilar_kural_hatasi_verir(self):
-        """Eskiden ValueError → 500 hatası veriyordu."""
+        """Bozuk sayılar ValueError yerine KuralHatasi üretir."""
         ali, ayse = self.kisi("ali"), self.kisi("ayse")
         k = self.konu(ali)
         with self.assertRaises(KuralHatasi):
@@ -54,7 +51,7 @@ class KategoriKurallari(Ortam):
         self.genel = self.kategori("Genel")
 
     def test_yonetici_de_genelin_altina_kategori_ekleyemez(self):
-        """Topluluk önerisi bu kuralı uyguluyordu, yönetici yolu uygulamıyordu (kopya kod sapması)."""
+        """Yönetici yolu da öneri yoluyla aynı kuralı uygular."""
         with self.assertRaises(KuralHatasi):
             yonetim.kategori_ekle(self.db, self.yonetici, "Alt Deneme", self.genel)
         with self.assertRaises(KuralHatasi):
@@ -71,7 +68,7 @@ class KategoriKurallari(Ortam):
 
 class YanEtkiDayanikliligi(Ortam):
     def test_defter_yazilamazsa_commit_hata_vermez(self):
-        """Veri kalıcıyken isteğin 500 dönmesi kullanıcıyı işlemi tekrarlamaya iter (çift kayıt)."""
+        """Defter yazılamazsa commit hata fırlatmaz; veri zaten kalıcıdır."""
         gercek = defter.dugumlere_yaz
         defter.dugumlere_yaz = lambda klasor, kuyruk: (_ for _ in ()).throw(OSError("disk dolu"))
         try:
@@ -126,7 +123,7 @@ class ZamanlayiciYalitimi(Ortam):
         konular.oylamayi_baslat = bozuk
         try:
             with self.assertLogs("forum.gorevler", logging.ERROR):
-                gorevler.tick(self.db)                     # eskiden istisna yayılıyor, her sayfa 500 dönüyordu
+                gorevler.tick(self.db)                     # istisna yakalanır; sayfa 500 dönmez
         finally:
             konular.oylamayi_baslat = gercek
         self.assertEqual(self.durum(k1), "TARTISMA")
@@ -329,7 +326,7 @@ class OturumVeAnahtarlar(WebOrtam):
                                           ).status_code, 401)
 
     def test_ayni_cihaz_anahtari_yenilenir(self):
-        for _ in range(7):                                                     # eskiden 6. girişte kilitleniyordu
+        for _ in range(7):                                                     # her yeni anahtar öncekinin yerine geçer
             guvenlik.api_anahtari_olustur(self.db, self.ali["id"], "Mobil uygulama")
         self.assertEqual(len(guvenlik.api_anahtarlari(self.db, self.ali["id"])), 1)
 
@@ -396,7 +393,7 @@ class OylamaYarislari(Ortam):
         self.assertEqual(len(uygunluk.oy_hakki_olanlar(self.db, baglam)), 3)
 
     def test_ayni_anda_gelen_fikirler(self):
-        """Eşzamanlı istekler "zaten bir fikrin var" kontrolünü birlikte geçip birden fazla fikir yazabiliyordu."""
+        """Eşzamanlı istekte de bir üye yalnızca bir fikir yazabilir."""
         from forum import create_app
         ali, ayse = self.kisi("ali"), self.kisi("ayse")
         k = self.konu(ali)
@@ -456,7 +453,7 @@ class DefterKorumasi(WebOrtam):
 
 class GrafGizliOy(WebOrtam):
     def test_ikili_oy_benzerligi_disari_verilmez(self):
-        """İki üyenin oy benzerliği verilirse, kendi oyunu bilen kişi komşusunun gizli oyunu çıkarabiliyordu (T4)."""
+        """Oy benzerliği kenarları genel grafta dışarı verilmez; komşunun gizli oyu çıkarılamaz (T4)."""
         kisiler = self.kisiler(6)
         for i in range(3):                                         # üç çekişmeli oylama: a,b aynı; c,d tersi
             k, (f1, f2) = self.fikirli_konu(kisiler[:2], baslik=f"Yemekhane menüsü tartışması {i}")
@@ -492,7 +489,7 @@ class YanitDerinligi(WebOrtam):
         ali, ayse = self.kisi("ali"), self.kisi("ayse")
         k = self.konu(ali)
         ust = None
-        for i in range(300):                                       # eskiden ~250. kademede RecursionError → 500
+        for i in range(300):                                       # 300 kademelik yanıt zinciri
             ust = konular.mesaj_yaz(self.db, ali if i % 2 else ayse, k, "ARGUMAN", f"Yanıt {i}", ust)
         self.db.commit()
         self.assertEqual(self.istemci.get(f"/konu/{k}").status_code, 200)
@@ -774,7 +771,7 @@ class SablonFiltreleri(unittest.TestCase):
 
 
 class DenetimKuralIyilestirmeleri(Ortam):
-    """olcum/ hata analizinde bulunan, dil kuralına dayanan iyileştirmeler."""
+    """Denetim kurallarındaki Türkçe iyileştirmeler."""
 
     def test_unsuz_yumusamasi(self):
         for metin in ("Sen ahmağın tekisin.", "Salağa bak.", "Bu dangalağın yorumu."):
@@ -787,7 +784,7 @@ class DenetimKuralIyilestirmeleri(Ortam):
         self.assertEqual(denetim.kisisel_veriler("Kampüs santrali 0312 212 34 56 numarasında."), [])
 
     def test_kategori_onerisi_ana_alan_duzeyinde_toplanir(self):
-        """Siyaset (meclis) + Yerel Yönetim (belediye) iki eşleşme; Biyoloji (canlı) bir. Önceden sözlük sırası kazanıyordu."""
+        """Eşleşmeler ana alan düzeyinde toplanır; en çok eşleşen alan seçilir (Siyaset: 2, Biyoloji: 1)."""
         kid, _ = ontoloji.en_uygun_kategori(self.db, "Belediye meclis toplantıları internetten canlı yayınlansın.")
         self.assertEqual(ontoloji.atalar(self.db, "kategoriler", kid)[0], self.kategori("Siyaset"))
 
@@ -878,7 +875,7 @@ class PanoSayilari(Ortam):
 
 
 class DefterDayanikliligi(unittest.TestCase):
-    """İkinci inceleme turunda bulunanlar: önbelleğin göremeyeceği değişiklik, uç girdiler, çok süreçli yazma."""
+    """Önbelleğin tek başına göremeyeceği değişiklikleri, uç girdileri ve çok süreçli yazmayı sınar."""
 
     def yaz(self, kaynak, n=3, i=0):
         defter.dugumlere_yaz(kaynak, [("MESAJ", '{"i": %d}' % (i + j), "2026-01-02 10:00:00") for j in range(n)])
@@ -951,14 +948,14 @@ class DefterDayanikliligi(unittest.TestCase):
 
 
 class DenetimDesenSinirlari(Ortam):
-    """İkinci inceleme turu: desenler kelime/rakam sınırında başlar, serbest metinlerin üst sınırı var."""
+    """Desenler kelime ve rakam sınırında eşleşir; serbest metinlerin bir üst sınırı vardır."""
 
     def test_uzun_metin_karesel_sure_almaz(self):
         import time
         bas = time.perf_counter()
         denetim.kisisel_veriler("a" * 200_000)
         denetim.kisisel_veriler("a." * 100_000)
-        self.assertLess(time.perf_counter() - bas, 1.0)      # önceden 40.000 karakter ~7 sn sürüyordu
+        self.assertLess(time.perf_counter() - bas, 1.0)      # iki uzun girdi bir saniyenin altında işlenir
 
     def test_serbest_metin_ust_siniri(self):
         with self.assertRaises(KuralHatasi):
@@ -1028,7 +1025,7 @@ class KonuDurumMakinesi(Ortam):
 
 
 class Belirlenimcilik(Ortam):
-    """S02-42 "aynı girdi, farklı çıktı" sorunu kural tabanlı özette yoktur: aynı veriden her seferinde aynı metin."""
+    """Kural tabanlı özet aynı veriden her seferinde aynı metni üretir (S02-42)."""
 
     def test_ayni_veri_ayni_ozet(self):
         self.yz()
@@ -1103,7 +1100,7 @@ class YonetmelikMetni(Ortam):
 
 
 class Bulunamadi(WebOrtam):
-    """Olmayan bir kayıt 404 döner (önceden 400 "İşlem yapılamadı" ve API'de 422 dönüyordu)."""
+    """Olmayan bir kayıt 404 döner."""
 
     def test_olmayan_konu_ve_oylama(self):
         for adres in ("/konu/9999", "/oylama/9999", "/api/v1/konular/9999"):

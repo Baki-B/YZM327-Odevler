@@ -150,7 +150,7 @@ class OntolojiVeYonetmelik(Ortam):
 
     def test_denetim_maddesi_kapatilabilir(self):
         yonetmelik.degisikligi_uygula(self.db, {"tur": "DENETIM", "kod": "D1", "yeni": "KAPALI"})
-        denetim.mesaj_denetle(self.db, "Bu fikir cahilce.")   # artık engellemez
+        denetim.mesaj_denetle(self.db, "Bu fikir cahilce.")   # kapalı madde engellemez
 
     def test_varsayilan_sureler_ve_esikler(self):
         d = lambda kod: yonetmelik.deger(self.db, kod)  # noqa: E731
@@ -609,7 +609,7 @@ class EskiVeritabani(Ortam):
         m = konular.mesaj_yaz(self.db, a, idler["TARTISMA"], "ARGUMAN", "Eski bir mesaj; olduğu gibi kalmalı.")
         self.db.commit()
         self.db.close()
-        self.db = veritabani.hazirla(self.yol)                 # sunucu yeni sürümle yeniden başlıyor
+        self.db = veritabani.hazirla(self.yol)                 # sunucu yeniden başlatılır
         yonetmelik.yukle(self.db)
         durumlar = {eski: konular.konu_getir(self.db, i) for eski, i in idler.items()}
         for eski in ("KOMISYON", "GENEL_KURUL", "TARTISMA"):
@@ -698,7 +698,7 @@ class GrafVeGuvenlik(Ortam):
         _, kod = kullanicilar.kayit(self.db, "Deneme Kişi", "deneme", SIFRE, SIFRE, dogum, self.konum("İzmir"))
         _, yeni_kod = kullanicilar.sifre_sifirla(self.db, "deneme", kod, "yenisifre99", "yenisifre99")
         kullanicilar.giris(self.db, "deneme", "yenisifre99")
-        with self.assertRaises(KuralHatasi):   # eski kod artık geçersiz
+        with self.assertRaises(KuralHatasi):   # kullanılan kurtarma kodu yeniden kullanılamaz
             kullanicilar.sifre_sifirla(self.db, "deneme", kod, "baskasifre1", "baskasifre1")
         self.assertNotEqual(kod, yeni_kod)
 
@@ -863,7 +863,7 @@ class Web(unittest.TestCase):
                                                           "csrf": self._csrf()})
         self.assertEqual(y.status_code, 302)
         self.assertIn(f"/mesaj/{m}/gecmis", self.metin(f"/konu/{k}"))
-        self.assertIn("Her gün iki ana yemek çıkarmanın", self.metin(f"/mesaj/{m}/gecmis"))   # eski hâli
+        self.assertIn("Her gün iki ana yemek çıkarmanın", self.metin(f"/mesaj/{m}/gecmis"))   # düzenleme öncesi metin geçmişte kalır
 
     def test_guvenlik_basliklari(self):
         yanit = self.istemci.get("/")
@@ -1069,7 +1069,7 @@ class Kategoriler(Ortam):
         k2 = self.konu(a, kategori_id=kulup, baslik="Kulüp günleri", aciklama="Kulüp toplantıları için ortak bir gün belirlensin.")
         uzmanlik.uzmanlik_ver(self.db, a["id"], ulasim)
         self.db.execute("UPDATE site_ayarlari SET deger = '1' WHERE anahtar = 'kategori_surumu'")
-        ontoloji.yukle(self.db)                                       # sunucu yeni sürümle açılıyor
+        ontoloji.yukle(self.db)                                       # sunucu yeniden başlatılır
         yol = lambda k: ontoloji.yol_metni(self.db, "kategoriler", konular.konu_getir(self.db, k)["kategori_id"])  # noqa: E731
         self.assertEqual(yol(k1), "Siyaset › Ulaşım")
         self.assertEqual(yol(k2), "Eğitim › Kampüs Yaşamı")

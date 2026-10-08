@@ -6,8 +6,7 @@
 için; kopyalar mesajsızdır, yalnızca başlık ve açıklamaları vardır).
 
 --defter-blok N: ölçümden önce kayıt defterine N yapay blok eklenir (defter büyüdükçe gecikmenin nasıl değiştiğini
-görmek için). Doğrulama önbelleğinden önce her yazma üç zinciri baştan doğruluyordu: 50.000 blokta oy verme p95 ≈ 645 ms,
-kayıt defteri sayfası ≈ 1,1 sn idi. Sonuçlar docs/analiz.md'de.
+görmek için). Önbellek öncesi ölçüm (docs/analiz.md): 50.000 blokta oy verme p95 ≈ 645 ms, kayıt defteri sayfası ≈ 1,1 sn.
 
 Ders slaytı (S01, "gecikme"): ortalama yanıltır; p95 gibi yüzdelikler izlenir. Hedefler docs/analiz.md'de
 (işlevsel olmayan gereksinimler). Ölçüm, geçici bir klasöre demo verisi yükler ve Flask'ın test istemcisiyle istek
@@ -29,8 +28,7 @@ ISINMA = 3
 
 
 def yuzdelik(degerler, p):
-    """En yakın sıra yöntemiyle p. yüzdelik: sıralı listede ⌈p·N/100⌉. sıradaki değer (60 değerde p95 = 57. değer).
-    Önceki round(x + 0,5) yazımı Python'un "çifte yuvarlama" kuralı yüzünden bazen bir sonraki sırayı veriyordu."""
+    """En yakın sıra yöntemiyle p. yüzdelik: sıralı listede ⌈p·N/100⌉. sıradaki değer (60 değerde p95 = 57. değer)."""
     s = sorted(degerler)
     sira = -(-p * len(s) // 100)          # tam sayı tavanı
     return s[min(len(s), max(1, sira)) - 1]

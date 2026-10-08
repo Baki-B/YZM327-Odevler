@@ -17,9 +17,9 @@ jobs:
           python-version: "3.13"
       - name: Bağımlılıklar
         run: pip install -r requirements.txt pyflakes==3.4.0
-      - name: Statik denetim (kullanılmayan içe aktarma, tanımsız ad)
+      - name: Statik denetim (pyflakes)
         run: python -m pyflakes forum testler olcum tarayici calistir.py
       - name: Testler
         run: python -m unittest discover -s testler -v
-      - name: Ölçüm (denetim kuralları, temel çizgiyle)
+      - name: Denetim ölçümü
         run: python olcum/denetim_olcumu.py

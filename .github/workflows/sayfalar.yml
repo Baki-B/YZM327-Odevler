@@ -24,11 +24,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - name: Testler (bozuk sürüm yayınlanmasın)
+      - name: Testler (başarısızsa yayımlanmaz)
         run: |
           pip install -r requirements.txt
           python -m unittest discover -s testler
-      - name: Siteyi derle (Pyodide ve paketler indirilir, özetleri doğrulanır)
+      - name: Siteyi derle
         run: python tarayici/derle.py --cikti _site
       - uses: actions/upload-pages-artifact@v3
         with:
