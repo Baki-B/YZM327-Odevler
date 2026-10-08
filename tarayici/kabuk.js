@@ -19,8 +19,24 @@ function uygulamayiAc() {
   perde.classList.add("gizli");
 }
 
+// Çentik ve sistem çubuğu boşlukları çerçevenin içinden görünmez (env() çerçevede 0 olur; Expo uygulaması değişkenleri
+// yalnızca ana sayfaya verir). Kabuk ölçtüğü boşlukları çerçeveye aktarır: üstü kabuğun şeridi karşılar, altı ve yanları
+// uygulamanın alt sekme çubuğu kullanır.
+function bosluklariAktar() {
+  try {
+    const olcu = getComputedStyle(document.getElementById("olcu"));
+    const s = cerceve.contentDocument.documentElement.style;
+    s.setProperty("--safe-area-inset-top", "0px");
+    s.setProperty("--safe-area-inset-bottom", olcu.paddingBottom);
+    s.setProperty("--safe-area-inset-left", olcu.paddingLeft);
+    s.setProperty("--safe-area-inset-right", olcu.paddingRight);
+  } catch (e) { /* çerçeve henüz yüklenmedi */ }
+}
+window.addEventListener("resize", bosluklariAktar);
+
 // Çerçevedeki sayfanın başlığını ve adresini kabuğa yansıt: yenileyince aynı sayfa açılır.
 cerceve.addEventListener("load", () => {
+  bosluklariAktar();
   try {
     const belge = cerceve.contentDocument;
     if (belge && belge.title) document.title = belge.title;

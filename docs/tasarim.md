@@ -239,7 +239,7 @@ GoF'un tam biçimi olmayan, Python'un dil özellikleriyle yapılan hafif karşı
 |---|---|---|---|
 | **S** — Tek sorumluluk | `web/__init__.kur()` 150 satırda kimlik, CSRF, zamanlayıcı, hata sayfaları ve şablon filtrelerini birlikte yapıyordu. Yönetmelik modülü hem maddeleri hem denetim motorunu taşıyordu. Konu sayfası rotası iş kuralı içeriyordu. | Her biri kendi modülünde | `web/istek.py`, `web/hata_sayfalari.py`, `web/sablon.py`, `denetim.py`, `gorunum.py`, `metin.py`, `hatalar.py` |
 | **O** — Açık/kapalı | Yeni oylama türü 5 dosyada `if tip == …` dalı demekti; yeni bildirim kanalı `if tur == 'WEB'` dalı | Yeni tür = yeni sınıf + `@kaydet` + `ayarlar.TEKLIF_TIPLERI`'nde bir yapılandırma satırı; yeni denetim maddesi = yeni halka; yeni kanal = yeni adaptör; yeni depo = yeni `DugumDeposu` | `teklif_turleri.py`, `denetim.py`, `anlik.py`, `defter.py` |
-| **L** — Liskov | Web Push kanalı, `pywebpush` kurulu değilken abone kabul edip her bildirimde hata veriyordu (alt tür sözleşmeyi bozuyordu) | Kapalı kanal abone kabul etmez. Bütün teklif türleri şablon yöntemde aynı biçimde kullanılır. SQLite ve bellek depoları aynı sonucu verir | `test_forum.py: test_kapali_kanala_abone_olunmaz_ve_gonderilmez`, `TeklifTurleri`, `DefterOlceklenmesi.test_sorgu_islemleri_iki_depoda_ayni` |
+| **L** — Liskov | Web Push kanalı, `pywebpush` kurulu değilken abone kabul edip her bildirimde hata veriyordu (alt tür sözleşmeyi bozuyordu) | Kapalı kanal abone kabul etmez. Bütün teklif türleri şablon yöntemde aynı biçimde kullanılır. SQLite ve bellek depoları aynı sonucu ve aynı hatayı verir (yinelenen blokta önceden biri `ValueError`, öteki `sqlite3.IntegrityError` veriyordu; şimdi ikisi de `YinelenenBlok`) | `test_forum.py: test_kapali_kanala_abone_olunmaz_ve_gonderilmez`, `TeklifTurleri`, `DefterOlceklenmesi.test_sorgu_islemleri_iki_depoda_ayni`, `DepoSozlesmesi` |
 | **I** — Arayüz ayrımı | — | Küçük arayüzler: `AnlikKanal` 3 yöntem, `DenetimKurali` 1 soyut yöntem (`kontrol`), `DugumDeposu` 5 soyut yöntem (sorgular varsayılanlı). **İstisna:** `TeklifTuru` 18 yöntemli geniş bir arayüz (4 soyut, 14 varsayılanlı kanca); `FikirTuru` bazı kancaları anlamsız değerlerle dolduruyor. Bölmek için ikinci bir tüketici yok, bilerek bırakıldı (8.7) | `anlik.py`, `denetim.py`, `defter.py`, `teklif_turleri.py` |
 | **D** — Bağımlılığın tersine çevrilmesi | Veritabanı bağlantısı (altyapı) defter modülünü (üst katman) içe aktarıyordu. Şifre özeti yöntemi sabitti; zaman `datetime.now()` ile her yerden okunuyordu | Veritabanı defteri tanımaz: defter commit olayına abone olur (Observer). İş modülleri bağlantıyı (`db`) ve defter işlevleri depo kaynağını parametre olarak alır. Şifre yöntemi, saat ve bildirim kanalları birer **test dikişidir** (seam): modül düzeyindeki değişken testte değiştirilir; gerçek bir bağımlılık enjeksiyonu değildir (8.6) | `veritabani.commit_aboneligi`, `defter._depolar`, `guvenlik.SIFRE_YONTEMI`, `zaman.simdi`, `anlik.KANALLAR` |
 
@@ -280,6 +280,7 @@ classDiagram
     +yazilabilir
     +kapali
     +okunabilir
+    +zamanli
     +sonrakiler
     +fikir_yazilabilir(konu)
     +konu_duzenlenebilir()
@@ -294,11 +295,16 @@ classDiagram
   class konu_durumlari {
     <<modül>>
     durumu(konu) KonuDurumu
+    onceki_durumlar(yeni) list
     yazilabilir_olmali(konu)
     okunabilir_olmali(konu)
   }
+  class GecersizGecis {
+    <<exception>>
+  }
   konu_durumlari ..> KonuDurumu : satırdan durum nesnesi
-  konular ..> konu_durumlari : izin sorar
+  KonuDurumu ..> GecersizGecis : tabloda olmayan geçiş
+  konular ..> konu_durumlari : izin ve geçiş sorar
 ```
 
 **Strategy + Template Method + Registry — oylama türleri**
@@ -362,7 +368,7 @@ classDiagram
   DenetimKurali <|-- AltKonuIliskisi
   DenetimKurali <|-- Aciklik
   class DenetimIstegi {
-    db, baslik, aciklama, kategori_id, konum_id, ust
+    db, baslik, aciklama, kategori_id, konum_id, ust, haric_konu_id
     onerilen_kategori
   }
   DenetimKurali ..> DenetimIstegi
@@ -419,13 +425,18 @@ classDiagram
     +veri_degistir(no, veri)*
     +surum()*
     +son_blok()
+    +blok(no)
     +sayfa(tur, atla, boy)
     +turdeki(turler)
     +bul(anahtar)
   }
+  class YinelenenBlok {
+    <<exception>>
+  }
   DugumDeposu <|-- SqliteDugumDeposu
   DugumDeposu <|-- BellekDugumDeposu
-  defter ..> DugumDeposu : yalnızca arayüzü bilir
+  DugumDeposu ..> YinelenenBlok : ekle() iki gerçeklemede de
+  defter ..> DugumDeposu : uzlaşma ve onarım arayüzü bilir
 ```
 
 **Facade — konu sayfası**

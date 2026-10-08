@@ -85,6 +85,11 @@ def baslangic_blogu():
             "hash": blok_hash(0, BASLANGIC_ZAMANI, "BASLANGIC", veri, BASLANGIC_HASH)}
 
 
+class YinelenenBlok(Exception):
+    """Eklenmek istenen numarada depoda zaten bir blok var. Bütün depo gerçeklemeleri aynı hatayı verir (Liskov):
+    çağıran kod hangi depoyla çalıştığını bilmeden bu durumu yakalayabilir."""
+
+
 class DugumDeposu(ABC):
     """Bir düğümün blok deposu. Boş bir depo ilk okunduğunda başlangıç bloğuyla açılır.
 
@@ -101,7 +106,7 @@ class DugumDeposu(ABC):
 
     @abstractmethod
     def ekle(self, yeni):
-        """Blokları zincirin sonuna ekler. Aynı numaralı bir blok zaten varsa hata verir."""
+        """Blokları zincirin sonuna ekler; hepsi ya eklenir ya hiçbiri. Aynı numaralı bir blok zaten varsa YinelenenBlok."""
 
     @abstractmethod
     def yeniden_kur(self, zincir):
@@ -176,7 +181,10 @@ class SqliteDugumDeposu(DugumDeposu):
         return self._oku("SELECT * FROM bloklar ORDER BY no")
 
     def ekle(self, yeni):
-        self._yaz([(_EKLE, list(yeni))])
+        try:
+            self._yaz([(_EKLE, list(yeni))])
+        except sqlite3.IntegrityError as hata:              # birincil anahtar (no) çakıştı; işlem geri alındı
+            raise YinelenenBlok("Bu numarada bir blok zaten var.") from hata
 
     def yeniden_kur(self, zincir):
         self._yaz([("DELETE FROM bloklar", ()), (_EKLE, list(zincir))])
@@ -258,7 +266,7 @@ class BellekDugumDeposu(DugumDeposu):
         var = {b["no"] for b in self._bloklar}
         yeni = [dict(b) for b in yeni]
         if any(b["no"] in var for b in yeni) or len({b["no"] for b in yeni}) != len(yeni):
-            raise ValueError("Bu numarada bir blok zaten var.")     # SQLite deposundaki birincil anahtarın karşılığı
+            raise YinelenenBlok("Bu numarada bir blok zaten var.")   # SQLite deposundaki birincil anahtarın karşılığı
         self._bloklar.extend(yeni)
         self._degisti()
 

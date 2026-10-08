@@ -925,8 +925,8 @@ class DefterDayanikliligi(unittest.TestCase):
         with tempfile.TemporaryDirectory() as klasor:
             self.yaz(klasor)
             self.assertEqual(defter.bloklar(klasor, sayfa=10 ** 20), ([], 4))
-        with self.assertRaises(ValueError):
-            depolar[0].ekle([depolar[0].son_blok()])         # aynı numara: SQLite'taki birincil anahtar gibi
+        with self.assertRaises(defter.YinelenenBlok):
+            depolar[0].ekle([depolar[0].son_blok()])         # aynı numara: iki depoda da aynı hata (DepoSozlesmesi)
 
     def test_bozma_denemesi_ardisik_olmayan_numaralarda(self):
         depolar = defter.bellek_depolari()
@@ -1109,6 +1109,20 @@ class Bulunamadi(WebOrtam):
         for adres in ("/konu/9999", "/oylama/9999", "/api/v1/konular/9999"):
             self.assertEqual(self.istemci.get(adres).status_code, 404, adres)
         self.assertEqual(self.istemci.get("/konu/abc").status_code, 404)
+
+
+class DepoSozlesmesi(unittest.TestCase):
+    """Liskov: iki depo gerçeklemesi yinelenen blokta aynı hatayı verir ve hiçbir bloğu yarım eklemez."""
+
+    def test_yinelenen_blok_ayni_hata(self):
+        with tempfile.TemporaryDirectory() as klasor:
+            for depo in (defter.SqliteDugumDeposu(klasor, "A"), defter.BellekDugumDeposu("A")):
+                ilk = depo.bloklar()
+                yeni = dict(ilk[-1], no=ilk[-1]["no"] + 1)
+                depo.ekle([yeni])
+                with self.assertRaises(defter.YinelenenBlok, msg=type(depo).__name__):
+                    depo.ekle([dict(yeni, no=yeni["no"] + 1), yeni])
+                self.assertEqual(len(depo.bloklar()), len(ilk) + 1, type(depo).__name__)
 
 
 if __name__ == "__main__":
