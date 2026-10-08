@@ -1,0 +1,19 @@
+{% extends "yonetim/_duzen.html" %}
+{% from "_makrolar.html" import csrf %}
+{% block baslik %}Yönetici girişi{% endblock %}
+{% block icerik %}
+<section class="kart yonetici-giris">
+  <h1>{{ ikon('kalkan') }} Yönetici girişi</h1>
+  <p class="soluk">Yönetim paneline yalnızca yönetici hesapları girebilir. Bu giriş üye girişinden ayrıdır: forumda
+    üye olarak açık olan oturumun etkilenmez.</p>
+  <form method="post" class="form">
+    {{ csrf() }}
+    <input type="hidden" name="sonra" value="{{ sonra or '' }}">
+    <label>Takma ad <input name="takma_ad" value="{{ takma_ad }}" required autofocus autocomplete="username"></label>
+    <label>Şifre <input type="password" name="sifre" required autocomplete="current-password"></label>
+    <button class="dugme">Yönetim paneline gir</button>
+  </form>
+  <p class="soluk kucuk">Demo yönetici hesabı: <code>yonetici</code> · şifre <code>forum1234</code>.
+    Forumu kullanmak için <a href="{{ url_for('hesap.giris') }}">üye girişi</a>.</p>
+</section>
+{% endblock %}

@@ -194,7 +194,7 @@
 <ul class="yakinda-listesi">
   {% for y in liste %}
     <li>{{ ikon('oy' if y.tur == 'OYLAMA' else 'sohbet') }}
-      <span><a href="{{ y.baglanti }}">{{ y.baslik }}</a><br>
+      <span><a href="{{ y.baglanti|site_yolu }}">{{ y.baslik }}</a><br>
         <small class="soluk">{{ 'Oylama bitiyor' if y.tur == 'OYLAMA' else 'Oylamaya geçiyor' }} · {{ y.bitis|kalan }}</small></span></li>
   {% else %}<li class="soluk kucuk">Yakında biten bir şey yok.</li>{% endfor %}
 </ul>

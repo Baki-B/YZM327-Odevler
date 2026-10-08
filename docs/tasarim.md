@@ -183,9 +183,9 @@ Kesikli oklar: altyapı katmanı (veritabanı) üst katmanı **çağırmaz**; ol
 | Konular | Konu akışı, kategori çipleri, durum filtresi (açılır menü), bekleyen oylar şeridi, arama |
 | Oylamalar | Gündem (süren oylamalar), kararlar arşivi |
 | Meclis | Nasıl işler?, yönetmelik, kayıt defteri, üye ağı, şeffaflık günlüğü, API |
-| Avatar menüsü | Panelim, bildirimler, herkese açık profil, yönetim paneli (yöneticilere), çıkış |
+| Avatar menüsü | Panelim, bildirimler, herkese açık profil, görünüm, çıkış |
 | Panelim (`/profil`) | Solda bölüm menüsü: özet, bildirimler, hesap bilgileri, oy devri, uzmanlık, güvenlik, uygulama ve API |
-| Yönetim paneli (`/yonetim`) | Solda bölüm menüsü: pano, üyeler, şikayetler, konular, oylamalar, toplu bildirim, kategoriler, sistem, günlük; kullanıcı sayfalarında yönetici düğmesi yok |
+| Yönetim paneli (`/yonetim`) | Solda bölüm menüsü: pano, üyeler, şikayetler, konular, oylamalar, toplu bildirim, kategoriler, sistem, günlük. Ayrı giriş (`/yonetim/giris`, sayfa altındaki "Yönetici girişi") ve üye oturumundan bağımsız yönetici oturumu; kendi üst çubuğu var; kullanıcı sayfalarında yönetici düğmesi yok |
 | Telefon / mobil uygulama | Üst çubukta logo, arama, bildirim ve avatar; ana bölümler alttaki sekme çubuğunda (ortada yeni konu düğmesi) |
 
 **Giriş katmanı:** `/` adresi ziyaretçiye tanıtım sayfasını (tapınak çizimi, canlı sayılar, bir konunun 4 adımda karara

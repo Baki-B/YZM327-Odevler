@@ -483,13 +483,18 @@ Hesap menüsünden (sağ üstteki avatar) ya da telefonda alttaki **Panelim** se
 | Güvenlik | Şifre değiştirme, yeni kurtarma kodu |
 | Uygulama ve API | Telefona kurma yolları, API anahtarları |
 
-Yöneticilerde menünün altında **Yönetim paneli** bağlantısı da vardır.
+Panelim yalnızca üyenin kendi hesabıdır; yönetim paneline buradan geçilmez (20. bölüm).
 
 ---
 
 ## 20. Yönetim paneli
 
 Yalnızca yöneticiler görür (`/yonetim`). **Bütün yöneticiler eşittir**; ayrı bir süper yönetici yoktur.
+
+**Ayrı giriş:** Yönetim paneli üye arayüzünden ayrıdır. Her sayfanın altındaki ve üye giriş sayfasındaki **Yönetici girişi**
+bağlantısı `/yonetim/giris` sayfasını açar. Bu giriş, üye oturumundan bağımsız bir yönetici oturumu açar: üye olarak giriş
+yapmak paneli açmaz, panelden çıkmak üye oturumunu kapatmaz. Şifre değişirse ya da yetki kaldırılırsa yönetici oturumu da
+kapanır. Panelin kendi üst çubuğu vardır ("Siteye dön", "Çıkış").
 
 Yönetici **yalnızca siteyi yönetir**. Kararları etkileyecek hiçbir düğmesi yoktur.
 
@@ -550,7 +555,7 @@ Nasıl hesaplanır (`gundem.py`):
 
 Bunların hiçbiri oylamaları etkilemez; yalnızca okuyana "şu an ne konuşuluyor?" sorusunun cevabını verir.
 
-**Sağ üst:** arama, bildirim zili, "Yeni konu", avatar menüsü (Panelim, Bildirimler, Herkese açık profil, Yönetim paneli, Görünüm, Çıkış).
+**Sağ üst:** arama, bildirim zili, "Yeni konu", avatar menüsü (Panelim, Bildirimler, Herkese açık profil, Görünüm, Çıkış). Sayfa altında: Nasıl işler?, Yönetmelik, Yönetici girişi.
 
 **Giriş katmanı:** Giriş yapmamış biri `/` adresinde önce tanıtım sayfasını görür; giriş yapmış üye doğrudan konulara gider.
 

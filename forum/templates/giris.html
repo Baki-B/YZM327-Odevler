@@ -13,10 +13,11 @@
   </form>
   <p class="soluk">Hesabın yok mu? <a href="{{ url_for('hesap.kayit') }}">Üye ol</a> ·
     <a href="{{ url_for('hesap.sifremi_unuttum') }}">Şifremi unuttum</a></p>
+  <p class="soluk kucuk">Yönetici misin? Yönetim paneli için <a href="{{ url_for('yonetim.giris') }}">{{ ikon('kalkan') }} Yönetici girişi</a>.</p>
   <details class="demo">
     <summary>Demo hesapları (şifre hepsinde: <code>forum1234</code>)</summary>
     <ul>
-      <li><code>yonetici</code>: yönetici (İstanbul › Şişli)</li>
+      <li><code>yonetici</code>: yönetici (İstanbul › Şişli); panele <a href="{{ url_for('yonetim.giris') }}">Yönetici girişi</a>'nden girer</li>
       <li><code>ayse</code>, <code>elif</code> (17 yaş): İstanbul › Kadıköy</li>
       <li><code>mehmet</code>: İstanbul › Beşiktaş · <code>burak</code>: İstanbul › Kartal</li>
       <li><code>zeynep</code>: Ankara (İstanbul konularında gözlemci)</li>

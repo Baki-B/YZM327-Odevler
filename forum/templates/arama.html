@@ -13,7 +13,7 @@
     <h2>{{ sonuclar|length }} sonuç</h2>
     {% for s in sonuclar %}
       <article class="arama-sonucu">
-        <p><span class="rozet">{{ s.tur }}</span> <a href="{{ s.baglanti }}"><strong>{{ s.konu.baslik }}</strong></a> {{ konu_durumu(s.konu.durum) }}
+        <p><span class="rozet">{{ s.tur }}</span> <a href="{{ s.baglanti|site_yolu }}"><strong>{{ s.konu.baslik }}</strong></a> {{ konu_durumu(s.konu.durum) }}
           {% if s.yazar %}<span class="soluk kucuk">@{{ s.yazar }}</span>{% endif %}</p>
         <p class="soluk">{{ s.alinti }}</p>
       </article>

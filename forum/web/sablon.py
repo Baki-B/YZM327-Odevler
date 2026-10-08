@@ -56,8 +56,18 @@ def kategori(kategori_id):
     return ontoloji.yol_metni(db_al(), "kategoriler", kategori_id) if kategori_id else "—"
 
 
+def bicimle(metin):
+    return yardimcilar.bicimle(metin, request.script_root)
+
+
+def site_yolu(yol):
+    """Veritabanında saklanan uygulama içi yolu ("/konu/3") bağlantıya çevirir; uygulama bir alt yolda çalışıyorsa
+    (GitHub Pages) önek eklenir, yoksa tarayıcı sitenin köküne gider."""
+    return request.script_root + yol if yol and yol.startswith("/") and not yol.startswith("//") else yol
+
+
 FILTRELER = {"tarih": tarih, "gun": gun, "kalan": kalan, "once": once, "kategori_rengi": kategori_rengi,
-             "yuzde": yuzde, "konum": konum, "kategori": kategori, "bicimle": yardimcilar.bicimle}
+             "yuzde": yuzde, "konum": konum, "kategori": kategori, "bicimle": bicimle, "site_yolu": site_yolu}
 
 
 def sablon_degiskenleri():

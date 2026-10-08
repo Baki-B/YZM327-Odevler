@@ -68,10 +68,11 @@ değişmiş üç durum belgelendi:
 | T | 10 denemede farklı yanıt | "konu"dan sonra en olası kelimenin olasılığı |
 |---|---|---|
 | 0 | **1** (hep "konu kaldırma uzmanlık ve API") | 1,00 |
-| 0,7 | **10** | 0,11 |
+| 0,7 | **9** | 0,11 |
 | 1,5 | **10** | 0,05 |
 
-T = 0 açgözlü seçimdir; her çalıştırmada aynı yanıt gelir. T büyüdükçe dağılım düzleşir: en olası kelimenin payı 0,11'den
+T = 0 açgözlü seçimdir; her çalıştırmada aynı yanıt gelir. (Sayılar kılavuzun güncel metnine bağlıdır; metin değiştikçe
+T = 0,7 satırı 9 ile 10 arasında oynayabilir.) T büyüdükçe dağılım düzleşir: en olası kelimenin payı 0,11'den
 0,05'e iner ve her deneme başka bir yol izler. Bu yerel model gerçek bir dil modeli değildir; yalnızca sıcaklığın etkisini
 gösterir.
 

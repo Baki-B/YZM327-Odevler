@@ -736,6 +736,9 @@ class Web(unittest.TestCase):
     def giris(self, takma):
         return self.istemci.post("/giris", data={"takma_ad": takma, "sifre": "forum1234", "csrf": self._csrf()})
 
+    def yonetici_girisi(self, takma):
+        return self.istemci.post("/yonetim/giris", data={"takma_ad": takma, "sifre": "forum1234", "csrf": self._csrf()})
+
     def metin(self, adres):
         return self.istemci.get(adres).get_data(as_text=True)
 
@@ -763,6 +766,7 @@ class Web(unittest.TestCase):
         for adres in adresler:
             self.assertEqual(self.istemci.get(adres).status_code, 200, adres)
         self.assertEqual(self.giris("yonetici").status_code, 302)
+        self.assertEqual(self.yonetici_girisi("yonetici").status_code, 302)
         for adres in adresler + ["/profil", "/bildirimler", "/konu/yeni", f"/konu/yeni?itiraz={self.konu_no('hangi dille')}", "/yonetim"]:
             self.assertEqual(self.istemci.get(adres).status_code, 200, adres)
 
@@ -897,10 +901,11 @@ class Web(unittest.TestCase):
 
     def test_yonetim_paneli(self):
         self.giris("ayse")
-        self.assertEqual(self.istemci.get("/yonetim").status_code, 403)      # üye paneli göremez
-        self.assertEqual(self.istemci.get("/yonetim/uyeler").status_code, 403)
+        self.assertIn("/yonetim/giris", self.istemci.get("/yonetim/uyeler").headers["Location"])   # üye paneli göremez
+        self.yonetici_girisi("ayse")                                                         # yönetici olmayan giremez
+        self.assertIn("/yonetim/giris", self.istemci.get("/yonetim").headers["Location"])
         self.istemci = self.app.test_client()
-        self.giris("yonetici")
+        self.yonetici_girisi("yonetici")
         for adres in ["/yonetim", "/yonetim/uyeler", "/yonetim/uyeler?filtre=uzman&q=a", "/yonetim/uye/2",
                       "/yonetim/konular", "/yonetim/konular?durum=TARTISMA", "/yonetim/konular?durum=SONUCSUZ",
                       "/yonetim/oylamalar", "/yonetim/kategoriler", "/yonetim/sistem", "/yonetim/sistem?denetle=1",
@@ -909,8 +914,28 @@ class Web(unittest.TestCase):
         yedek = self.istemci.get("/yonetim/yedek")
         self.assertTrue(yedek.data.startswith(b"SQLite format 3"))
 
+    def test_yonetici_girisi_uye_girisinden_ayri(self):
+        self.giris("yonetici")                                              # üye girişi paneli açmaz
+        self.assertIn("/yonetim/giris", self.istemci.get("/yonetim").headers["Location"])
+        self.assertNotIn("Yönetim paneli", self.metin("/konular"))
+        self.assertIn("Yönetici girişi", self.metin("/konular"))           # giriş bağlantısı sayfa altında
+        self.istemci = self.app.test_client()
+        self.assertIn("Yönetici girişi", self.metin("/giris"))
+        y = self.yonetici_girisi("yonetici")
+        self.assertTrue(y.headers["Location"].endswith("/yonetim"))
+        self.assertEqual(self.istemci.get("/yonetim").status_code, 200)
+        self.assertIn("/giris", self.istemci.get("/profil").headers["Location"])   # yönetici girişi üye oturumu açmaz
+        self.giris("ayse")
+        self.istemci.post("/cikis", data={"csrf": self._csrf()})           # üye çıkışı yönetici oturumunu kapatmaz
+        self.assertEqual(self.istemci.get("/yonetim/uyeler").status_code, 200)
+        self.giris("ayse")
+        self.istemci.post("/yonetim/cikis", data={"csrf": self._csrf()})   # yönetici çıkışı üye oturumunu kapatmaz
+        self.assertIn("/yonetim/giris", self.istemci.get("/yonetim").headers["Location"])
+        self.assertEqual(self.istemci.get("/profil").status_code, 200)
+
     def test_yonetici_kararlari_etkileyemez(self):
         self.giris("yonetici")
+        self.yonetici_girisi("yonetici")
         db = self.vt()
         tur = self.tur_no("Yemekhanede")
         ring = self.konu_no("ring servisleri")
@@ -920,7 +945,7 @@ class Web(unittest.TestCase):
             for iz in ("Süreyi ilerlet", "Sonuçlandır", "Uzman ata", "sona erdir"):
                 self.assertNotIn(iz, sayfa, adres)
         self.assertNotIn("Bozmayı dene", self.metin("/defter"))
-        self.assertIn("Yönetim paneli", self.metin("/profil"))
+        self.assertNotIn("Yönetim paneli", self.metin("/profil"))      # üye arayüzü ile yönetim paneli ayrı
         csrf = self._csrf()
         self.assertEqual(self.istemci.post("/yonetim/uzmanlik", data={"kullanici_id": 2, "kategori_id": 1, "csrf": csrf}).status_code, 404)
         self.assertEqual(self.istemci.post(f"/yonetim/oylama/{tur}/sonuclandir", data={"csrf": csrf}).status_code, 404)
@@ -930,7 +955,7 @@ class Web(unittest.TestCase):
         self.assertEqual(db.execute("SELECT durum FROM teklifler WHERE id = ?", (tur,)).fetchone()[0], "ACIK")
 
     def test_sunum_kipinde_sure_ilerletilir(self):
-        self.giris("yonetici")
+        self.yonetici_girisi("yonetici")
         db = self.vt()
         k = self.konu_no("gözlem gecesi")
         self.app.config["DEMO"] = True
@@ -951,7 +976,7 @@ class Web(unittest.TestCase):
         self.assertIn("Kontenjan", self.metin("/profil/uzmanlik"))
 
     def test_askidaki_uye_yazamaz(self):
-        self.giris("yonetici")
+        self.yonetici_girisi("yonetici")
         db = self.vt()
         can_id = db.execute("SELECT id FROM kullanicilar WHERE takma_ad = 'can'").fetchone()[0]
         once = db.execute("SELECT COUNT(*) FROM mesajlar").fetchone()[0]
@@ -965,12 +990,13 @@ class Web(unittest.TestCase):
         self.assertEqual(db.execute("SELECT COUNT(*) FROM mesajlar").fetchone()[0], once)
         self.assertIn("askıda", self.metin("/konular"))
         self.istemci = self.app.test_client()
-        self.giris("yonetici")
+        self.yonetici_girisi("yonetici")
         self.istemci.post(f"/yonetim/uye/{can_id}/aski-kaldir", data={"csrf": self._csrf()})
         self.assertIsNone(db.execute("SELECT askida_bitis FROM kullanicilar WHERE id = ?", (can_id,)).fetchone()[0])
 
     def test_sikayetler_ve_anlik(self):
         self.giris("yonetici")
+        self.yonetici_girisi("yonetici")
         for adres in ["/yonetim/sikayetler", "/yonetim/sikayetler?durum=kapali", "/yonetim/bildirim", "/static/tema.js"]:
             self.assertEqual(self.istemci.get(adres).status_code, 200, adres)
         self.assertIn("satılık bisikletim", self.metin("/yonetim/sikayetler"))       # 3 kişi şikayet etti: taban doldu
