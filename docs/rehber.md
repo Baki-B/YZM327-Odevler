@@ -609,10 +609,11 @@ Kırmızı yoktur; durumlar ikon ve dolgu biçimiyle ayrılır (sürüyor = yeş
 
 ## 22. Mobil
 
-Üç yol var; hepsi **aynı siteyi** açar, yani aynı hesap ve aynı veri.
+Dört yol var. İlk üçü bir sunucudaki **aynı siteyi** açar (aynı hesap, aynı veri); dördüncüsü sunucusuzdur.
 
 | Yol | Nasıl | Not |
 |---|---|---|
+| **Sunucusuz: GitHub Pages + Ana ekrana ekle** | Telefonda <https://baki-b.github.io/YZM327-Odevler/> adresini açıp menüden "Ana ekrana ekle" | Sunucu gerekmez; uygulama telefonun tarayıcısında çalışır, veriler telefonda kalır, internetsiz de açılır (25.23) |
 | **Expo Go** (`mobil-expo/`) | `baslat_mobil.bat`'a çift tıkla, çıkan QR kodu Expo Go ile okut | Expo SDK 57. En hızlı deneme yolu. Anlık bildirim yok |
 | **Android uygulaması** (`mobil/`) | Android Studio ile APK derlenir | Capacitor. Firebase ayarlanırsa anlık bildirim var |
 | **Ana ekrana ekle** | Telefon tarayıcısında siteyi açıp menüden seç | Web uygulaması (PWA); çevrimdışıyken "bağlantı yok" sayfası |
@@ -620,7 +621,9 @@ Kırmızı yoktur; durumlar ikon ve dolgu biçimiyle ayrılır (sürüyor = yeş
 Uygulamalarda ek olarak: geri tuşu, çentik boşlukları, sunucuya ulaşılamazsa hata ekranı, site dışı bağlantıların tarayıcıda açılması.
 Site, uygulamada açıldığını tarayıcı kimliğindeki `AgoraMobil` ekinden anlar.
 
-**Telefonla bilgisayar aynı Wi-Fi'da olmalı** ve forum `--ag` ile başlatılmalı.
+Sunucuya bağlanan yollarda **telefonla bilgisayar aynı Wi-Fi'da olmalı** ve forum `--ag` ile başlatılmalı. Expo Go uygulamasının
+adres ekranındaki "Sunucusuz demoyu aç" düğmesi GitHub Pages sürümünü açar (Android; iOS'un uygulama içi tarayıcısı service worker
+desteklemediği için iPhone'da Safari'den "Ana ekrana ekle" kullanılmalı).
 
 ---
 
@@ -837,6 +840,22 @@ Her desenin hangi sorunu çözdüğü, sınıf diyagramları ve SOLID ilkeleriyl
 Hiçbir başarım iddiası tahmine dayanmaz; `olcum/` klasöründeki betiklerle ölçülür: denetim kurallarının kesinlik ve duyarlılığı
 (aptal temel çizgilerle karşılaştırmalı), sayfaların p95 yanıt süresi, iş/ürün/koruyucu metrikler. Sonuçlar ve yorumları
 [analiz.md](analiz.md) dosyasında.
+
+### 25.23 Tarayıcıda çalışan sürüm (WebAssembly, sunucusuz)
+GitHub Pages yalnızca dosya sunar. Agora'nın "her zaman açılabilen" sürümü bu yüzden **ziyaretçinin tarayıcısında** çalışır:
+- **Pyodide**, CPython'un WebAssembly'ye derlenmiş hâlidir. Flask, Jinja2 ve SQLite dahil uygulamanın bütün Python kodu
+  değiştirilmeden onun içinde, ayrı bir **Web Worker**'da çalışır (ana sayfa donmaz).
+- **Service worker** (`tarayici/sw.js`), çerçevedeki sayfanın her isteğini (sayfa, form, API) yakalar ve işçideki Flask'a iletir;
+  yanıtı (yönlendirmeler dahil) tarayıcıya sunucudan gelmiş gibi verir. Yani tarayıcının içinde küçük bir sunucu vardır.
+- Veritabanı ve kayıt defterinin üç düğümü, tarayıcının kalıcı deposuna (IndexedDB) bağlı bir klasördedir; sayfa kapansa da kalır.
+  Oturum çerezi de orada tutulur (service worker gerçek çerezleri okuyamaz).
+- Aynı anda tek sekme çalışır (Web Locks): iki sekme aynı verinin iki kopyasına yazıp birbirini ezmesin.
+- Farklar yalnızca yapılandırmadadır (`TARAYICI=True`): sayfa aynı sitedeki kabuğun çerçevesinde açılabilir, uygulamanın kendi
+  service worker'ı kaydedilmez, sunum kipi açıktır. Kod tabanı tektir; aynı testler ikisini de korur (`testler/test_tarayici.py`).
+- **Tedarik zinciri:** Pyodide ve paketleri sitenin içinde sunulur (çalışma anında başka bir CDN'e bağımlılık yok); derleme
+  betiği indirdiği her dosyanın SHA-256 özetini doğrular.
+- **Neden:** Hoca, arkadaşlar ya da işveren siteyi istedikleri an, kurulum yapmadan açabilsin; sunucu ücreti ve bakımı olmasın.
+  Bedeli: veriler kişiye özeldir (ortak bir forum değil, kişisel bir demo kopyası) ve ilk açılış ~15 MB indirir.
 
 ---
 

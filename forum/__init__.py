@@ -28,7 +28,7 @@ def create_app(ayar=None):
     )
     if ayar:
         app.config.update(ayar)
-    if not app.config.get("TESTING"):
+    if not app.config.get("TESTING") and not app.config.get("TARAYICI"):
         _gunluk_dosyasi(app)
 
     from . import ontoloji, veritabani, yonetmelik

@@ -487,3 +487,50 @@ classDiagram
 - **Observer:** ayrı bir gözlemci arayüzü yerine fonksiyon listesi yeter (`commit_aboneligi`).
 - **Factory / Registry:** sınıflar birinci sınıf nesnedir; sözlükte saklanıp koddan seçilir (`TURLER`, `KANALLAR`).
 - **Iterator ve Decorator:** dilin kendisinde (`yield`, `@`).
+
+## 9. Dağıtım: sunucu sürümü ve tarayıcı sürümü (GitHub Pages)
+
+Aynı kod iki biçimde çalışır. Sunucu sürümünde Flask bir Python sürecidir (`calistir.py`); tarayıcı sürümünde Flask,
+ziyaretçinin tarayıcısında WebAssembly üzerinde (Pyodide) çalışır ve GitHub Pages yalnızca statik dosyaları sunar.
+
+```mermaid
+flowchart LR
+  subgraph Pages["GitHub Pages (statik dosyalar)"]
+    Kabuk[index.html · kabuk.js]
+    SWD[sw.js]
+    Paket[pyodide/ · tekerlekler.zip · forum.zip · app/static/]
+  end
+  subgraph Tarayici["Ziyaretçinin tarayıcısı"]
+    K[Kabuk sayfası] --> C[Çerçeve: app/...]
+    C -->|her istek| SW[Service worker]
+    SW -->|MessageChannel| K
+    K -->|istek| W[Web Worker: Pyodide + Flask]
+    W --> DB[(IndexedDB: forum.db, defter A·B·C)]
+  end
+  Pages -.->|ilk açılışta indirilir, sonra önbellekten| Tarayici
+```
+
+```mermaid
+sequenceDiagram
+  participant C as Çerçeve (app/konu/8)
+  participant S as Service worker
+  participant K as Kabuk sayfası
+  participant W as İşçi (Pyodide)
+  participant F as Flask (forum/)
+  C->>S: POST app/konu/8/mesaj (form)
+  S->>K: postMessage {yöntem, yol, başlıklar, gövde}
+  K->>W: aynı ileti (yanıt kanalıyla)
+  W->>F: kopru.istek() → test istemcisi, oturum çerezi eklenir
+  F-->>W: 302 Location: /YZM327-Odevler/app/konu/8#m174
+  W->>W: IndexedDB'ye yaz (syncfs)
+  W-->>S: {durum, başlıklar, gövde}
+  S-->>C: Response.redirect → tarayıcı yeni sayfayı ister
+```
+
+| Karar | Gerekçe |
+|---|---|
+| Flask'ı tarayıcıda çalıştırmak (statik bir "vitrin" yerine) | Ziyaretçi gerçek uygulamayı kullanır: oy verir, makbuz alır, defteri bozup onarır. Kod tektir; ayrı bir demo yazılmadı |
+| Python bir Web Worker'da | WebAssembly'deki Python ana iş parçacığında çalışsa her istekte sayfa donardı |
+| İstekler service worker'dan kabuk üzerinden işçiye | Service worker uzun süre canlı tutulamaz (tarayıcı kapatabilir); Python'u barındıran uzun ömürlü kabuk sayfasıdır |
+| Pyodide siteyle birlikte sunulur, özetleri doğrulanır | Çalışma anında üçüncü taraf CDN'e bağımlılık ve tedarik zinciri riski olmasın; site bir kez açılınca çevrimdışı çalışsın |
+| Tek sekme kilidi (Web Locks) | İki sekme aynı IndexedDB verisinin iki ayrı bellek kopyasına yazıp birbirini ezmesin |

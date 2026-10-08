@@ -7,11 +7,39 @@ Mesajlar silinmez, karara katılmayan itiraz konusu açar ve her olay kayıt def
 
 Yazılım Mühendisliğine Giriş dersi ödevi.
 
+**Hemen dene (kurulum gerekmez):** <https://baki-b.github.io/YZM327-Odevler/> — uygulamanın tamamı tarayıcıda çalışır
+(aşağıda "Tarayıcı sürümü"). Telefonda aynı adresi açıp "Ana ekrana ekle" ile uygulama gibi kurulabilir.
+
 | Belge | İçinde |
 |---|---|
 | [docs/analiz.md](docs/analiz.md) | **Problem çerçeveleme ve gereksinim analizi:** YZ gerekli mi?, tek sayfalık kanvas, iş/ürün/koruyucu metrikler, ölçülmüş temel çizgi ve hata analizi, kısıtlar, paydaşlar, ön-otopsi, ölçülmüş gecikme ve ölçeklenme |
 | [docs/tasarim.md](docs/tasarim.md) | UML diyagramları; **SOLID ilkeleri ve tasarım desenlerinin** (State, Strategy, Template Method, Registry, Chain of Responsibility, Adapter, Memento, Observer, Repository, Facade…) dosya dosya karşılığı ve sınıf diyagramları |
 | [docs/rehber.md](docs/rehber.md) | Uygulamanın bütün ayrıntıları ve kullanılan mimariler, sade bir dille |
+
+## Tarayıcı sürümü (GitHub Pages, sunucusuz)
+
+GitHub Pages yalnızca dosya sunar, Python çalıştırmaz. Bu yüzden Agora'nın **aynı kodu** ziyaretçinin tarayıcısında,
+WebAssembly üzerinde çalışan Python (Pyodide) ile çalıştırılır. Her ziyaretçi kendi tarayıcısında, demo verisiyle dolu, gerçek ve
+çalışan bir kopya açar. Veriler yalnızca o tarayıcıda (IndexedDB) saklanır. Ayrıntılar: `docs/tasarim.md` 9. bölüm.
+
+```
+Tarayıcı ──► index.html (kabuk) ──► Web Worker: Pyodide + Flask (forum/ paketi) ──► SQLite ve defter düğümleri (IndexedDB)
+                 ▲                              ▲
+                 └── sw.js (service worker): app/ altındaki her sayfa ve API isteğini yakalayıp işçiye iletir
+```
+
+| Komut / adım | Ne yapar |
+|---|---|
+| `python tarayici/derle.py` | Siteyi `_site/` klasörüne üretir (Pyodide ve paketleri indirip SHA-256 özetlerini doğrular) |
+| `python -m http.server -d _site 8000` | Yerelde dener: <http://localhost:8000/> |
+| GitHub'da bir kez: **Settings › Pages › Source: GitHub Actions** | Sonra `main` dalına her gönderimde `.github/workflows/sayfalar.yml` testleri çalıştırır, siteyi derler ve yayınlar (Actions sekmesinden elle de başlatılabilir) |
+
+İlk açılışta yaklaşık 15 MB indirilir (sonra önbellekten); site bir kez açıldıktan sonra internetsiz de çalışır. Sunum kipi
+açıktır ("Süreyi ilerlet"). Kabuktaki **Sıfırla** düğmesi bu tarayıcıdaki verileri silip demoyu baştan yükler.
+
+**Mobil:** Telefonda adresi açıp **Ana ekrana ekle** (Android: Chrome ⋮ menüsü, iPhone: Safari paylaş düğmesi) — tam ekran,
+çevrimdışı çalışan bir uygulama olur. Expo Go uygulamasında (`mobil-expo/`) adres ekranındaki **"Sunucusuz demoyu aç"** düğmesi
+aynı adresi açar (Android). Capacitor uygulaması da bu adrese yönlendirilebilir: `npm run adres -- https://baki-b.github.io/YZM327-Odevler`.
 
 ## Kurulum ve çalıştırma
 

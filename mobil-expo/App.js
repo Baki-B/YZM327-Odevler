@@ -16,6 +16,9 @@ import { WebView } from 'react-native-webview';
 const RENK = { tas: '#ebe7df', kart: '#f6f4ef', cizgi: '#dfd9ce', yazi: '#2c2a27', soluk: '#6f6a62', yesil: '#4a6642' };
 const ADRES_ANAHTARI = 'agora-sunucu';
 const ADRES_SAYFASI = '/uygulama/adres';   // sitedeki "Sunucu adresini değiştir" bağlantısı bu ekranı açar
+// Sunucusuz demo: GitHub Pages'teki tarayıcı sürümü (Python, telefonun tarayıcı motorunda çalışır). Service worker gerektirir:
+// Android WebView destekler; iOS WebView (WKWebView) desteklemez, iPhone'da Safari'den "Ana ekrana ekle" kullanılmalıdır.
+const DEMO_ADRESI = 'https://baki-b.github.io/YZM327-Odevler';
 const FORUM_PORTU = 5000;
 
 // Expo Go projeyi bilgisayardan yüklediği için bilgisayarın ağdaki adresini biliyoruz; forum da çoğunlukla oradadır.
@@ -125,6 +128,9 @@ function AdresEkrani({ mevcut, vazgecilebilir, onVazgec, onKaydet }) {
           {durum ? <Text style={stil.hata}>{durum}</Text> : null}
           <Pressable style={({ pressed }) => [stil.dugme, pressed && { opacity: 0.85 }]} onPress={baglan} disabled={bekliyor}>
             {bekliyor ? <ActivityIndicator color={RENK.kart} /> : <Text style={stil.dugmeYazi}>Bağlan</Text>}
+          </Pressable>
+          <Pressable style={stil.ikinciDugme} onPress={() => onKaydet(DEMO_ADRESI)} disabled={bekliyor}>
+            <Text style={stil.ikinciYazi}>Sunucusuz demoyu aç (GitHub Pages)</Text>
           </Pressable>
           {vazgecilebilir ? (
             <Pressable style={stil.ikinciDugme} onPress={onVazgec}><Text style={stil.ikinciYazi}>Vazgeç</Text></Pressable>

@@ -1,0 +1,45 @@
+# Agora'nın tarayıcı sürümünü GitHub Pages'e yayınlar: https://baki-b.github.io/YZM327-Odevler/
+# Bir kez: depo Settings > Pages > Build and deployment > Source: "GitHub Actions" seçilmelidir.
+name: GitHub Pages (tarayıcı sürümü)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  derle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Testler (bozuk sürüm yayınlanmasın)
+        run: |
+          pip install -r requirements.txt
+          python -m unittest discover -s testler
+      - name: Siteyi derle (Pyodide ve paketler indirilir, özetleri doğrulanır)
+        run: python tarayici/derle.py --cikti _site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  yayinla:
+    needs: derle
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.yayin.outputs.page_url }}
+    steps:
+      - id: yayin
+        uses: actions/deploy-pages@v4

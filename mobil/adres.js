@@ -4,9 +4,10 @@ const fs = require("fs");
 const path = require("path");
 
 const adres = (process.argv[2] || "").replace(/\/+$/, "");
-if (!/^https?:\/\/[^\s/]+(:\d+)?$/.test(adres)) {
+if (!/^https?:\/\/[^\s/]+(:\d+)?(\/[^\s]*)?$/.test(adres)) {
   console.error("Kullanım: npm run adres -- http://BILGISAYARIN-IP-ADRESI:5000");
   console.error("Emülatörde bilgisayarın kendisi: http://10.0.2.2:5000");
+  console.error("Sunucusuz demo (GitHub Pages): https://baki-b.github.io/YZM327-Odevler");
   process.exit(1);
 }
 const yol = path.join(__dirname, "capacitor.config.json");

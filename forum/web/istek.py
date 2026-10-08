@@ -89,10 +89,13 @@ def yazma_kilidi():
 
 
 def guvenlik_basliklari(yanit):
+    # Tarayıcı sürümünde (GitHub Pages, tarayici/) uygulama aynı sitedeki kabuk sayfasının çerçevesinde açılır; yalnızca
+    # aynı kökenden çerçeveye izin verilir. Sunucu sürümünde hiçbir site çerçeveye alamaz.
+    cerceve = "'self'" if current_app.config.get("TARAYICI") else "'none'"
     yanit.headers.setdefault("X-Content-Type-Options", "nosniff")
-    yanit.headers.setdefault("X-Frame-Options", "DENY")
+    yanit.headers.setdefault("X-Frame-Options", "SAMEORIGIN" if current_app.config.get("TARAYICI") else "DENY")
     yanit.headers.setdefault("Referrer-Policy", "same-origin")
-    yanit.headers.setdefault("Content-Security-Policy", CSP)
+    yanit.headers.setdefault("Content-Security-Policy", CSP.replace("frame-ancestors 'none'", f"frame-ancestors {cerceve}"))
     if getattr(g, "kullanici", None) is not None:
         yanit.headers.setdefault("Cache-Control", "no-store")   # kişisel sayfalar tarayıcı önbelleğinde kalmasın
     return yanit

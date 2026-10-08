@@ -15,7 +15,7 @@
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
   {% block ek_bas %}{% endblock %}
 </head>
-<body class="{{ 'mobil-uygulama' if mobil_uygulama }}">
+<body class="{{ 'mobil-uygulama' if mobil_uygulama }}" data-kok="{{ request.script_root }}" data-sw="{{ 0 if config.TARAYICI else 1 }}">
 {#- Üç ana bölüm: Konular, Oylamalar, Meclis. Oylamalar ve Meclis'in sayfaları alt sekmelerde toplanır. -#}
 {% set ep = request.endpoint or '' %}
 {% set oylama_sayfalari = [('oylamalar.gundem', 'Gündem'), ('oylamalar.kararlar_arsivi', 'Kararlar')] %}

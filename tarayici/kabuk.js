@@ -1,0 +1,81 @@
+// Kabuk sayfası: service worker'ı kaydeder, Python işçisini başlatır, service worker'dan gelen istekleri işçiye iletir
+// ve uygulamayı tam ekran bir çerçevede (iframe) gösterir.
+"use strict";
+
+const perde = document.getElementById("perde");
+const adim = document.getElementById("adim");
+const cerceve = document.getElementById("uygulama");
+const parametreler = new URLSearchParams(location.search);
+let isci = null;
+
+function yaz(metin, hata) {
+  adim.textContent = metin;
+  perde.classList.toggle("hatali", Boolean(hata));
+}
+
+function uygulamayiAc() {
+  const yol = parametreler.get("yol") || "/";
+  cerceve.src = "app" + (yol.startsWith("/") ? yol : "/" + yol);
+  perde.classList.add("gizli");
+}
+
+// Çerçevedeki sayfanın başlığını ve adresini kabuğa yansıt: yenileyince aynı sayfa açılır.
+cerceve.addEventListener("load", () => {
+  try {
+    const belge = cerceve.contentDocument;
+    if (belge && belge.title) document.title = belge.title;
+    const yol = cerceve.contentWindow.location.pathname.split("/app").slice(1).join("/app") || "/";
+    const adres = new URL(location.href);
+    adres.searchParams.set("yol", yol + cerceve.contentWindow.location.search);
+    history.replaceState(null, "", adres);
+  } catch (e) { /* farklı kökenli sayfa: dokunma */ }
+});
+
+async function baslat() {
+  if (!("serviceWorker" in navigator) || !window.Worker || !window.WebAssembly) {
+    yaz("Bu tarayıcı Agora'nın tarayıcı sürümünü desteklemiyor (service worker, Web Worker ve WebAssembly gerekir). " +
+      "Güncel Chrome, Edge, Firefox ya da Safari kullanın.", true);
+    return;
+  }
+  // Aynı anda tek bir kabuk çalışır: iki sekme aynı veritabanının iki ayrı kopyasına yazıp birbirini ezmesin.
+  if (navigator.locks) {
+    const kilit = await new Promise((tamam) => {
+      navigator.locks.request("agora-kabuk", { ifAvailable: true }, (k) => {
+        tamam(k);
+        return k ? new Promise(() => {}) : undefined;     // sekme açık kaldıkça kilit tutulur
+      });
+    });
+    if (!kilit) {
+      yaz("Agora başka bir sekmede açık. Verilerin karışmaması için orayı kullanın ya da o sekmeyi kapatıp bu sayfayı yenileyin.", true);
+      return;
+    }
+  }
+  const kayit = await navigator.serviceWorker.register("sw.js", { scope: "./" });
+  navigator.serviceWorker.addEventListener("message", (e) => {
+    if (e.data && e.data.tur === "istek" && isci) isci.postMessage(e.data, [e.ports[0]]);
+  });
+  isci = new Worker("isci.js");
+  isci.onmessage = (e) => {
+    const m = e.data;
+    if (m.tur === "durum") yaz(m.mesaj);
+    else if (m.tur === "hazir") navigator.serviceWorker.ready.then(uygulamayiAc);
+    else if (m.tur === "sifirlandi") location.replace(location.pathname);
+    else if (m.tur === "hata") yaz("Başlatılamadı: " + m.mesaj, true);
+  };
+  isci.onerror = (e) => yaz("Başlatılamadı: " + (e.message || "bilinmeyen hata"), true);
+  await kayit.update().catch(() => {});
+}
+
+document.getElementById("sifirla").addEventListener("click", () => {
+  if (!isci) return;
+  if (!confirm("Bu cihazdaki bütün Agora verileri (hesapların, konuların, oylar) silinip demo verisi yeniden yüklenecek. Emin misin?")) return;
+  perde.classList.remove("gizli");
+  yaz("Veriler siliniyor…");
+  isci.postMessage({ tur: "sifirla" });
+});
+
+const bilgi = document.getElementById("bilgi");
+document.getElementById("bilgi-ac").addEventListener("click", () => bilgi.showModal());
+document.getElementById("bilgi-kapat").addEventListener("click", () => bilgi.close());
+
+baslat().catch((h) => yaz("Başlatılamadı: " + h, true));
