@@ -50,9 +50,9 @@ cümlesinde öz-dikkat (Q = K) hesaplanıyor. Vektörler öğretim amaçlı seç
 ## 3. Sıcaklık: aynı istem 10'ar kez
 
 **API ile (betik hazır, bu ortamda çalıştırılamadı).** `sicaklik.py --api` aynı istemi T = 0, 0,7 ve 1,5 ile 10'ar kez
-gönderir ve farklı yanıtları sayar. Bu çalışma ortamında API anahtarı olmadığı için gerçek sonuç yok; öğrencinin kendi
-anahtarıyla çalıştırması gerekir (anahtar koda yazılmaz, ortam değişkeninden okunur, S01-17). Betiği yazarken çıkan,
-slayttan sonra değişmiş üç durum belgelendi:
+gönderir ve farklı yanıtları sayar. Bu ortamda API anahtarı olmadığı için gerçek sonuç yok; öğrencinin kendi
+anahtarıyla çalıştırması gerekir (anahtar koda yazılmaz, ortam değişkeninden okunur, S01-17). Betiği yazarken slayttan sonra
+değişmiş üç durum belgelendi:
 
 1. Güncel Claude modelleri (Opus 4.7 ve sonrası) sıcaklık taşıyan isteği **400 hatasıyla reddeder**; Sonnet 5/5.5 ve
    Haiku 5.5 varsayılan dışı değeri reddeder. Deney bu yüzden sıcaklığı hâlâ kabul eden `claude-sonnet-4-6` ile yapılır.
@@ -68,11 +68,11 @@ slayttan sonra değişmiş üç durum belgelendi:
 | T | 10 denemede farklı yanıt | "konu"dan sonra en olası kelimenin olasılığı |
 |---|---|---|
 | 0 | **1** (hep "konu kaldırma uzmanlık ve API") | 1,00 |
-| 0,7 | **9** | 0,11 |
-| 1,5 | **10** | 0,04 |
+| 0,7 | **10** | 0,11 |
+| 1,5 | **10** | 0,05 |
 
 T = 0 açgözlü seçimdir; her çalıştırmada aynı yanıt gelir. T büyüdükçe dağılım düzleşir: en olası kelimenin payı 0,11'den
-0,04'e iner ve her deneme başka bir yol izler. Bu yerel model gerçek bir dil modeli değildir; yalnızca sıcaklığın etkisini
+0,05'e iner ve her deneme başka bir yol izler. Bu yerel model gerçek bir dil modeli değildir; yalnızca sıcaklığın etkisini
 gösterir.
 
 ## 4. YZ kodlama aracının önerdiği import'lar gerçek mi?

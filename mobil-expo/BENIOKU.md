@@ -1,8 +1,8 @@
 # Agora — Expo Go uygulaması
 
 Bu klasör Agora'nın **Expo Go** ile açılan mobil uygulamasıdır (Expo SDK 57; Expo Go 57.x ile uyumlu).
-Uygulama, Agora sunucusundaki siteyi tam ekran açar. Bu yüzden web sitesiyle aynı sayfaları, aynı hesabı ve aynı
-veritabanını kullanır; sitede yapılan her değişiklik uygulamaya da yansır.
+Uygulama, Agora sunucusundaki siteyi tam ekran açar; web sitesiyle aynı sayfaları, hesabı ve veritabanını kullanır.
+Sitedeki değişiklikler uygulamaya da yansır.
 
 Uygulamaya özel olanlar:
 
