@@ -47,7 +47,7 @@
         </details>
       {% endif %}
 
-      {% if kullanici and m.yazar_id == kullanici.id and aktif and m.tip != 'YZ' and (m.tip != 'FIKIR' or konu.durum == 'TARTISMA') %}
+      {% if kullanici and m.yazar_id == kullanici.id and aktif and m.tip != 'YZ' and (m.tip != 'FIKIR' or durum.fikir_duzenlenebilir()) %}
         <a class="bag" href="{{ url_for('konular.mesaj_duzenle', mesaj_id=m.id) }}">{{ ikon('kalem') }} Düzenle</a>
       {% endif %}
 
@@ -161,7 +161,7 @@
         <div><button class="dugme">{{ ikon('arti') }} Fikrimi ekle</button></div>
       </form>
     {% elif benim_fikrim %}
-      <p class="soluk kucuk">Bu konuda bir fikrin var (<a href="#m{{ benim_fikrim.id }}">#{{ benim_fikrim.id }}</a>){% if konu.durum == 'TARTISMA' %}; oylama başlayana kadar düzenleyebilirsin{% endif %}.</p>
+      <p class="soluk kucuk">Bu konuda bir fikrin var (<a href="#m{{ benim_fikrim.id }}">#{{ benim_fikrim.id }}</a>){% if durum.fikir_duzenlenebilir() %}; oylama başlayana kadar düzenleyebilirsin{% endif %}.</p>
     {% endif %}
     {% for f in fikirler %}{{ mesaj(f, 0) }}{% else %}<p class="bos-durum">Henüz fikir yazılmadı.</p>{% endfor %}
   </section>
@@ -221,7 +221,7 @@
   {% if kullanici %}
   <section class="kart eylemler">
     <h3>İşlemler</h3>
-    {% if sahibi and konu.durum == 'TARTISMA' %}
+    {% if sahibi and durum.konu_duzenlenebilir() %}
       <a class="dugme ince tam" href="{{ url_for('konular.konu_duzenle', konu_id=konu.id) }}">{{ ikon('kalem') }} Konuyu düzenle</a>
     {% endif %}
     {% if katilimci and aktif %}

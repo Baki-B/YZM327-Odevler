@@ -109,7 +109,6 @@ KONU_DURUMLARI = {
     "KARARA_BAGLANDI": "Karara bağlandı",
     "SONUCSUZ": "Sonuçsuz kapandı",
 }
-AKTIF_DURUMLAR = {"TARTISMA", "OYLAMA"}   # mesaj yazılabilen durumlar
 
 MESAJ_TIPLERI = {
     "ARGUMAN": "Argüman", "KARSI_ARGUMAN": "Karşı argüman", "SORU": "Soru", "KAYNAK": "Kaynak",

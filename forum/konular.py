@@ -15,7 +15,7 @@ from datetime import timedelta
 from . import (arama, ayarlar, bildirimler, defter, denetim, gunluk, oylama, ontoloji, uygunluk, yonetmelik,
                zaman)
 from .hatalar import KuralHatasi, tamsayi
-from .konu_durumlari import durumu, okunabilir_olmali, yazilabilir_olmali
+from .konu_durumlari import durumu, okunabilir_olmali, onceki_durumlar, yazilabilir_olmali
 from .metin import kisalt
 
 MAX_TOPLU_GIZLEME = 20
@@ -242,9 +242,12 @@ def fikir_yaz(db, kullanici, konu_id, icerik):
 
 def oylamayi_baslat(db, konu_id):
     """Tartışma süresi dolunca 1. turu açar. Döner: oylamanın id'si ya da None (zaten başlamışsa)."""
-    # Atomik geçiş: arka plan zamanlayıcısı ile bir web isteği aynı anda çalışsa da tek oylama açılır.
-    if db.execute("UPDATE konular SET durum = 'OYLAMA', tur = 1 WHERE id = ? AND durum = 'TARTISMA' AND silindi = 0",
-                  (konu_id,)).rowcount == 0:
+    # Atomik geçiş: arka plan zamanlayıcısı ile bir web isteği aynı anda çalışsa da tek oylama açılır. Hangi
+    # durumlardan OYLAMA'ya geçilebileceğini durum makinesinin geçiş tablosu söyler (State).
+    kaynaklar = onceki_durumlar("OYLAMA")
+    if db.execute(f"""UPDATE konular SET durum = 'OYLAMA', tur = 1
+                      WHERE id = ? AND silindi = 0 AND durum IN ({','.join('?' * len(kaynaklar))})""",
+                  (konu_id, *kaynaklar)).rowcount == 0:
         return None
     defter.ekle(db, "KONU_DURUM", {"konu": konu_id, "durum": "OYLAMA", "tur": 1})
     liste = fikirler(db, konu_id)
@@ -302,6 +305,7 @@ def alt_agac(db, konu_id):
 
 
 def konuyu_kaldir(db, konu_id, not_metni):
+    durumu(konu_getir(db, konu_id)).gecis_dogrula("KALDIRILDI")
     for i in alt_agac(db, konu_id):
         db.execute("UPDATE konular SET silindi = 1, silinme_notu = ? WHERE id = ?", (not_metni, i))
         db.execute("UPDATE teklifler SET durum = 'IPTAL', kapanis = ? WHERE konu_id = ? AND durum = 'ACIK'",

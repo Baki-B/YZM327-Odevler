@@ -30,16 +30,21 @@ def konuyu_ilerlet(db, konu_id):
     """Sunum kipi: konunun sıradaki zamanlanmış işini süresini beklemeden yürütür (tick'in tek konuluk hâli).
     Döner: konu."""
     konu = konular.konu_getir(db, konu_id)
-    kod = durumu(konu).kod
-    if kod == "TARTISMA":
-        konular.oylamayi_baslat(db, konu_id)
-    elif kod == "OYLAMA":
-        t = oylama.acik_teklif(db, "KARAR", konu_id=konu_id)
-        if t:
-            oylama.sonuclandir(db, t["id"])
-    else:
+    durum = durumu(konu)
+    if not durum.zamanli:
         raise KuralHatasi("Bu konu kapanmış.")
+    _SIRADAKI_IS[durum.kod](db, konu_id)
     return konu
+
+
+def _turu_bitir(db, konu_id):
+    t = oylama.acik_teklif(db, "KARAR", konu_id=konu_id)
+    if t:
+        oylama.sonuclandir(db, t["id"])
+
+
+# Zamanlı durumların (KonuDurumu.zamanli) süresi dolunca yürütülen işi.
+_SIRADAKI_IS = {"TARTISMA": konular.oylamayi_baslat, "OYLAMA": _turu_bitir}
 
 
 def _yalitilmis(db, hata_metni, is_, *argumanlar):

@@ -2,11 +2,17 @@
 
     TARTISMA ──► OYLAMA (1.–5. tur) ──► KARARA_BAGLANDI
                                    └──► SONUCSUZ
-    (herhangi bir durumdan oylamayla) ──► KALDIRILDI   (veritabanında `silindi = 1`)
+    (kaldırılmamış her durumdan oylamayla) ──► KALDIRILDI   (veritabanında `silindi = 1`)
 
 Her durum bir sınıftır ve "bu durumda ne yapılabilir?" sorusunu kendisi yanıtlar. Önceden bu sorular
 `if konu["durum"] == ...` biçiminde konular.py, web katmanı ve şablonlara dağılmıştı; bir yerde unutulan kontrol
-(ör. kaldırılmış konunun geçmişinin hâlâ okunabilmesi) hataya dönüşüyordu. Şimdi bütün izinler buradan okunur.
+(ör. kaldırılmış konunun geçmişinin hâlâ okunabilmesi) hataya dönüşüyordu. Şimdi bütün izinler ve izin verilen
+geçişler buradan okunur; geçişi yapan üç işlem (konular.oylamayi_baslat, durum_degistir, konuyu_kaldir) geçiş
+tablosuna danışır.
+
+GoF'taki biçimden bilinçli sapma: geçişi durum nesnesi kendisi yapmaz. Geçiş veritabanı, kayıt defteri ve bildirim
+yazımı gerektirir; bunları durum sınıflarına taşımak bu modülü iş modüllerine bağlar (döngüsel bağımlılık). Durum
+nesneleri "ne yapılabilir ve nereye gidilebilir" bilgisinin tek kaynağıdır, "nasıl" konular.py'dedir.
 
 Durumlar iç durum taşımaz; her biri tek bir paylaşılan nesnedir. `durumu(konu)` bir veritabanı satırına karşılık
 gelen durum nesnesini verir.
@@ -24,6 +30,7 @@ class KonuDurumu:
     yazilabilir = False          # mesaj yazma, yanıtlama, mesaj düzenleme, özet isteme
     kapali = False               # sonuçlanmış: itiraz konusu açılabilir
     okunabilir = True            # içerik ve geçmiş gösterilebilir
+    zamanli = False              # süresi dolunca zamanlayıcı bir sonraki aşamaya geçirir (sunumda "Süreyi ilerlet")
     sonrakiler = frozenset()     # izin verilen geçişler
 
     @property
@@ -50,7 +57,8 @@ class KonuDurumu:
 class Tartisma(KonuDurumu):
     kod = "TARTISMA"
     yazilabilir = True
-    sonrakiler = frozenset({"OYLAMA"})
+    zamanli = True
+    sonrakiler = frozenset({"OYLAMA", "KALDIRILDI"})
 
     def fikir_yazilabilir(self, konu):
         return True
@@ -65,7 +73,8 @@ class Tartisma(KonuDurumu):
 class Oylama(KonuDurumu):
     kod = "OYLAMA"
     yazilabilir = True                                   # oylama sürerken tartışma devam eder
-    sonrakiler = frozenset({"KARARA_BAGLANDI", "SONUCSUZ"})
+    zamanli = True
+    sonrakiler = frozenset({"KARARA_BAGLANDI", "SONUCSUZ", "KALDIRILDI"})
 
     def fikir_yazilabilir(self, konu):
         return konu["tur"] == 1                          # yeni fikir 1. tur bitene kadar yazılabilir
@@ -74,11 +83,13 @@ class Oylama(KonuDurumu):
 class KararaBaglandi(KonuDurumu):
     kod = "KARARA_BAGLANDI"
     kapali = True
+    sonrakiler = frozenset({"KALDIRILDI"})
 
 
 class Sonucsuz(KonuDurumu):
     kod = "SONUCSUZ"
     kapali = True
+    sonrakiler = frozenset({"KALDIRILDI"})
 
 
 class Kaldirildi(KonuDurumu):
@@ -93,6 +104,11 @@ KALDIRILDI = Kaldirildi()
 
 def durumu(konu):
     return KALDIRILDI if konu["silindi"] else DURUMLAR[konu["durum"]]
+
+
+def onceki_durumlar(yeni):
+    """`yeni` duruma geçilebilen durumların kodları (atomik UPDATE'lerin WHERE koşulu bu tablodan kurulur)."""
+    return sorted(kod for kod, d in DURUMLAR.items() if yeni in d.sonrakiler)
 
 
 # --- Korumalar: kural ihlalinde kullanıcıya gösterilecek KuralHatasi ---

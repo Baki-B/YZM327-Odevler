@@ -5,6 +5,7 @@ Filtreler FILTRELER sözlüğünden döngüyle kaydedilir (Registry)."""
 from flask import g, request
 
 from .. import ayarlar, bildirimler, konular, ontoloji, oylama, sikayetler, uygunluk, yonetim, yonetmelik, zaman
+from ..konu_durumlari import durumu
 from ..metin import yuzde
 from . import csrf_token, db_al, ikonlar, yardimcilar
 
@@ -73,6 +74,7 @@ def sablon_degiskenleri():
 
 def kur(app):
     app.jinja_env.globals.update(ayarlar=ayarlar, csrf_token=csrf_token, avatar=yardimcilar.avatar, ikon=ikonlar.ikon,
+                                 durum_nesnesi=durumu,
                                  parametre=lambda kod: yonetmelik.parametre_metni(db_al(), kod))
     app.context_processor(sablon_degiskenleri)
     for ad, filtre in FILTRELER.items():

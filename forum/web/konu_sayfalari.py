@@ -5,6 +5,7 @@ from flask import Blueprint, flash, g, redirect, render_template, request, url_f
 from .. import (ayarlar, gorunum, gundem, kategoriler, konular, ontoloji, oylama, sikayetler, uygunluk, yonetmelik,
                 yz)
 from ..hatalar import KuralHatasi
+from ..konu_durumlari import durumu
 from . import db_al, giris_gerekli, sayfa_no
 from .yardimcilar import sayfala
 
@@ -21,7 +22,7 @@ def acilis():
     if g.kullanici:
         return ana_sayfa()
     db = db_al()
-    gundemdekiler = sorted((k for k in konular.konu_listesi(db) if k["durum"] in ayarlar.AKTIF_DURUMLAR),
+    gundemdekiler = sorted((k for k in konular.konu_listesi(db) if durumu(k).yazilabilir),
                            key=lambda k: k["son_etkinlik"], reverse=True)[:3]
     return render_template("acilis.html", istatistik=konular.istatistikler(db), gundemdekiler=gundemdekiler)
 

@@ -7,7 +7,8 @@ alt sistemler değişirse rota değişmez. İş kuralı (`fikir_durumu`) saf bir
 """
 import json
 
-from . import ayarlar, devir, kararlar, konular, kullanicilar, oylama, uygunluk, yz
+from . import devir, kararlar, konular, kullanicilar, oylama, uygunluk, yz
+from .konu_durumlari import durumu
 
 KAZANDI, ELENDI = "KAZANDI", "ELENDI"
 
@@ -62,7 +63,7 @@ def konu_sayfasi(db, ben, konu_id):
     benim_fikrim = konular.kullanicinin_fikri(db, konu_id, ben["id"]) if ben else None
     return "konu.html", {
         "konu": k, "zincir": zincir, "uygunluk": u, "kural": uygunluk.kural_metni(db, k),
-        "katilimci": katilimci, "aktif": k["durum"] in ayarlar.AKTIF_DURUMLAR,
+        "katilimci": katilimci, "durum": durumu(k), "aktif": durumu(k).yazilabilir,
         "sahibi": bool(ben) and ben["id"] == k["sahip_id"],
         "agirlik": uygunluk.oy_agirligi(db, ben, baglam) if ben else (0, ""),
         "sahip": kullanicilar.getir(db, k["sahip_id"]),
