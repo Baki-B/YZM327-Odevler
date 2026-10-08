@@ -18,8 +18,8 @@ def kural_hatasi(e):
         return jsonify(hata=str(e)), 404 if yok else 422
     if request.method == "GET":
         if yok:
-            return render_template("hata.html", baslik="Bulunamadı", mesaj=str(e)), 404
-        return render_template("hata.html", baslik="İşlem yapılamadı", mesaj=str(e)), 400
+            return render_template("hata.html", baslik="Bulamadık", mesaj=str(e)), 404
+        return render_template("hata.html", baslik="Bir sorun oluştu", mesaj=str(e)), 400
     flash(str(e), "hata")
     return redirect(geldigi_sayfa())
 
@@ -32,13 +32,13 @@ def _hata(kod, baslik, mesaj):
 
 def sunucu_hatasi(e):
     log.exception("Sunucu hatası")
-    return _hata(500, "Beklenmeyen hata", "Beklenmeyen bir hata oluştu ve kaydedildi. Sayfayı yenileyip tekrar dene.")
+    return _hata(500, "Bir şeyler ters gitti", "Bir hata oluştu ve kaydedildi. Sayfayı yenileyip tekrar deneyebilirsin.")
 
 
 def kur(app):
     app.register_error_handler(KuralHatasi, kural_hatasi)
-    app.register_error_handler(400, lambda e: _hata(400, "Geçersiz istek", e.description))
-    app.register_error_handler(403, lambda e: _hata(403, "Yetkin yok", "Bu sayfa sadece yöneticiler içindir."))
-    app.register_error_handler(404, lambda e: _hata(404, "Sayfa bulunamadı", "Aradığın sayfa yok."))
-    app.register_error_handler(413, lambda e: _hata(413, "Çok büyük", "Gönderdiğin veri çok büyük."))
+    app.register_error_handler(400, lambda e: _hata(400, "Bir sorun oluştu", e.description))
+    app.register_error_handler(403, lambda e: _hata(403, "Erişimin yok", "Bu sayfaya yalnızca yöneticiler erişebilir."))
+    app.register_error_handler(404, lambda e: _hata(404, "Sayfa bulunamadı", "Aradığın sayfayı bulamadık."))
+    app.register_error_handler(413, lambda e: _hata(413, "Veri çok büyük", "Gönderdiğin veri çok büyük. Daha kısa gönderip tekrar dene."))
     app.register_error_handler(500, sunucu_hatasi)

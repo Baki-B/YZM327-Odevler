@@ -14,7 +14,7 @@ def _konum_verisi(db):
 
 def _guvenli_adres(adres):
     """Girişten sonra dönülecek adres. `sonra` uygulama içi yoldur ("/konu/3"); uygulama bir alt yolda çalışıyorsa
-    (GitHub Pages sürümü: /YZM327-Odevler/app) önek eklenir, yoksa tarayıcı sitenin köküne gidip 404 alırdı."""
+    (GitHub Pages: /YZM327-Odevler/app) önek eklenir."""
     return request.script_root + adres if site_ici_yol_mu(adres) else url_for("konular.ana_sayfa")
 
 

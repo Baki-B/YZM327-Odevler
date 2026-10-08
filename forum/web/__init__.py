@@ -29,7 +29,7 @@ def giris_gerekli(f):
             if g.get("api"):
                 return jsonify(hata="Kimlik doğrulaması gerekli."), 401
             flash("Bu işlem için giriş yapmalısın.", "hata")
-            # Girişten sonra yalnızca bir sayfaya (GET) dönülür; POST adresine dönmek 405 verirdi.
+            # Girişten sonra yalnızca GET sayfasına dönülür; POST adresi 405 verir.
             return redirect(url_for("hesap.giris", sonra=request.path if request.method == "GET" else None))
         return f(*args, **kwargs)
     return sarici
@@ -51,7 +51,7 @@ def csrf_token():
 
 
 def sayfa_no():
-    """1 ile 100.000 arası: çok büyük bir sayı veritabanı sorgusunda taşma hatasına (500) yol açıyordu."""
+    """Sayfa numarası 1 ile 100.000 arasında tutulur; çok büyük sayılar sorguda taşmaya (500) yol açar."""
     return min(max(request.args.get("sayfa", 1, type=int), 1), 100_000)
 
 

@@ -70,8 +70,8 @@ def makbuz_dogrula():
         return redirect(url_for("genel.defter_sayfasi"))
     bulunan = defter.makbuz_dogrula(db.defter_klasoru, teklif_id, makbuz, oylama.secim_anahtarlari(db, t))
     if bulunan and not bulunan[2]:
-        flash(f"Bu makbuz, sonradan değiştirdiğin eski oyuna ait (blok #{bulunan[0]['no']}); sayılan oy bu değil. "
-              "Son oyunu verirken aldığın makbuzu kullan.", "hata")
+        flash(f"Bu makbuz, değiştirdiğin eski oyuna ait (blok #{bulunan[0]['no']}). Sayılan oy bu değil; "
+              "son oyunu verirken aldığın makbuzu kullan.", "hata")
     elif bulunan:
         blok, secim, _ = bulunan
         flash(f"Oyun defterde kayıtlı: blok #{blok['no']} ({blok['hash'][:16]}…). Seçimin: "

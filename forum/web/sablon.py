@@ -1,7 +1,7 @@
 """Şablonların kullandığı genel değişkenler, bağlam ve filtreler.
 
-Saf filtreler (tarih, gün, kalan süre, göreli zaman) modül düzeyinde fonksiyonlardır: Flask olmadan test edilebilir.
-Filtreler FILTRELER sözlüğünden döngüyle kaydedilir (Registry)."""
+Saf filtreler (tarih, gün, kalan süre, göreli zaman) modül düzeyinde fonksiyonlardır; Flask olmadan test edilebilir.
+Filtreler FILTRELER sözlüğünden kaydedilir."""
 from flask import g, request
 
 from .. import ayarlar, bildirimler, konular, ontoloji, oylama, sikayetler, uygunluk, yonetim, yonetmelik, zaman

@@ -86,7 +86,7 @@ def kategori_oner():
     f = request.form
     teklif_id = kategoriler.oner(db, g.kullanici, f.get("ad"), f.get("ust_id"), f.get("kavramlar"), f.get("gerekce"))
     db.commit()
-    flash("Kategori önerin oylamaya sunuldu. Bütün üyelere haber verildi.", "basari")
+    flash("Kategori önerin oylamaya sunuldu. Tüm üyelere haber verildi.", "basari")
     return redirect(url_for("oylamalar.teklif", teklif_id=teklif_id))
 
 

@@ -277,7 +277,7 @@ def defter_deneme(ad, islem):
             defter.onar(db.defter_klasoru, ad)
         except ValueError as e:
             raise KuralHatasi(str(e))
-        flash(f"{ad} düğümü çoğunluk zincirinden onarıldı.", "basari")
+        flash(f"{ad} düğümü, çoğunluk zincirindeki kopyayla onarıldı.", "basari")
     return redirect(url_for("yonetim.sistem", _anchor="defter"))
 
 

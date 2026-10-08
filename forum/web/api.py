@@ -17,8 +17,8 @@ bp = Blueprint("api", __name__, url_prefix="/api/v1")
 
 
 def _veri():
-    """İstek gövdesi: JSON nesnesi ya da form. Liste/sayı gövde boş sayılır; sayı ve mantıksal alanlar metne çevrilir
-    (iş katmanı metin bekler: {"baslik": 5} 500 değil, anlaşılır bir doğrulama hatası versin)."""
+    """İstek gövdesi: JSON nesnesi ya da form verisi. Sayı ve mantıksal alanlar metne çevrilir, çünkü iş katmanı
+    metin bekler."""
     veri = request.get_json(silent=True)
     if not isinstance(veri, dict):
         veri = request.form.to_dict()

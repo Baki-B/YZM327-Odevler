@@ -1,13 +1,11 @@
 """Her isteğin önünden ve arkasından geçtiği adımlar.
 
-İstek öncesi adımlar ayrı fonksiyonlardır ve kayıt sırasıyla çalışır; biri yanıt döndürürse sonrakiler çalışmaz.
-Bu, web çatılarındaki ara katman (middleware) zinciridir — GoF Chain of Responsibility'nin Flask'taki karşılığı.
+Adımlar kayıt sırasıyla çalışır; biri yanıt döndürürse sonrakiler çalışmaz (Chain of Responsibility).
   1. kimlik       oturum çerezi ya da (yalnızca /api/ altında) Bearer API anahtarı
   2. aski         askıdaki üyenin yazma isteklerini durdurur
   3. csrf         çerezle gelen POST'larda güvenlik anahtarını doğrular
   4. zamanlayici  süresi dolan tartışmaları ve oylama turlarını işler
   5. yazma_kilidi POST isteklerinde baştan yazma kilidini alır
-Önceden bunların hepsi (ve hata sayfaları, şablon filtreleri...) 150 satırlık tek bir kur() fonksiyonundaydı.
 """
 import hmac
 
@@ -51,7 +49,7 @@ def aski():
     if _statik() or g.kullanici is None or request.method != "POST" or not uygunluk.askida_mi(g.kullanici) \
             or request.endpoint in ("hesap.cikis", "api.giris"):
         return None
-    metin = f"Hesabın {zaman.coz(g.kullanici['askida_bitis']):%d.%m.%Y %H:%M} tarihine kadar askıda; bu işlemi yapamazsın."
+    metin = f"Hesabın {zaman.coz(g.kullanici['askida_bitis']):%d.%m.%Y %H:%M} tarihine kadar askıda olduğu için bu işlemi yapamazsın."
     if g.api:
         return jsonify(hata=metin), 403
     flash(metin, "hata")
@@ -67,7 +65,7 @@ def csrf():
     if not session.get("csrf") or not hmac.compare_digest(gelen, session["csrf"]):
         if g.api:
             return jsonify(hata="Güvenlik anahtarı (CSRF) geçersiz."), 400
-        abort(400, "Güvenlik anahtarı geçersiz; sayfayı yenileyip tekrar dene.")
+        abort(400, "Sayfanın süresi dolmuş olabilir; sayfayı yenileyip tekrar dene.")
     return None
 
 
@@ -81,16 +79,15 @@ def zamanlayici():
 
 
 def yazma_kilidi():
-    # Yazma isteği baştan yazma kilidini alır: "zaten fikrin var mı?" gibi kontrol ile kayıt arasında başka bir istek
-    # araya giremez (eşzamanlı isteklerle kişi başı tek fikir kuralı aşılabiliyordu).
+    # Kilit baştan alınır: "zaten fikrin var mı?" kontrolü ile kayıt arasına başka bir istek giremez.
     if not _statik() and request.method == "POST":
         db_al().execute("BEGIN IMMEDIATE")
     return None
 
 
 def guvenlik_basliklari(yanit):
-    # Tarayıcı sürümünde (GitHub Pages, tarayici/) uygulama aynı sitedeki kabuk sayfasının çerçevesinde açılır; yalnızca
-    # aynı kökenden çerçeveye izin verilir. Sunucu sürümünde hiçbir site çerçeveye alamaz.
+    # Tarayıcı sürümü (GitHub Pages) kabuk sayfasının çerçevesinde açılır; yalnızca aynı kökenden çerçeveye izin verilir.
+    # Sunucu sürümü hiçbir sitenin çerçevesinde açılmaz.
     cerceve = "'self'" if current_app.config.get("TARAYICI") else "'none'"
     yanit.headers.setdefault("X-Content-Type-Options", "nosniff")
     yanit.headers.setdefault("X-Frame-Options", "SAMEORIGIN" if current_app.config.get("TARAYICI") else "DENY")
