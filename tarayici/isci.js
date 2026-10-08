@@ -1,6 +1,6 @@
-// Web Worker: Pyodide'i (WebAssembly Python) ve içindeki Flask uygulamasını çalıştırır. Kabuk sayfası (kabuk.js) service
-// worker'dan gelen istekleri buraya iletir. Python tek iş parçacıklıdır; istekler sırayla işlenir. Ana sayfa donmasın
-// diye Python ayrı bir işçide çalışır.
+// Web Worker: Pyodide ile tarayıcıda çalışan Python'u ve içindeki Flask uygulamasını çalıştırır. Kabuk sayfası (kabuk.js)
+// istekleri buraya iletir. Python tek iş parçacıklıdır; istekler sırayla işlenir. Ana sayfa donmasın diye ayrı bir işçide
+// çalışır.
 "use strict";
 
 const SITE = new URL("./", self.location).href;
@@ -31,7 +31,7 @@ function kaydetPlanla() {
 
 async function baslat() {
   surum = (await (await fetch(SITE + "surum.json", { cache: "no-store" })).json()).surum;
-  durum("Python (WebAssembly) yükleniyor…");
+  durum("Python yükleniyor…");
   importScripts(SITE + "pyodide/pyodide.js");
   py = await loadPyodide({ indexURL: SITE + "pyodide/" });
   durum("Paketler yükleniyor…");

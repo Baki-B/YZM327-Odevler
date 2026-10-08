@@ -2,7 +2,7 @@
 //   * app/ altındaki sayfa ve API istekleri (app/static/ hariç) tarayıcıda çalışan Flask'a gider: istek, açık kabuk
 //     sayfasına (index.html) iletilir, kabuk onu Python işçisine (isci.js) verir, yanıt geri gelir.
 //   * Diğer dosyalar (kabuk, Pyodide, CSS, JS, simgeler) önce ağdan, ağ yoksa önbellekten sunulur: site bir kez açıldıktan
-//     sonra çevrimdışı da çalışır ve telefona uygulama gibi kurulabilir (PWA).
+//     sonra çevrimdışı da çalışır ve telefona uygulama gibi kurulabilir.
 "use strict";
 
 const SURUM = "__SURUM__";                     // derle.py yerleştirir; sürüm değişince eski önbellek silinir

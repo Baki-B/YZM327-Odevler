@@ -62,8 +62,8 @@ async function denetimiBekle(ms) {
 
 async function baslat() {
   if (!("serviceWorker" in navigator) || !window.Worker || !window.WebAssembly) {
-    yaz("Bu tarayıcı Agora'nın tarayıcı sürümünü desteklemiyor (service worker, Web Worker ve WebAssembly gerekir). " +
-      "Güncel Chrome, Edge, Firefox ya da Safari kullanın.", true);
+    yaz("Bu tarayıcı Agora'yı çalıştıramıyor. " +
+      "Güncel Chrome, Edge, Firefox ya da Safari ile tekrar deneyin.", true);
     return;
   }
   // Aynı anda tek bir kabuk çalışır: iki sekme aynı veritabanının iki ayrı kopyasına yazıp birbirini ezmesin.
@@ -75,7 +75,7 @@ async function baslat() {
       });
     });
     if (!kilit) {
-      yaz("Agora başka bir sekmede açık. Verilerin karışmaması için orayı kullanın ya da o sekmeyi kapatıp bu sayfayı yenileyin.", true);
+      yaz("Agora zaten başka bir sekmede açık. Veriler karışmasın diye o sekmeyi kullanın ya da kapatıp bu sayfayı yenileyin.", true);
       return;
     }
   }
@@ -98,7 +98,7 @@ async function baslat() {
 
 document.getElementById("sifirla").addEventListener("click", () => {
   if (!isci) return;
-  if (!confirm("Bu cihazdaki bütün Agora verileri (hesapların, konuların, oylar) silinip demo verisi yeniden yüklenecek. Emin misin?")) return;
+  if (!confirm("Bu cihazdaki bütün Agora verileri (hesaplar, konular, oylar) silinecek ve örnek veriler yeniden yüklenecek. Emin misin?")) return;
   perde.classList.remove("gizli");
   yaz("Veriler siliniyor…");
   isci.postMessage({ tur: "sifirla" });
