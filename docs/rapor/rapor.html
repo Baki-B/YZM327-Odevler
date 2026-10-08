@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Agora — Proje Raporu (YZM327 1. Hafta Ödevi)</title>
+<!-- Kaynak dosya. PDF: node docs/rapor/pdf_uret.mjs  (ya da Chrome'da açıp "PDF olarak kaydet", A4, kenar boşlukları "Varsayılan") -->
+<style>
+  @page { size: A4; margin: 13mm 14mm 14mm 14mm;
+          @bottom-left { content: "Agora · Proje Raporu · Abdülbaki Bayır (24290050)"; font: 7.5pt Inter, sans-serif; color: #8a857c; }
+          @bottom-right { content: counter(page) " / " counter(pages); font: 7.5pt Inter, sans-serif; color: #8a857c; } }
+  @page :first { margin: 0; @bottom-left { content: none; } @bottom-right { content: none; } }
+  :root { --yesil: #4a6642; --koyu: #2a3c25; --tas: #ebe7df; --kart: #f6f4ef; --cizgi: #dfd9ce; --metin: #2c2a27; --soluk: #6d6961; }
+  * { box-sizing: border-box; }
+  html { font: 8.8pt/1.44 Inter, "DejaVu Sans", sans-serif; font-feature-settings: "calt" 0; color: var(--metin); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; }
+  h1, h2, h3 { font-family: "Inter Display", Inter, sans-serif; color: var(--koyu); line-height: 1.2; }
+  h1 { font-size: 17pt; margin: 0 0 1mm; letter-spacing: -.01em; }
+  h2 { font-size: 11pt; margin: 3.6mm 0 1.4mm; padding-bottom: .8mm; border-bottom: 1.2pt solid var(--yesil); break-after: avoid; }
+  h3 { font-size: 9.2pt; margin: 2.6mm 0 1mm; color: var(--yesil); break-after: avoid; }
+  p { margin: 0 0 1.6mm; }
+  ul { margin: 0 0 1.6mm; padding-left: 4.2mm; }
+  li { margin: 0 0 .6mm; }
+  code { font: 7.8pt "DejaVu Sans Mono", monospace; background: var(--tas); padding: 0 1mm; border-radius: 1mm; }
+  a { color: var(--yesil); text-decoration: none; }
+  strong { color: #1f2d1b; }
+  table { width: 100%; border-collapse: collapse; margin: 1mm 0 2.2mm; font-size: 7.9pt; line-height: 1.34; break-inside: avoid; }
+  th { text-align: left; background: var(--yesil); color: #f6f4ef; font-weight: 600; padding: 1.1mm 1.6mm; }
+  td { padding: .9mm 1.6mm; border-bottom: .5pt solid var(--cizgi); vertical-align: top; }
+  tr:nth-child(even) td { background: #faf8f4; }
+  td.s, th.s { text-align: right; white-space: nowrap; }
+  .ust { color: var(--soluk); font-size: 8.4pt; margin-bottom: 2.5mm; }
+  .iki { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .kutu { background: var(--kart); border: .6pt solid var(--cizgi); border-left: 2.2pt solid var(--yesil); border-radius: 1.5mm;
+          padding: 1.8mm 2.6mm; margin: 1.4mm 0 2.2mm; break-inside: avoid; }
+  .kutu p:last-child, .kutu ul:last-child { margin-bottom: 0; }
+  .sekil { margin: 1mm 0 2.4mm; break-inside: avoid; }
+  .sekil figcaption { font-size: 7.3pt; color: var(--soluk); margin-top: .8mm; }
+  .iyi { color: #3a5234; font-weight: 700; }
+  .kotu { color: #8a2d1f; font-weight: 700; }
+  .yeni-sayfa { break-before: page; }
+
+  /* Kapak */
+  .kapak { width: 210mm; height: 297mm; position: relative; background: #f6f4ef; break-after: page; overflow: hidden; }
+  .kapak::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 9mm; background: var(--yesil); }
+  .kapak::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 9mm; background: var(--yesil); }
+  .kapak .orta { position: absolute; left: 0; right: 0; top: 34%; transform: translateY(-50%); text-align: center; }
+  .kapak img { width: 52mm; height: 52mm; border-radius: 12mm; box-shadow: 0 6mm 14mm -6mm rgba(0,0,0,.35); }
+  .kapak .ad { margin-top: 15mm; font: 600 20pt "Inter Display", Inter, sans-serif; color: var(--metin); letter-spacing: .01em; }
+  .kapak .no { margin-top: 3.5mm; font: 500 14pt Inter, sans-serif; color: var(--soluk); letter-spacing: .12em; }
+  .kapak .odev { margin-top: 10mm; display: inline-block; font: 700 15pt "Inter Display", Inter, sans-serif; color: var(--koyu);
+                 letter-spacing: .06em; padding: 3mm 7mm; border-top: 1pt solid var(--yesil); border-bottom: 1pt solid var(--yesil); }
+</style>
+</head>
+<body>
+
+<!-- ============================== KAPAK ============================== -->
+<section class="kapak">
+  <div class="orta">
+    <img src="../../forum/static/ikon.svg" alt="Agora logosu">
+    <div class="ad">Abdülbaki Bayır</div>
+    <div class="no">24290050</div>
+    <div class="odev">YZM327 1. HAFTA ÖDEVİ</div>
+  </div>
+</section>
+
+<!-- ============================== 1–2 ============================== -->
+<h1>Agora — Proje Raporu</h1>
+<div class="ust">Konuların tartışılıp fikirlerin tur tur oylanarak karara bağlandığı forum · Python 3.11+, Flask 3.1, SQLite ·
+  Canlı (kurulumsuz): <a href="https://baki-b.github.io/YZM327-Odevler/">baki-b.github.io/YZM327-Odevler</a> ·
+  Kaynak: <a href="https://github.com/Baki-B/YZM327-Odevler">github.com/Baki-B/YZM327-Odevler</a></div>
+
+<h2>1. Proje ve ödev gereksinimleri</h2>
+<p>Agora'da her üye konu açar. Konu 24 saat tartışılır; bu sürede her katılımcı <strong>bir</strong> fikir yazabilir. Ardından en fazla
+  beş turluk fikir oylaması başlar: her turda eşiğin altında kalan fikirler elenir (%5, %5, %10, %20), %75'i bulan ya da tek başına
+  kalan fikir hemen kabul edilir, beşinci turda en çok oyu alan kazanır. Bir fikrin oranı, <strong>ağırlıklı oy payı ile kişi payının
+  küçüğüdür</strong> (çift çoğunluk); çekimserler paydada sayılır. Mesajlar silinmez; gizleme ve konu kaldırma 3/4 oylamayla olur. Her olay
+  üç düğümlü, kurcalanamaz bir kayıt defterine yazılır; oy veren makbuz koduyla oyunun deftere doğru yazıldığını doğrular.</p>
+<table>
+  <tr><th style="width:34%">Gereksinim</th><th>Karşılığı</th></tr>
+  <tr><td>Konu açma, düzenleme, silme; alt konular</td><td>Konu hemen açılır; sahibi tartışmada düzenler (eski hâli görünür); kaldırma 3/4 oylamayla; alt konu üst konunun kuralını yalnızca daraltır</td></tr>
+  <tr><td>Çoğunluk kararı, konu sonunda uzlaşma</td><td>En fazla 5 tur eleme, ezici üstünlük (%75), "tek kalan", yeter sayı; sonunda tek fikir karar olur, katılmayan itiraz konusu açar</td></tr>
+  <tr><td>Kayıt (ad soyad, adres, doğum tarihi, şifre, takma ad); bilgiler katılım kuralı</td><td>Konum ağacı (il › ilçe) ve yaş kuralı; kuralı sağlamayan <em>gözlemci</em> olur (okur, oy veremez); görünen yalnızca takma ad</td></tr>
+  <tr><td>Herkes eşit, bazıları daha eşit; bilirkişi</td><td>Kurallar herkese aynı; uzmanlık ön şart + kontenjan + alanın oylamasıyla verilir, uzman oyu 10 sayılır ama çift oranla dengelenir</td></tr>
+  <tr><td>Kurallar ontolojiyle ölçülür, yönetmelik denetler</td><td>Yönetmelik maddeleri D1–D7 (hakaret, kişisel veri, kategoriye uygunluk, konum, benzer konu, alt konu, açıklık); eşikler oylamayla değişir</td></tr>
+  <tr><td>Tartışma silinmez; oy devri; azınlık</td><td>Düzenleme geçmişi, toplu gizleme oylaması; genel/kategori/konu düzeyinde tavanlı oy devri; itiraz, korunan maddeler 3/4, gizli oy</td></tr>
+  <tr><td>Yapay zeka üye; kişiler grafta; dağıtık defter</td><td>YZ üye tartışma ve tur özeti yazar (oy vermez); üye ağı, PageRank, Gini; hash zinciri, 3 düğüm, uzlaşma, onarım</td></tr>
+  <tr><td>Uygulama + web sitesi</td><td>Sunucu sürümü, <strong>sunucusuz tarayıcı sürümü (GitHub Pages)</strong>, telefona kurulabilen PWA, Expo Go ve Android (Capacitor) uygulaması, REST API</td></tr>
+  <tr><td>Ders: problem çerçeveleme; SOLID ve GoF</td><td><code>docs/analiz.md</code> (4. bölüm), <code>docs/tasarim.md</code> 8. bölüm (3. bölüm)</td></tr>
+</table>
+
+<h2>2. Mimari ve teknik ayrıntılar</h2>
+<figure class="sekil">
+<svg viewBox="0 0 182 47" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <defs><marker id="o" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="3.2" markerHeight="3.2" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#4a6642"/></marker></defs>
+  <g font-size="2.6" fill="#2c2a27">
+    <rect x="1" y="2" width="40" height="43" rx="2" fill="#f6f4ef" stroke="#dfd9ce" stroke-width=".4"/>
+    <text x="21" y="7" text-anchor="middle" font-weight="700" fill="#2a3c25" font-size="3">İstemciler</text>
+    <text x="4" y="13">Tarayıcı / PWA</text><text x="4" y="18">Expo Go · Android</text><text x="4" y="23">REST API (Bearer)</text>
+    <text x="4" y="31" fill="#6d6961">Tarayıcı sürümünde:</text><text x="4" y="35.5" fill="#6d6961">service worker istekleri</text><text x="4" y="40" fill="#6d6961">Pyodide'deki Flask'a iletir</text>
+    <rect x="50" y="2" width="44" height="43" rx="2" fill="#f6f4ef" stroke="#dfd9ce" stroke-width=".4"/>
+    <text x="72" y="7" text-anchor="middle" font-weight="700" fill="#2a3c25" font-size="3">Sunum (forum/web)</text>
+    <text x="53" y="13">istek.py: kimlik → askı → CSRF</text><text x="53" y="17.5">  → zamanlayıcı → yazma kilidi</text>
+    <text x="53" y="23">Blueprint rotaları, REST API</text><text x="53" y="28">gorunum.py (Facade)</text>
+    <text x="53" y="33">55 Jinja2 şablonu, CSS/JS</text><text x="53" y="38">CSP, güvenlik başlıkları</text>
+    <rect x="103" y="2" width="44" height="43" rx="2" fill="#f6f4ef" stroke="#dfd9ce" stroke-width=".4"/>
+    <text x="125" y="7" text-anchor="middle" font-weight="700" fill="#2a3c25" font-size="3">İş kuralları (forum/)</text>
+    <text x="106" y="13">konular · konu_durumlari</text><text x="106" y="18">oylama · teklif_turleri</text><text x="106" y="23">sonuclar · denetim (D1–D7)</text>
+    <text x="106" y="28">devir · uzmanlik · yonetmelik</text><text x="106" y="33">graf · gundem · yz · ontoloji</text><text x="106" y="38">47 modül, ~8.300 satır</text>
+    <rect x="156" y="2" width="25" height="19" rx="2" fill="#e3ebdf" stroke="#a3bd97" stroke-width=".4"/>
+    <text x="168.5" y="7.5" text-anchor="middle" font-weight="700" fill="#2a3c25" font-size="3">SQLite</text>
+    <text x="168.5" y="12.5" text-anchor="middle">24 tablo, FTS5</text><text x="168.5" y="17" text-anchor="middle">BEGIN IMMEDIATE</text>
+    <rect x="156" y="26" width="25" height="19" rx="2" fill="#e3ebdf" stroke="#a3bd97" stroke-width=".4"/>
+    <text x="168.5" y="31.5" text-anchor="middle" font-weight="700" fill="#2a3c25" font-size="3">Defter</text>
+    <text x="168.5" y="36.5" text-anchor="middle">düğüm A · B · C</text><text x="168.5" y="41" text-anchor="middle">(Repository)</text>
+  </g>
+  <g stroke="#4a6642" stroke-width=".55" fill="none" marker-end="url(#o)">
+    <path d="M41 23.5 H49"/><path d="M94 23.5 H102"/><path d="M147 12 H155"/>
+    <path d="M168.5 21.5 V25.2" stroke-dasharray="1.2 .8"/>
+  </g>
+  <text x="167.2" y="24.6" font-size="2.2" fill="#4a6642" text-anchor="end">Observer</text>
+</svg>
+<figcaption>Şekil 1. Katmanlar. Her katman yalnızca altındakini çağırır. Veritabanı defteri tanımaz; defter "işlem kaydedildi" olayına abone olur (bağımlılığın tersine çevrilmesi).</figcaption>
+</figure>
+<div class="iki">
+<div>
+<h3>Tutarlılık ve eşzamanlılık</h3>
+<ul>
+  <li>Yazan her istek baştan <code>BEGIN IMMEDIATE</code> ile sıraya girer. Oy yalnızca tur hâlâ açıksa yazılır (koşullu INSERT). Kişi başı tek fikir kısmi tekil indeksle korunur (8 iş parçacıklı test).</li>
+  <li>Zamanlayıcı her konuyu ayrı kayıt noktasında (SAVEPOINT) işler: biri hata verirse yalnızca o geri alınır.</li>
+  <li>Yan etkiler (defter bloğu, bildirim) kuyruğa alınır, yalnızca <em>commit</em> başarılıysa gerçekleşir.</li>
+</ul>
+<h3>Dağıtık kayıt defteri</h3>
+<ul>
+  <li>Her blok öncekinin SHA-256 özetini taşır; üç düğümde çoğunluk uzlaşması, bozuk düğümün tespiti ve onarımı.</li>
+  <li>Oy taahhüdü = SHA-256(teklif | seçim | makbuz): seçim deftere açık yazılmaz, makbuz sahibi doğrulayabilir.</li>
+  <li>Doğrulama sonucu düğümün <em>sürümüyle</em> (SQLite değişiklik sayacı, inode, ctime) önbelleğe alınır; kurcalama yine yakalanır.</li>
+</ul>
+</div>
+<div>
+<h3>Güvenlik ve kişisel veri (KVKK)</h3>
+<ul>
+  <li>scrypt şifre özeti, CSRF, CSP, HttpOnly çerez; şifre değişince eski oturum ve API anahtarları düşer.</li>
+  <li>Açık yönlendirme ve SSRF engeli, kayıt/giriş hız sınırları, büyük metinle hizmet reddine karşı sınır.</li>
+  <li>Kişisel veri forumda görünmez, API'de dönmez; deftere yalnızca özet ve taahhüt yazılır. İki kişilik görüş grubu gösterilmez (k-anonimlik ≥ 3).</li>
+</ul>
+<h3>Yapay zeka üye: neden kural tabanlı?</h3>
+<p>Özet, oy vermeden önce okunur. Bir dil modelinin uydurabileceği tek bir sayı (halüsinasyon) kararı etkiler. Mesajları dış servise göndermek
+  kişisel veriyi dışarı çıkarır; her çağrı ücretli ve yavaştır. Bu yüzden özetteki her sayı veritabanından gelir. Oranlar yuvarlanmaz,
+  <em>kesilir</em>: %74,9 asla "%75" yazılmaz. İleride dil modeli eklenirse yalnızca insan onaylı taslak yazar (Bölüm 4).</p>
+</div>
+</div>
+
+<!-- ============================== 3 ============================== -->
+<h2>3. Tasarım ilkeleri (SOLID) ve tasarım desenleri</h2>
+<p>Desenler yalnızca kodda somut bir sorunu çözdükleri yerde kullanıldı ("desen amaç değil araçtır"; YAGNI/KISS). Her birinin
+  davranışı testle korunur; sınıf diyagramları <code>docs/tasarim.md</code> 8. bölümdedir.</p>
+<table>
+  <tr><th style="width:15%">İlke</th><th style="width:43%">Önce (ihlal)</th><th>Şimdi</th></tr>
+  <tr><td><strong>S</strong> Tek sorumluluk</td><td>150 satırlık <code>web.kur()</code> kimlik, CSRF, zamanlayıcı, hata sayfaları ve filtreleri birlikte yapıyordu; denetim yönetmelik modülüne gömülüydü</td><td><code>istek.py</code>, <code>hata_sayfalari.py</code>, <code>sablon.py</code>, <code>denetim.py</code>, <code>gorunum.py</code>, <code>metin.py</code></td></tr>
+  <tr><td><strong>O</strong> Açık/kapalı</td><td>Yeni oylama türü 5 dosyada <code>if tip == …</code> dalı demekti</td><td>Yeni tür = yeni sınıf + <code>@kaydet</code>; yeni denetim maddesi = yeni halka; yeni kanal/depo = yeni gerçekleme</td></tr>
+  <tr><td><strong>L</strong> Liskov</td><td>Kapalı bildirim kanalı abone kabul edip her gönderimde hata veriyordu</td><td>Bütün türler şablon yöntemde aynı kullanılır; SQLite ve bellek depoları aynı sonucu verir (testli)</td></tr>
+  <tr><td><strong>I</strong> Arayüz ayrımı</td><td>—</td><td>Küçük arayüzler: <code>AnlikKanal</code> 3, <code>DenetimKurali</code> 1, <code>DugumDeposu</code> 5 soyut yöntem</td></tr>
+  <tr><td><strong>D</strong> Bağımlılığın tersine çevrilmesi</td><td>Veritabanı (altyapı) defteri (üst katman) içe aktarıyordu; şifre yöntemi ve saat sabitti</td><td>Commit aboneliği (Observer); şifre yöntemi, saat, kanallar ve depolar dışarıdan verilir</td></tr>
+</table>
+<table>
+  <tr><th style="width:19%">Desen (slayt)</th><th style="width:38%">Çözdüğü sorun</th><th>Agora'daki karşılığı</th></tr>
+  <tr><td><strong>State</strong> (TD-43)</td><td><code>durum == …</code> kontrolleri dağınıktı; unutulan biri kaldırılmış konunun geçmişini okunur bırakıyordu</td><td><code>konu_durumlari.py</code>: 5 durum sınıfı, izinler ve geçiş tablosu</td></tr>
+  <tr><td><strong>Strategy + Template Method + Registry</strong> (TD-36, 41, 49)</td><td>Altı oylama türünün sonuç kuralları <code>if/elif</code> zincirindeydi</td><td><code>teklif_turleri.py</code> (strateji, <code>@kaydet</code>); <code>oylama.sonuclandir</code>: sayım → durum → tamamla → bildir → uygula</td></tr>
+  <tr><td><strong>Chain of Responsibility</strong> (TD-44)</td><td>D1–D7 tek 77 satırlık fonksiyondaydı, mesaj denetimi bunları yeniden yazıyordu</td><td><code>denetim.py</code>: her madde bir halka; web'de istek öncesi zincir</td></tr>
+  <tr><td><strong>Adapter</strong> (TD-24)</td><td>Web Push ve Firebase farklı arayüzler, çağıran iki dalı da biliyordu</td><td><code>anlik.py</code>: <code>AnlikKanal</code> ← <code>WebPushKanali</code>, <code>FcmKanali</code> (testte sahte kanal)</td></tr>
+  <tr><td><strong>Memento</strong> (TD-47)</td><td>Bir konunun hatası zamanlayıcının bütün işini geri alıyordu; geçmiş tur, değişen parametreyle yeniden hesaplanıyordu</td><td><code>kayit_noktasi()</code> + kuyruk hatırası; <code>TurKarari</code> anlık görüntüsü</td></tr>
+  <tr><td><strong>Observer</strong> (TD-38)</td><td>Altyapı katmanı üst katmanı çağırıyordu</td><td><code>veritabani.commit_aboneligi</code>; defter abone</td></tr>
+  <tr><td><strong>Repository</strong> (TD-51)</td><td>Düğüm dosyası erişimi uzlaşma mantığına gömülüydü; test için disk gerekiyordu</td><td><code>DugumDeposu</code> ← <code>SqliteDugumDeposu</code>, <code>BellekDugumDeposu</code> (sahte depo)</td></tr>
+  <tr><td><strong>Facade</strong> (TD-28)</td><td>Konu sayfası rotası 9 alt sistemi çağırıyor, iş kuralı içeriyordu</td><td><code>gorunum.konu_sayfasi()</code>; kural saf işlev</td></tr>
+  <tr><td><strong>Dependency Injection</strong> (TD-52), Factory, Decorator, Command</td><td>Testler gerçek scrypt yüzünden ~60 sn sürüyordu</td><td>Şifre yöntemi, saat, kanal, depo enjekte; <code>tur(kod)</code>, <code>zincir_kur()</code>; <code>@giris_gerekli</code>; commit kuyrukları</td></tr>
+</table>
+<div class="iki">
+<div class="kutu"><p><strong>Giderilen anti-desenler (TD-57):</strong> God function (<code>web.kur</code>, <code>yonetmelik.denetle</code>),
+  uzun durum zincirleri, kopya kod (güvenli yönlendirme kontrolünün beş kopyasından biri açık yönlendirme açığı içeriyordu),
+  gizli global durum, doğrulanmamış yapılandırma (ör. <code>UZMAN_AGIRLIK=0</code> oylanabiliyordu).</p></div>
+<div class="kutu"><p><strong>Bilerek kullanılmayanlar:</strong> Singleton (Python modülü zaten tekildir; gizli global durum anti-deseni),
+  Builder, Abstract Factory, Visitor, Mediator (çözecekleri bir sorun yok). Python'un dinamik yapısı Iterator, Command, Observer ve
+  Factory'yi fonksiyon, kapanış ve sözlüklerle hafifletir.</p></div>
+</div>
+<p><strong>Ödev slaytının (TD-59) maddeleri:</strong> yapılandırmadan seçim (Registry + Factory) → oylama türleri; ön işleme hattı (Pipeline) →
+  sayım → saf <code>tur_karari</code> → <code>tur_uygula</code>; veri kaynağı değiştirilebilir (Repository) → defter düğümleri; olay yayını (Observer) →
+  commit aboneliği; tek giriş noktası (Facade) → konu sayfası; sahte depoyla birim testi → <code>BellekDugumDeposu</code>, <code>SahteKanal</code>.</p>
+
+<!-- ============================== 4 ============================== -->
+<h2>4. Problem çerçeveleme analizi (Hafta 2)</h2>
+<p>"Bir forum yapın" isteğinin arkasındaki altı dertten üçü YZ ile ilgili değil: söz eşitsizliği, süresiz tartışma ve sayıma güvensizlik.
+  Bunlar süreç ve kriptografi ile çözüldü. <strong>Kararı model değil, insanlar verir</strong>; YZ yalnızca kararı hazırlayan üç destek işinde
+  aday. Her bileşen H2-9'daki karar ağacından geçirildi:</p>
+<table>
+  <tr><th style="width:22%">Bileşen</th><th style="width:22%">Görev türü</th><th>"YZ gerekli mi?" sonucu</th></tr>
+  <tr><td>Sayım ve eleme</td><td>ML değil</td><td><strong>Kural yazın:</strong> kural yönetmelikte; açıklama yasal/etik zorunluluk ("harf notu" örneği, H2-12)</td></tr>
+  <tr><td>D1 hakaret, D2 kişisel veri</td><td>İkili sınıflandırma</td><td>Etiketli veri yok → <strong>önce veri toplayın;</strong> bugün kural. Gizleme oylamaları ve şikayetler etiket olarak birikir (insan döngüde)</td></tr>
+  <tr><td>D3 kategori önerisi</td><td>7 sınıflı sınıflandırma</td><td>Hata ucuz (yalnızca uyarı) → <strong>kural (ontoloji)</strong></td></tr>
+  <tr><td>YZ özeti</td><td>Üretim</td><td>Sayılar: <strong>kural</strong>. İçerik: yalnızca <strong>insan onaylı</strong> dil modeli (yapılandırılmış çıktı, sayı sadakati denetimi)</td></tr>
+</table>
+<div class="iki">
+<div>
+<h3>Kanvas (H2-48) özeti</h3>
+<ul>
+  <li><strong>İş hedefi:</strong> topluluk kararlarının adil, şeffaf ve en geç 7 günde alınması.</li>
+  <li><strong>Kısıtlar:</strong> sunucu bütçesi ve GPU yok, dış API yok, sunucuda p95 &lt; 200 ms, KVKK, gizli oy, açıklanabilirlik.</li>
+  <li><strong>Paydaşlar:</strong> katılımcı, azınlık, gözlemci, uzman, yönetici (yalnızca yönetir), veri sahibi, değerlendirici.</li>
+  <li><strong>Ön-otopsi:</strong> oy devriyle güç toplama, sahte hesap, katılımsızlık, yanlış engel, defterin büyümesi (bulundu, düzeltildi), uzun metinle hizmet reddi (bulundu, düzeltildi).</li>
+</ul>
+</div>
+<div>
+<h3>Metrikler (H2-25, Goodhart H2-35)</h3>
+<ul>
+  <li><strong>İş:</strong> karara bağlanma oranı, itiraz edilen kararların oranı.</li>
+  <li><strong>Ürün:</strong> karara kadar medyan süre, katılım (katılan / hak sahibi), yeter sayıya ulaşamayan tur oranı, fikir başına yanıt.</li>
+  <li><strong>Koruyucu:</strong> oy gücü Gini katsayısı, defter tutarsızlığı = 0, YZ sayı sadakati = %100, p95 gecikme. Trend puanında kişi başı en çok 3 mesaj sayılır (Goodhart).</li>
+  <li>Hepsi <code>olcum/urun_metrikleri.py</code> ile ölçülür.</li>
+</ul>
+</div>
+</div>
+<h3>Temel çizgi ve ölçüm (H2-37…56)</h3>
+<p>Kurallar "aptal" temel çizgilerle aynı elle etiketlenmiş örneklerde ölçüldü. Hata analizinden dil kuralına dayanan düzeltmeler çıktı
+  (Türkçe ünsüz yumuşaması "ahmak → ahmağın", IBAN, ana alan düzeyinde puanlama). Kurallar dondurulduktan sonra yazılıp
+  <strong>ölçülmeden önce commit edilen</strong> son küme, önceki sonuçların iyimser olduğunu gösterdi:</p>
+<table>
+  <tr><th>Madde · öncelikli metrik</th><th class="s">Çoğunluk sınıfı</th><th class="s">Kural · test kümesi</th><th class="s">Kural · görülmemiş son küme</th><th>Yayın ölçütü</th></tr>
+  <tr><td>D1 hakaret · kesinlik / F1</td><td class="s">0 / 0</td><td class="s">0,83 / 0,83</td><td class="s">0,71 / 0,71</td><td class="kotu">sağlanmadı</td></tr>
+  <tr><td>D2 kişisel veri · duyarlılık (kesinlik)</td><td class="s">0</td><td class="s">0,80 (0,80)</td><td class="s">0,83 (1,00)</td><td class="iyi">sağlandı</td></tr>
+  <tr><td>D3 kategori · makro F1 (doğruluk)</td><td class="s">0,04 (0,14)</td><td class="s">0,87 (0,86)</td><td class="s">0,49 (0,50)</td><td class="kotu">sağlanmadı</td></tr>
+</table>
+<p><strong>Karar.</strong> Ölçütler önceden yazılmıştı (H2-43). D3 yalnızca uyarı verdiği için yayını durdurmaz. D1 engellediği ve yanlış
+  engel oranı %29 olduğu için topluluğa yönetmelik oylamasıyla "Uyarır"a çekilmesi önerilir; bu bir iş kararıdır (H2-29). Her ikisinde
+  de sonraki adım veri toplamaktır: basit bir model, aynı son kümede kuralı en az +0,10 F1 farkla geçmedikçe kuralın yerine geçmez.</p>
+
+<!-- ============================== 5–7 ============================== -->
+<h2>5. Kalite güvencesi ve ölçülen başarım</h2>
+<div class="iki">
+<div>
+<ul>
+  <li><strong>184 otomatik test</strong> (~12 sn): <code>python -m unittest discover testler</code>, <code>pytest</code> ya da <code>uv run pytest</code>. GitHub Actions her gönderimde çalıştırır.</li>
+  <li><strong>Hata önce test:</strong> bulunan her hata için önce onu yeniden üreten bir test yazıldı, sonra düzeltildi.</li>
+  <li><strong>Bağımsız inceleme:</strong> ilk turda her ilke için ayrı bir YZ inceleme ajanı (10 ajan), bulgular tek tek doğrulandı: 30 gerçek hata. İkinci turda 3 ajan; düzeltmeler: kurcalamanın önbellekte gizlenmesi, çok süreçli yazmada zincirin bölünmesi, uzun metinle hizmet reddi, 12 belge–kod tutarsızlığı.</li>
+  <li>Tarayıcı sürümü Chromium'da uçtan uca sınandı: giriş, mesaj, oy ve makbuz, yenileme sonrası kalıcılık, çevrimdışı açılış.</li>
+</ul>
+</div>
+<div>
+<table>
+  <tr><th>Sunucu tarafı gecikme (ms)</th><th class="s">p95 önce</th><th class="s">p95 şimdi</th></tr>
+  <tr><td>Oy verme, demo verisi</td><td class="s">18,6</td><td class="s">10,1</td></tr>
+  <tr><td>Oy verme, defterde +50.000 blok</td><td class="s">645,2</td><td class="s">9,5</td></tr>
+  <tr><td>Kayıt defteri sayfası, +50.000 blok</td><td class="s">1.145,5</td><td class="s">11,7</td></tr>
+  <tr><td>Konu akışı, 1.019 konu</td><td class="s">≈176*</td><td class="s">51,5</td></tr>
+</table>
+<p style="font-size:7.3pt;color:#6d6961">Hedef p95 &lt; 200 ms. "Önce": her yazmada üç zincirin baştan doğrulanması (O(n)). Düzeltme: düğüm sürümüne bağlı doğrulama önbelleği.
+  *En kötü değer, 10 istek. Komut: <code>python olcum/gecikme_olcumu.py</code>.</p>
+</div>
+</div>
+
+<h2>6. Dağıtım: her an açılabilen sürüm ve mobil</h2>
+<figure class="sekil">
+<svg viewBox="0 0 182 30" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <defs><marker id="o2" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="3.2" markerHeight="3.2" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#4a6642"/></marker></defs>
+  <g font-size="2.5" fill="#2c2a27">
+    <rect x="1" y="1" width="34" height="28" rx="2" fill="#e3ebdf" stroke="#a3bd97" stroke-width=".4"/>
+    <text x="18" y="6" text-anchor="middle" font-weight="700" fill="#2a3c25" font-size="2.9">GitHub Pages</text>
+    <text x="4" y="11.5">index.html, sw.js</text><text x="4" y="16">pyodide/ (WebAssembly)</text><text x="4" y="20.5">forum.zip, tekerlekler.zip</text>
+    <text x="4" y="25" fill="#6d6961">yalnızca statik dosya</text>
+    <rect x="45" y="1" width="136" height="28" rx="2" fill="#f6f4ef" stroke="#dfd9ce" stroke-width=".4"/>
+    <text x="113" y="5.6" text-anchor="middle" font-weight="700" fill="#2a3c25" font-size="2.9">Ziyaretçinin tarayıcısı</text>
+    <rect x="49" y="9" width="27" height="16" rx="1.5" fill="#fff" stroke="#dfd9ce" stroke-width=".4"/>
+    <text x="62.5" y="14.5" text-anchor="middle" font-weight="600">Çerçeve</text><text x="62.5" y="19" text-anchor="middle">app/konu/8</text>
+    <rect x="84" y="9" width="27" height="16" rx="1.5" fill="#fff" stroke="#dfd9ce" stroke-width=".4"/>
+    <text x="97.5" y="14.5" text-anchor="middle" font-weight="600">Service worker</text><text x="97.5" y="19" text-anchor="middle">isteği yakalar</text>
+    <rect x="119" y="9" width="30" height="16" rx="1.5" fill="#fff" stroke="#dfd9ce" stroke-width=".4"/>
+    <text x="134" y="14.5" text-anchor="middle" font-weight="600">Web Worker</text><text x="134" y="19" text-anchor="middle">Pyodide + Flask</text>
+    <rect x="156" y="9" width="22" height="16" rx="1.5" fill="#e3ebdf" stroke="#a3bd97" stroke-width=".4"/>
+    <text x="167" y="14.5" text-anchor="middle" font-weight="600">IndexedDB</text><text x="167" y="19" text-anchor="middle">forum.db, A·B·C</text>
+  </g>
+  <g stroke="#4a6642" stroke-width=".55" fill="none" marker-end="url(#o2)">
+    <path d="M35 15 H44"/><path d="M76 15 H83"/><path d="M111 15 H118"/><path d="M149 15 H155"/>
+  </g>
+</svg>
+<figcaption>Şekil 2. Tarayıcı sürümü: sunucu yoktur. Service worker sayfa isteklerini (kabuk sayfası üzerinden) Python işçisine iletir; yanıt sunucudan gelmiş gibi döner.</figcaption>
+</figure>
+<ul>
+  <li><strong>Sunucu sürümü:</strong> <code>python calistir.py</code> (Windows'ta <code>baslat.bat</code>); demo verisi ve sunum kipi (<code>--demo</code>) ile.</li>
+  <li><strong>Tarayıcı sürümü (GitHub Pages):</strong> GitHub Pages Python çalıştıramaz. Bu yüzden <em>aynı kod</em> ziyaretçinin tarayıcısında, WebAssembly
+    üzerindeki Python'da (Pyodide) bir Web Worker içinde çalışır. Service worker, çerçevedeki sayfanın her isteğini yakalayıp Flask'a iletir;
+    veritabanı ve defter IndexedDB'de kalıcıdır. İlk açılış ~15 MB, ~6,5 sn; sonra önbellekten ve çevrimdışı açılır. Pyodide siteyle birlikte
+    sunulur, derleme betiği her indirmenin SHA-256 özetini doğrular. Her ziyaretçinin kendi demo kopyası olur; "Sıfırla" baştan yükler.</li>
+  <li><strong>Mobil:</strong> aynı adres telefonda <em>Ana ekrana ekle</em> ile tam ekran, çevrimdışı çalışan bir uygulama (PWA) olur (Android ve iPhone).
+    Ayrıca Expo Go uygulaması (sunucuya ya da sunucusuz demoya bağlanır) ve Capacitor ile Android APK.</li>
+</ul>
+
+<h2>7. Sınırlar, sonraki adımlar ve YZ kullanım beyanı</h2>
+<p><strong>Sınırlar:</strong> D1 ve D3 kural tabanlı temel çizgidir, son kümede yayın ölçütünü sağlamaz (Bölüm 4). Kimlik doğrulama yoktur
+  (sahte hesap riskine karşı yalnızca hız sınırı var). Veritabanı yedeği şifrelenmez. SQLite tek yazar olduğu için saniyede ~100 yazmayla sınırlıdır.
+  Tarayıcı sürümünde veriler kişiseldir; ortak bir forum değil, kişisel bir demodur. <strong>Sonraki adım:</strong> toplanan gizleme/şikayet
+  etiketleriyle basit bir sınıflandırıcıyı aynı son kümede kurala karşı ölçmek.</p>
+<div class="kutu"><p><strong>YZ kullanım beyanı.</strong> Projenin yazılım mühendisliği revizyonunda bir YZ kodlama asistanı (Claude Code)
+  kullanıldı: SOLID/GoF incelemesi, hata düzeltmeleri, desenlerin uygulanması, ölçüm betikleri, tarayıcı sürümü ve belge taslakları.
+  Her değişiklik otomatik testlerle doğrulandı; belgelerdeki her sayı <code>olcum/</code> betikleriyle ölçüldü.</p></div>
+<p style="font-size:7.4pt;color:#6d6961"><strong>Kaynaklar:</strong> Ders slaytları: S01 YZ Mühendisliğine Giriş, S02 Temel Modelleri Anlamak, Hafta 2 Problem
+  Çerçeveleme (H2), Yazılım Tasarım Desenleri (TD); Huyen, <em>Designing Machine Learning Systems</em> (2022); Gamma vd., <em>Design Patterns</em> (1994).
+  Ayrıntılı belgeler: <code>docs/analiz.md</code>, <code>docs/tasarim.md</code>, <code>docs/rehber.md</code>.</p>
+
+</body>
+</html>

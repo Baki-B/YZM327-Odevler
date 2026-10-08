@@ -12,6 +12,7 @@ Yazılım Mühendisliğine Giriş dersi ödevi.
 
 | Belge | İçinde |
 |---|---|
+| [docs/rapor/Agora_Proje_Raporu.pdf](docs/rapor/Agora_Proje_Raporu.pdf) | **Proje raporu (PDF, kapak + 4 sayfa):** teknik ayrıntılar, SOLID ve GoF desenleri, problem çerçeveleme, ölçümler, dağıtım. Kaynağı `docs/rapor/rapor.html` |
 | [docs/analiz.md](docs/analiz.md) | **Problem çerçeveleme ve gereksinim analizi:** YZ gerekli mi?, tek sayfalık kanvas, iş/ürün/koruyucu metrikler, ölçülmüş temel çizgi ve hata analizi, kısıtlar, paydaşlar, ön-otopsi, ölçülmüş gecikme ve ölçeklenme |
 | [docs/tasarim.md](docs/tasarim.md) | UML diyagramları; **SOLID ilkeleri ve tasarım desenlerinin** (State, Strategy, Template Method, Registry, Chain of Responsibility, Adapter, Memento, Observer, Repository, Facade…) dosya dosya karşılığı ve sınıf diyagramları |
 | [docs/rehber.md](docs/rehber.md) | Uygulamanın bütün ayrıntıları ve kullanılan mimariler, sade bir dille |
