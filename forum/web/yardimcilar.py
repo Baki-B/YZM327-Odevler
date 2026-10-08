@@ -13,8 +13,9 @@ _BAHSETME = re.compile(r"(?<![\w/])@([A-Za-z0-9_.çğıöşüÇĞİÖŞÜ]{3,30}
 _KALIN = re.compile(r"\*\*(.+?)\*\*")
 
 
-def bicimle(metin):
-    """Önce HTML kaçışı, sonra güvenli biçimler: bağlantı, @bahsetme, **kalın**. Satır sonları CSS ile korunur."""
+def bicimle(metin, kok=""):
+    """Önce HTML kaçışı, sonra güvenli biçimler: bağlantı, @bahsetme, **kalın**. Satır sonları CSS ile korunur.
+    `kok`, uygulama bir alt yolda çalışıyorsa (GitHub Pages) bahsetme bağlantılarının önüne eklenir."""
     if not metin:
         return ""
     e = str(escape(metin))
@@ -23,7 +24,7 @@ def bicimle(metin):
         if i % 2:   # URL
             parcalar[i] = f'<a href="{p}" rel="nofollow noopener noreferrer" target="_blank">{p}</a>'
         else:
-            p = _BAHSETME.sub(r'<a class="bahsetme" href="/kullanici/\1">@\1</a>', p)
+            p = _BAHSETME.sub(rf'<a class="bahsetme" href="{kok}/kullanici/\1">@\1</a>', p)
             parcalar[i] = _KALIN.sub(r"<strong>\1</strong>", p)
     return Markup("".join(parcalar))
 

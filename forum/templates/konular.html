@@ -21,7 +21,7 @@
   {% endif %}
   {% set y = (yan.yakinda|rejectattr('baglanti', 'equalto', '/konu/' ~ t.id)|first) if t else (yan.yakinda|first) %}
   {% if y %}
-  <a class="vitrin-karti" href="{{ y.baglanti }}">
+  <a class="vitrin-karti" href="{{ y.baglanti|site_yolu }}">
     <span class="vk-ust">{{ ikon('kum_saati') }} {{ 'Oylama bitiyor' if y.tur == 'OYLAMA' else 'Oylamaya geçiyor' }}</span>
     <strong>{{ y.baslik }}</strong>
     <span class="vk-alt">{{ y.bitis|kalan }}</span>

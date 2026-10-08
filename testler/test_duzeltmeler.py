@@ -1,6 +1,7 @@
 """Hata düzeltmelerinin geri dönmesini engelleyen regresyon testleri."""
 import logging
 import os
+import re
 import sys
 import tempfile
 import threading
@@ -1090,6 +1091,53 @@ class AltYoldaCalisma(WebOrtam):
             from forum.web import yonetim_sayfalari
             self.assertEqual(yonetim_sayfalari._geri("/x").headers["Location"],
                              "/YZM327-Odevler/app/yonetim/konular?durum=OYLAMA")
+
+    def test_mesajdaki_bahsetme_onek_tasir(self):
+        with self.app.test_request_context("/konu/1", base_url=self.KOK):
+            html = self.app.jinja_env.filters["bicimle"]("Katılıyorum @ayse")
+        self.assertIn('href="/YZM327-Odevler/app/kullanici/ayse"', html)
+
+
+class AltYoldaBaglantilar(unittest.TestCase):
+    """Alt yolda çalışırken sayfalardaki bütün site içi bağlantılar (mesajdaki @bahsetme, arama sonucu, vitrin, yakında
+    bitenler dahil) öneki taşımalı. Demo verisiyle siteyi ziyaretçi, üye ve yönetici olarak gezer."""
+    ONEK = "/YZM327-Odevler/app"
+    ADRES = re.compile(r'(?:href|action|src)="(/[^"]*)"')
+
+    def test_baglantilar_onek_tasir(self):
+        from collections import deque
+        from forum import create_app, ornek_veri, veritabani
+        eski, guvenlik.SIFRE_YONTEMI = guvenlik.SIFRE_YONTEMI, "pbkdf2:sha256:1"
+        self.addCleanup(setattr, guvenlik, "SIFRE_YONTEMI", eski)
+        with tempfile.TemporaryDirectory() as klasor:
+            yol = os.path.join(klasor, "t.db")
+            app = create_app({"VERITABANI": yol, "TESTING": True, "SECRET_KEY": "x", "DEMO": True})
+            ornek_veri.gerekirse_yukle(yol)
+            db = veritabani.baglan(yol)
+            kisiler = [None] + [kullanicilar.takma_ad_ile(db, ad) for ad in ("ayse", "yonetici")]
+            db.close()
+            hatali = set()
+            for kisi in kisiler:
+                c = app.test_client()
+                if kisi:
+                    with c.session_transaction() as oturum:
+                        oturum["kullanici_id"], oturum["surum"], oturum["csrf"] = kisi["id"], kisi["oturum_surumu"], "x"
+                gorulen, kuyruk = set(), deque(["/"])
+                while kuyruk and len(gorulen) < 150:
+                    a = kuyruk.popleft()
+                    if a in gorulen or a.startswith(("/static", "/cikis")) or "indir" in a or "yedek" in a:
+                        continue
+                    gorulen.add(a)
+                    r = c.get(a, base_url="http://localhost" + self.ONEK)
+                    if r.status_code != 200 or "html" not in (r.content_type or ""):
+                        continue
+                    for h in self.ADRES.findall(r.get_data(as_text=True)):
+                        h = h.replace("&amp;", "&")
+                        if not h.startswith(self.ONEK + "/") and h != self.ONEK:
+                            hatali.add((a, h))
+                        elif h.startswith(self.ONEK + "/"):
+                            kuyruk.append(h[len(self.ONEK):])
+            self.assertEqual(sorted(hatali, key=lambda x: x[1])[:10], [])
 
 
 class YonetmelikMetni(Ortam):
