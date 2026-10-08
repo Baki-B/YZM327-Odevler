@@ -746,7 +746,7 @@ Renkler CSS'te doğrudan yazılmaz; `:root` içinde değişken olarak tanımlan�
 - **Zaman enjeksiyonu:** Kodun tamamı saati `zaman.simdi()` üzerinden okur. Testler bu fonksiyonu değiştirip zamanı ileri sarar ("48 saat geçti") ve süre kurallarını saniyeler içinde dener.
 - Web testleri Flask'ın test istemcisiyle gerçek istekler atar (giriş, CSRF, yetki, sayfalar).
 - Eleme kuralları saf fonksiyon olduğu için (25.8) sınır değerleri (%4,9 – %5 – %75) doğrudan denenir.
-- **Sahte nesneler:** kayıt defteri testleri disk yerine bellekte çalışan sahte depoyla (`BellekDugumDeposu`), anlık bildirim testleri gerçek servis yerine sahte kanalla (`SahteKanal`) çalışır. Testlerde şifre özeti hızlı bir yöntemle yapılır (`guvenlik.SIFRE_YONTEMI`); 201 test yaklaşık 12 saniye sürer.
+- **Sahte nesneler:** kayıt defteri testleri disk yerine bellekte çalışan sahte depoyla (`BellekDugumDeposu`), anlık bildirim testleri gerçek servis yerine sahte kanalla (`SahteKanal`) çalışır. Testlerde şifre özeti hızlı bir yöntemle yapılır (`guvenlik.SIFRE_YONTEMI`); 204 test yaklaşık 12 saniye sürer.
 - **Hata önce test:** Bulunan hatalar için önce hatayı yeniden üreten bir test yazılır, sonra düzeltilir (`testler/test_duzeltmeler.py`). Testlerin düzeltmeden önceki kodda kırmızı olduğu git geçmişiyle denetlendi; ayrıntı ve iki istisna README'deki YZ kullanım beyanında.
 - **Ölçüm testleri:** denetim kurallarının etiketli örneklerdeki başarımı ve temel çizgileri geçtiği her çalıştırmada denetlenir (`testler/test_olcum.py`).
 
@@ -808,7 +808,7 @@ Katmanların ve diğer mimari kararların açıklaması 25. bölümde.
 | `web/` | Sayfa rotaları ve API; `istek.py` (istek öncesi zincir: kimlik, askı, CSRF, zamanlayıcı, yazma kilidi), `hata_sayfalari.py`, `sablon.py` (şablon filtreleri) |
 | `templates/` | Sayfalar (`panel/` = Panelim, `yonetim/` = yönetim paneli) |
 | `static/` | CSS, JS, simgeler, service worker |
-| `testler/` | 201 otomatik test |
+| `testler/` | 204 otomatik test |
 | `olcum/` | Ölçüm betikleri ve etiketli örnekler ([analiz.md](analiz.md)) |
 
 **Tek teklif mekanizması:** Bütün oylamalar (fikir turları, gizleme, kaldırma, uzmanlık, yönetmelik, yeni kategori) aynı "teklif" yapısından geçer; sayım ve eşik kuralları tek yerde yazılıdır. Oylama türü değişince yalnızca "bitince ne olacak" kısmı değişir.

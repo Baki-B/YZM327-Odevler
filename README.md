@@ -31,7 +31,7 @@ Ya da klasördeki **`baslat.bat`** dosyasına çift tıkla. Tarayıcı **http://
 | `python calistir.py --yonetici Baki` | Bir üyeyi yönetici yapar (ilk yönetici için; sonrası yönetim panelinden) |
 | `python calistir.py --demo` | Sunum kipi: yönetim panelinde "Süreyi ilerlet" düğmesi açılır (24/48 saat beklememek için) |
 | `python calistir.py --demo-verisiz` | Boş veritabanına demo verisini (ve şifresi herkesçe bilinen demo hesaplarını) yüklemez |
-| `python -m unittest discover testler` | 201 otomatik test (~12 sn) |
+| `python -m unittest discover testler` | 204 otomatik test (~12 sn) |
 | `python -m pytest` ya da `uv run pytest` | Aynı testler pytest ile (ayarlar `pyproject.toml`'da) |
 | `python olcum/denetim_olcumu.py` | Denetim kurallarının kesinlik/duyarlılık ölçümü (temel çizgilerle karşılaştırmalı; geliştirme, test ve görülmemiş son küme) |
 | `python olcum/gecikme_olcumu.py` | Sayfaların p50/p95 yanıt süresi (`--defter-blok 50000` ile büyük defterde) |
@@ -192,7 +192,7 @@ olcum/               ölçüm betikleri ve etiketli örnekler (gelistirme.csv, t
 laboratuvar/         S02-50 mini laboratuvarı (4 görev; sonuçlar laboratuvar/README.md)
 mobil-expo/          Expo Go uygulaması (Expo SDK 57, WebView)
 mobil/               Android uygulaması (Capacitor): capacitor.config.json, android/ projesi, BENIOKU.md
-testler/             201 test: iş kuralları, web, hata düzeltmeleri, desenler, ölçüm
+testler/             204 test: iş kuralları, web, hata düzeltmeleri, desenler, ölçüm
 docs/                analiz.md (problem çerçeveleme), tasarim.md (UML + desenler), rehber.md (ayrıntılar)
 ```
 

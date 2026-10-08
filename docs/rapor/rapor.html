@@ -149,7 +149,7 @@
 <h3>Güvenlik ve kişisel veri (KVKK)</h3>
 <ul>
   <li>scrypt şifre özeti, CSRF, CSP, HttpOnly çerez; şifre değişince eski oturum ve API anahtarları düşer.</li>
-  <li>Açık yönlendirme ve SSRF engeli, kayıt/giriş hız sınırları, büyük metne boyut sınırı.</li>
+  <li>Açık yönlendirme ve SSRF engeli, kayıt/giriş hız sınırları, büyük metne boyut sınırı. Yönetim paneli üye arayüzünden ayrıdır: kendi girişi ve üye oturumundan bağımsız oturumu vardır.</li>
   <li>Kişisel veri forumda görünmez, API'de dönmez; deftere yalnızca özet ve taahhüt yazılır. İki kişilik görüş grubu gösterilmez (k-anonimlik ≥ 3).</li>
 </ul>
 <h3>Yapay zeka üye: neden kural tabanlı?</h3>
@@ -277,7 +277,7 @@
 <div class="iki">
 <div>
 <ul>
-  <li><strong>201 otomatik test</strong> (~12 sn): <code>pytest</code>, <code>uv run pytest</code> ya da <code>python -m unittest discover testler</code>. GitHub Actions her gönderimde testleri, pyflakes denetimini ve ölçümü çalıştırır.</li>
+  <li><strong>204 otomatik test</strong> (~12 sn): <code>pytest</code>, <code>uv run pytest</code> ya da <code>python -m unittest discover testler</code>. GitHub Actions her gönderimde testleri, pyflakes denetimini ve ölçümü çalıştırır.</li>
   <li><strong>Önce test:</strong> düzeltme testlerinin, düzeltmeden önceki kodda başarısız olduğu git geçmişiyle denetlendi (ör. 9/9, 7/7).</li>
   <li><strong>İnceleme:</strong> üç tur; her bulgu kodla doğrulandıktan sonra uygulandı. 1. tur (ilke başına 10 inceleme): 30 hata. 2. tur: önbellekte gizlenen kurcalama, bölünen zincir, hizmet reddi. 3. tur (ders sunumu başına): State'in atlanan iki geçişi, içe aktarma döngüsü, Pages'te 4 hatalı yönlendirme, D1 kararı, mini laboratuvar.</li>
 </ul>
