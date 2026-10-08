@@ -1,7 +1,8 @@
 # Mini laboratuvar (S02-50)
 
-*Temel Modelleri Anlamak* sunumunun son slaytındaki "Mini laboratuvar (ödev)" kutusunun dört görevi. Her görev tek bir
-betiktir ve aşağıdaki sayılar o betiklerin çıktısıdır.
+*Temel Modelleri Anlamak* sunumunun son slaytındaki "Mini laboratuvar (ödev)" kutusunun dört görevi ve *YZ Mühendisliğine
+Giriş* sunumunun son slaytındaki uygulamalı soru 6 (5. bölüm). Her görev tek bir betiktir ve aşağıdaki sayılar o betiklerin
+çıktısıdır.
 
 ```bash
 pip install -r laboratuvar/gereksinimler.txt      # Python 3.12+; forumun kendisi bunlara ihtiyaç duymaz
@@ -9,6 +10,7 @@ python laboratuvar/token_orani.py       # 1. görev
 python laboratuvar/dikkat.py            # 2. görev (dikkat_isi_haritasi.png üretir)
 python laboratuvar/sicaklik.py          # 3. görev, yerel model; API ile: ANTHROPIC_API_KEY=... python laboratuvar/sicaklik.py --api
 python laboratuvar/import_dogrula.py --pypi    # 4. görev
+python laboratuvar/test_dogrulugu.py    # 5. bölüm (ek kurulum gerekmez)
 ```
 
 ## 1. Türkçe ve İngilizce token sayısı (tiktoken)
@@ -93,3 +95,34 @@ gizli gereksinim (NLTK verisi; torch ve model indirme), bir anlam kayması (kök
 (zeyrek 2022'den beri güncellenmemiş) ancak kodu örnek girdiyle çalıştırınca görüldü. S02-46'daki "üretilen kodu
 doğrulayın" uyarısı import'larla sınırlı değil, davranışı da kapsıyor. Sıra da önemli: önce `--pypi` ile paket adlarını
 denetleyin, tanımadığınız paketi ancak ondan sonra ayrı bir sanal ortama kurun.
+
+## 5. (S01-49, soru 6) YZ'nin yazdığı testlerin kaçı gerçekten doğru?
+
+S01'in son slaytındaki uygulamalı soru: bir kodlama aracına küçük bir fonksiyon ve testlerini yazdırıp testleri denetlemek.
+Bir kodlama ajanından T.C. kimlik numarası denetimi ve en az 12 test istendi. Ajandan kodu ve testleri çalıştırmaması,
+hesaplarını bir araçla doğrulamaması istendi. Öneri değiştirilmeden `yz_testleri/` klasörüne kaydedildi.
+`python laboratuvar/test_dogrulugu.py` iki şeyi ayrı ölçer:
+
+1. **Doğruluk:** Her testin beklediği sonuç, YZ'nin kendi koduyla değil, forumun ayrıca testli `denetim.tc_kimlik_gecerli_mi`
+   işleviyle (kâhin, *oracle*) karşılaştırıldı. Testin YZ'nin koduyla geçmesi doğruluk kanıtı değildir; kod ve test aynı
+   yanlışı paylaşabilir.
+2. **Güç:** YZ'nin fonksiyonuna tek tek 10 gerçekçi hata (mutant) sokuldu. Bir mutantı en az bir test kırmızıya çeviriyorsa
+   test o hatayı "yakalamış" sayılır (mutasyon testi).
+
+| Ölçüt | Sonuç |
+|---|---|
+| Test sayısı | 16 |
+| YZ'nin kendi koduyla geçen | 16 |
+| Beklentisi tanıma göre doğru olan | **16** (örnek numaraların sağlaması da doğru) |
+| Yakalanan mutant | **9 / 10** |
+| Hiçbir mutantı yakalamayan test | 7 (ör. boş dize, harf içeren, iç boşluk: aynı kontrolü sınayan tekrarlar) |
+
+**Yakalanamayan hata:** "10. hane denetimi yok" mutantı bütün testlerden geçti. `test_10_hane_sagLama_hatali` testi
+`10000000156` numarasını kullanıyor; 10. haneyi değiştirirken 11. hanenin sağlamasını da bozuyor, yani aslında 11. hane
+kuralını sınıyor. Kodun 10. hane kuralını silen biri, testlerin hepsini yeşil görür. Doğru test, yalnızca 10. haneyi bozan
+`10000000157` olurdu (11. hane yeni ilk 10 haneyle tutarlı): bu numara mutantta geçerli, doğru kodda geçersiz çıkıyor.
+
+**Yanıt:** 16 testin 16'sı doğru, ama "doğru" ile "işe yarar" aynı şey değil. Testlerden biri adının söylediği kuralı
+sınamıyor ve 7'si birbirinin tekrarı. Bu yüzden S01-46'nın uyarısı ("testleri de YZ yazdıysa testleri de doğrulayın") yalnızca
+beklenen değerlere bakmakla değil, testin hatayı yakalayıp yakalamadığına bakmakla karşılanır. Agora'nın düzeltme testleri
+için de aynı ölçüt kullanıldı: her test düzeltmeden önceki kodda kırmızı olmalıydı (README, YZ kullanım beyanı).

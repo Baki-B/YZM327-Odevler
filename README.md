@@ -16,7 +16,8 @@ Yazılım Mühendisliğine Giriş dersi ödevi.
 | [docs/analiz.md](docs/analiz.md) | **Problem çerçeveleme ve gereksinim analizi:** YZ gerekli mi?, tek sayfalık kanvas, iş/ürün/koruyucu metrikler, ölçülmüş temel çizgi ve hata analizi, kısıtlar, paydaşlar, ön-otopsi, ölçülmüş gecikme ve ölçeklenme |
 | [docs/tasarim.md](docs/tasarim.md) | UML diyagramları; **SOLID ilkeleri ve GoF tasarım desenlerinin** (State, Strategy, Template Method, Chain of Responsibility, Adapter, Memento, Observer, Repository, Facade) dosya dosya karşılığı, sınırları ve sınıf diyagramları |
 | [docs/rehber.md](docs/rehber.md) | Uygulamanın bütün ayrıntıları ve kullanılan mimariler, sade bir dille |
-| [laboratuvar/](laboratuvar/README.md) | **S02-50 mini laboratuvarı:** Türkçe/İngilizce token oranı (tiktoken), nedensel maskeli dikkat ısı haritası (NumPy), sıcaklık deneyi, YZ kodlama aracının önerdiği import'ların doğrulanması |
+| [laboratuvar/](laboratuvar/README.md) | **S02-50 mini laboratuvarı:** Türkçe/İngilizce token oranı (tiktoken), nedensel maskeli dikkat ısı haritası (NumPy), sıcaklık deneyi, YZ kodlama aracının önerdiği import'ların doğrulanması; **S01-49 soru 6:** YZ'nin yazdığı testlerin doğruluğu ve mutasyon testi |
+| [docs/tartisma_sorulari.md](docs/tartisma_sorulari.md) | Ders sunumlarındaki tartışma sorularına kısa yanıtlar (S01, S02; TD-59'unkiler `docs/tasarim.md` 8.7–8.8'de) |
 
 ## Tarayıcı sürümü (GitHub Pages, sunucusuz)
 
@@ -60,7 +61,7 @@ Ya da klasördeki **`baslat.bat`** dosyasına çift tıkla. Tarayıcı kendiliğ
 | `python calistir.py --yonetici Baki` | Bir üyeyi yönetici yapar (ilk yönetici için; sonrası yönetim panelinden) |
 | `python calistir.py --demo` | Sunum kipi: yönetim panelinde "Süreyi ilerlet" düğmesi açılır (24/48 saat beklememek için) |
 | `python calistir.py --demo-verisiz` | Boş veritabanına demo verisini (ve şifresi herkesçe bilinen demo hesaplarını) yüklemez |
-| `python -m unittest discover testler` | 200 otomatik test (~12 sn) |
+| `python -m unittest discover testler` | 201 otomatik test (~12 sn) |
 | `python -m pytest` ya da `uv run pytest` | Aynı testler pytest ile (ayarlar `pyproject.toml`'da) |
 | `python olcum/denetim_olcumu.py` | Denetim kurallarının kesinlik/duyarlılık ölçümü (temel çizgilerle karşılaştırmalı; geliştirme, test ve görülmemiş son küme) |
 | `python olcum/gecikme_olcumu.py` | Sayfaların p50/p95 yanıt süresi (`--defter-blok 50000` ile büyük defterde) |
@@ -217,7 +218,7 @@ olcum/               ölçüm betikleri ve etiketli örnekler (gelistirme.csv, t
 laboratuvar/         S02-50 mini laboratuvarı (4 görev; sonuçlar laboratuvar/README.md)
 mobil-expo/          Expo Go uygulaması (Expo SDK 57, WebView)
 mobil/               Android uygulaması (Capacitor): capacitor.config.json, android/ projesi, BENIOKU.md
-testler/             200 test: iş kuralları, web, hata düzeltmeleri, desenler, ölçüm
+testler/             201 test: iş kuralları, web, hata düzeltmeleri, desenler, ölçüm
 docs/                analiz.md (problem çerçeveleme), tasarim.md (UML + desenler), rehber.md (ayrıntılar)
 ```
 

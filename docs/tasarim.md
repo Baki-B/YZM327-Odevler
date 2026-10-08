@@ -266,7 +266,7 @@ deseni sayılmamalıdır (TD-26: "Python'daki @decorator sözdizimi fonksiyon sa
 | Fabrika işlevi (TD-16) | `teklif_turleri.tur(kod)`, `denetim.zincir_kur(*siniflar)`, `defter._depolar(kaynak)` | `tur(kod)` yeni nesne üretmez, kayıttaki tek örneği döndürür; `_depolar` yol verilince her zaman SQLite deposu kurar |
 | Fonksiyon dekoratörü | `giris_gerekli`, `yonetici_gerekli` rotayı sarar | Python dekoratörü; `@kaydet` ve `@commit_aboneligi` hiçbir şeyi sarmaz, yalnızca kaydeder |
 | Ertelenmiş iş kuyruğu | `commit_sonrasi` ve defter kuyrukları: iş commit'te çalışır, rollback'te silinir (testli: `YanEtkiDayanikliligi`) | Argümansız kapanış (closure) listesi; TD-40'taki `calistir/geri_al` yok. Doğru adı *transactional outbox*'tır (rehber 25.11) |
-| Test dikişi (seam) | `guvenlik.SIFRE_YONTEMI` (testte hızlı özet), `zaman.simdi` (testte ileri sarılır), `anlik.KANALLAR` (sahte kanal), `defter._saat` | Modül düzeyindeki değişkenin üzerine yazılır; kurucuya verilen bir bağımlılık değildir. Kazanç: test süresi 94 testte ~60 sn'den 200 testte ~12 sn'ye indi |
+| Test dikişi (seam) | `guvenlik.SIFRE_YONTEMI` (testte hızlı özet), `zaman.simdi` (testte ileri sarılır), `anlik.KANALLAR` (sahte kanal), `defter._saat` | Modül düzeyindeki değişkenin üzerine yazılır; kurucuya verilen bir bağımlılık değildir. Kazanç: test süresi 94 testte ~60 sn'den 201 testte ~12 sn'ye indi |
 | Değer görüntüsü | `sonuclar.TurKarari`: turun kararı saf bir değer nesnesi olarak saklanır; sonradan parametre değişse de geçmiş tur aynı gösterilir (testli: `TurKarariAnlikGoruntusu`) | Geri yükleyen bir Originator yok; Memento değil, değiştirilemez değer nesnesidir |
 
 ### 8.3 Sınıf diyagramları
@@ -476,7 +476,7 @@ en yakın benzerdir; nerede eksik kaldığı da yazıldı.
 | Veri kaynağı değiştirilebilsin (Repository) | `DugumDeposu`: defter düğümleri SQLite dosyasında ya da bellekte | Yalnızca defter için. Üretim yolu yol verilince SQLite deposunu kendisi kurar (`defter._depolar`) ve süreçler arası kilit SQLite'a özgüdür; PostgreSQL için bu iki yer de değişir. Forum verisi doğrudan SQLite'tadır |
 | Olaylar birden çok bileşene haber versin (Observer) | `commit_aboneligi`: defter commit olayına abone; bağlantı başına `commit_sonrasi` (bildirimler) | Üretimde tek abone var; mekanizma çok aboneliye hazır |
 | Tek giriş noktası (Facade) | `gorunum.konu_sayfasi` | — |
-| Her bileşen için birim testi (sahte depo ile) | `BellekDugumDeposu` (sahte depo), `SahteKanal` (sahte bildirim kanalı), sahte zaman | Sahte nesneyle birim testi defter, bildirim kanalı ve saat için. İş modüllerinin testleri her testte yeni kurulan geçici bir SQLite veritabanıyla çalışır (entegrasyon testi); 200 test ~12 sn |
+| Her bileşen için birim testi (sahte depo ile) | `BellekDugumDeposu` (sahte depo), `SahteKanal` (sahte bildirim kanalı), sahte zaman | Sahte nesneyle birim testi defter, bildirim kanalı ve saat için. İş modüllerinin testleri her testte yeni kurulan geçici bir SQLite veritabanıyla çalışır (entegrasyon testi); 201 test ~12 sn |
 
 ### 8.5 Bilerek kullanılmayan desenler (TD-57, TD-58)
 

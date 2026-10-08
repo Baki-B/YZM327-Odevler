@@ -824,7 +824,7 @@ Karanlık tema yalnızca bu değişkenleri yeniden tanımlar; hiçbir bileşene 
 - Eleme kuralları saf fonksiyon olduğu için (25.8) sınır değerleri (%4,9 – %5 – %75) doğrudan denenir.
 - **Sahte nesneler:** kayıt defteri testleri disk yerine bellekte çalışan sahte depoyla (`BellekDugumDeposu`), anlık bildirim
   testleri gerçek servis yerine sahte kanalla (`SahteKanal`) çalışır. Testlerde şifre özeti hızlı bir yöntemle yapılır
-  (`guvenlik.SIFRE_YONTEMI`); 200 test yaklaşık 12 saniye sürer.
+  (`guvenlik.SIFRE_YONTEMI`); 201 test yaklaşık 12 saniye sürer.
 - **Hata önce test:** incelemelerde bulunan hatalar için hatayı yeniden üreten bir test yazıldı, sonra düzeltildi
   (`testler/test_duzeltmeler.py`). Testlerin düzeltmeden önceki kodda gerçekten kırmızı olduğu git geçmişiyle denetlendi;
   ayrıntı ve iki istisna README'deki YZ kullanım beyanında.
@@ -903,7 +903,7 @@ Katmanların ve diğer mimari kararların açıklaması 25. bölümde.
 | `web/` | Sayfa rotaları ve API; `istek.py` (istek öncesi zincir: kimlik, askı, CSRF, zamanlayıcı, yazma kilidi), `hata_sayfalari.py`, `sablon.py` (şablon filtreleri) |
 | `templates/` | Sayfalar (`panel/` = Panelim, `yonetim/` = yönetim paneli) |
 | `static/` | CSS, JS, simgeler, service worker |
-| `testler/` | 200 otomatik test |
+| `testler/` | 201 otomatik test |
 | `olcum/` | Ölçüm betikleri ve etiketli örnekler ([analiz.md](analiz.md)) |
 
 **Tek teklif mekanizması:** Bütün oylamalar (fikir turları, gizleme, kaldırma, uzmanlık, yönetmelik, yeni kategori) aynı "teklif" yapısından geçer;

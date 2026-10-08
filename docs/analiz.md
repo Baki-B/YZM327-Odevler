@@ -456,7 +456,7 @@ Düzeltmeden önce aynı ölçüm (1.000 kopya, 10 istek) p50 77 ms, en kötü 1
 ### 8.3 Sürdürülebilirlik (maintainability)
 
 - Tasarım desenleri ve SOLID eşlemesi: `docs/tasarim.md` 8. bölüm (her desen dosya adıyla).
-- 200 otomatik test (~12 sn); ölçüm betikleri; hata düzeltmelerinin testleri (`testler/test_duzeltmeler.py`; düzeltmeden önceki kodda kırmızı olduğu denetlendi, README YZ kullanım beyanı).
+- 201 otomatik test (~12 sn); ölçüm betikleri; hata düzeltmelerinin testleri (`testler/test_duzeltmeler.py`; düzeltmeden önceki kodda kırmızı olduğu denetlendi, README YZ kullanım beyanı).
 - Bağımlılık sürümleri sabit; gizli anahtar kodda değil; ayarlar ortam değişkeniyle (README).
 
 ### 8.4 Uyarlanabilirlik (adaptability) — "hizmeti kesmeden uyum"

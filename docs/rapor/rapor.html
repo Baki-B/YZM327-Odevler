@@ -277,7 +277,7 @@
 <div class="iki">
 <div>
 <ul>
-  <li><strong>200 otomatik test</strong> (~12 sn): <code>python -m unittest discover testler</code>, <code>pytest</code> ya da <code>uv run pytest</code>. GitHub Actions her gönderimde testleri, statik denetimi (pyflakes) ve ölçümü çalıştırır.</li>
+  <li><strong>201 otomatik test</strong> (~12 sn): <code>python -m unittest discover testler</code>, <code>pytest</code> ya da <code>uv run pytest</code>. GitHub Actions her gönderimde testleri, statik denetimi (pyflakes) ve ölçümü çalıştırır.</li>
   <li><strong>Hata önce test:</strong> düzeltme testlerinin düzeltmeden önceki kodda kırmızı olduğu git geçmişiyle denetlendi (ör. 9/9, 7/7).</li>
   <li><strong>Bağımsız inceleme:</strong> üç tur YZ inceleme ajanı; bulgular kodla doğrulandıktan sonra uygulandı. 1. tur (ilke başına 10 ajan): 30 hata. 2. tur: önbellekte gizlenen kurcalama, bölünen zincir, hizmet reddi. 3. tur (ders sunumu başına): State'in atlanan iki geçişi, içe aktarma döngüsü, Pages'te 4 hatalı yönlendirme, D1 kararı, mini laboratuvar.</li>
 </ul>
@@ -305,17 +305,17 @@
     Ayrıca Expo Go uygulaması (sunucuya ya da sunucusuz demoya bağlanır) ve Capacitor ile Android APK.</li>
 </ul>
 
-<h2>7. Mini laboratuvar (S02-50)</h2>
+<h2>7. Mini laboratuvar (S02-50, S01-49)</h2>
 <div class="iki">
 <div>
 <ul>
   <li><strong>Token oranı (tiktoken):</strong> 10 Türkçe cümle İngilizce çevirisinden ortalama <strong>1,69</strong> (cl100k) ve <strong>1,36</strong> (o200k)
     kat daha çok token tutuyor; tek kelime "Avrupalılaştıramadıklarımızdan" 14 ve 12 token. Maliyet, gecikme ve bağlam aynı oranda artar (S02-4…6).</li>
-  <li><strong>Sıcaklık:</strong> güncel Claude modelleri sıcaklık parametresini reddediyor (400); betik sıcaklığı kabul eden eski bir modelle
-    çalışır, T = 1,5 API aralığı (0–1) dışında. Anahtar olmadığı için API ölçümü yapılmadı; yerel kelime ikilisi modelinde 10 denemede
-    T = 0 / 0,7 / 1,5 için <strong>1 / 9 / 10</strong> farklı yanıt.</li>
-  <li><strong>YZ kodlama aracının import'ları:</strong> bir kodlama ajanının 5 fonksiyonluk ilk önerisindeki 7 paket ve 8 import'un hepsi gerçek.
-    Ama örnek girdiyle çalıştırınca iki gizli gereksinim (NLTK verisi; torch + model indirme) ve bir anlam kayması (kök yerine sözlük biçimi) çıktı (S02-46, 47).</li>
+  <li><strong>Sıcaklık:</strong> güncel Claude modelleri sıcaklığı reddediyor (400); API anahtarı olmadığından ölçüm yerel kelime ikilisi
+    modelinde yapıldı: 10 denemede T = 0 / 0,7 / 1,5 için <strong>1 / 9 / 10</strong> farklı yanıt.</li>
+  <li><strong>YZ'nin önerdiği import'lar:</strong> 7 paket ve 8 import'un hepsi gerçek; ama çalıştırınca iki gizli gereksinim ve bir anlam kayması çıktı (S02-47).</li>
+  <li><strong>YZ'nin yazdığı testler (S01-49, soru 6):</strong> T.C. kimlik denetiminin 16 testinin <strong>16'sı doğru</strong> (kâhin: forumun testli
+    işlevi), ama mutasyon testinde 10 hatadan biri yakalanmadı: "10. hane hatalı" testi 11. haneyi de bozduğu için 10. hane kuralını hiç sınamıyor.</li>
 </ul>
 </div>
 <div>
