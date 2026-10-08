@@ -1,0 +1,39 @@
+madde,etiket,metin
+D1,VAR,Senin gibi beyinsizlerle tartışmak zaman kaybı.
+D1,VAR,Konuyu açan kişi resmen gerizekalı.
+D1,VAR,"Bu kadar cahil olmak için çaba gerekir, tebrikler."
+D1,VAR,Ahmaklar meclisi gibi oylama yapıyorsunuz.
+D1,VAR,Sus be salak!
+D1,VAR,Hödük herifin teki yazmış bunu.
+D1,VAR,"Kafana taş mı düştü, ne biçim öneri bu?"
+D1,YOK,Cahillik bilgisizlik demektir; eğitim bunu azaltır.
+D1,YOK,Aptal telefonlar dönemine dönmek ister misiniz?
+D1,YOK,Bu öneri bence yetersiz ama geliştirilebilir.
+D1,YOK,Hocanın anlattığı konu çok netti.
+D1,YOK,Şeref kürsüsü için aday gösterilsin.
+D1,YOK,Saygısızlık yapan mesajlar gizlenmeli.
+D2,VAR,Bilgi için 0505 111 22 33'ü arayabilirsiniz.
+D2,VAR,Benim e-postam zeynep.kaya@outlook.com
+D2,VAR,TC: 41028274356
+D2,VAR,IBAN: TR12 0001 0012 3456 7890 1234 56
+D2,VAR,"Telefon numaram +905441112233, WhatsApp'tan yazın."
+D2,VAR,Moda Caddesi No 15 Daire 7 Kadıköy'de oturuyorum.
+D2,YOK,Toplantı salonu 2. kat 204 numaralı oda.
+D2,YOK,"Ders kodu BIL101, kontenjan 120."
+D2,YOK,Kargo takip numarası 1Z999AA10123456784 geldi mi?
+D2,YOK,Bilgi işlem destek hattı 444 0 123.
+D2,YOK,Sınav 09.06.2026 saat 10:00'da.
+D3,Bilim,Gökbilim kulübü güneş tutulmasını izlemek için gözlük dağıtsın.
+D3,Bilim,Kampüsteki gölde su kalitesi ölçümü yapan bir araştırma projesi başlatalım.
+D3,Sağlık,Yurtlarda grip aşısı kampanyası yapılsın.
+D3,Sağlık,Öğrenciler için ücretsiz diyetisyen danışmanlığı olsun.
+D3,Siyaset,Belediye seçimlerinde gençlere yönelik bir tartışma programı düzenlensin.
+D3,Siyaset,Şehir içi otobüslerde gece seferleri yarım saatte bir olsun.
+D3,Eğitim,Ders kayıt haftası iki gün daha uzatılsın.
+D3,Eğitim,Bölümde birinci sınıflar için oryantasyon programı yapılsın.
+D3,Teknoloji,Kampüs uygulamasına ders programı bildirimi eklensin.
+D3,Teknoloji,Laboratuvar bilgisayarlarına Linux kurulsun.
+D3,Ekonomi,Kafeteryadaki fiyat artışları öğrenci bütçesini zorluyor.
+D3,Ekonomi,Mezunlarla staj ağı kuracak bir kariyer platformu açalım.
+D3,Kültür ve Sanat,Tiyatro kulübü yıl sonu oyununu açık havada sahnelesin.
+D3,Kültür ve Sanat,Kampüs radyosunda yerel müzisyenlere yer verilsin.
