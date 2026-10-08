@@ -16,7 +16,6 @@ node_modules/
 # Editör ve araç ayarları
 .vscode/
 .idea/
-AGENTS.md
 _site/
 .venv/
 .pytest_cache/
