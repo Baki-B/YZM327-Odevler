@@ -34,8 +34,29 @@ function bosluklariAktar() {
 }
 window.addEventListener("resize", bosluklariAktar);
 
+// Geri tuşu (Android ve Expo uygulaması): sayfalar çerçevede açıldığı için uygulamanın kendi geçmişi boş görünür. Kabuk,
+// çerçevede kaç sayfa ilerlendiğini sayar; geri tuşu çerçevede bir sayfa geri gider, en baştaysa uygulama kapanır.
+let derinlik = -1;                 // ilk sayfa açılınca 0 olur
+let geriGidiyor = false;
+
+function geri() {
+  if (derinlik <= 0) return false;
+  derinlik--;
+  geriGidiyor = true;
+  setTimeout(() => { geriGidiyor = false; }, 1500);   // sayfa yeniden yüklenmeden dönülürse (#bağlantı) sayaç kaymasın
+  cerceve.contentWindow.history.back();
+  return true;
+}
+window.agoraGeri = geri;           // Expo uygulaması geri tuşunda bunu çağırır
+
+const cap = window.Capacitor;
+if (cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App) {
+  cap.Plugins.App.addListener("backButton", () => { if (!geri()) cap.Plugins.App.exitApp(); });
+}
+
 // Çerçevedeki sayfanın başlığını ve adresini kabuğa yansıt: yenileyince aynı sayfa açılır.
 cerceve.addEventListener("load", () => {
+  if (geriGidiyor) geriGidiyor = false; else derinlik++;
   bosluklariAktar();
   try {
     const belge = cerceve.contentDocument;
