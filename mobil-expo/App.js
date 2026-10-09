@@ -176,7 +176,7 @@ function sayfaBetigi(kenar) {
 function Forum({ adres, onAdresDegistir }) {
   const kenar = useSafeAreaInsets();
   const web = useRef(null);
-  const [geriGidebilir, setGeriGidebilir] = useState(false);
+  const geriGidebilir = useRef(false);
   const [hata, setHata] = useState(false);
   const [koyu, setKoyu] = useState(false);
   const [zemin, setZemin] = useState(RENK.tas);
@@ -184,15 +184,19 @@ function Forum({ adres, onAdresDegistir }) {
   const kok = adres.replace(/\/+$/, '');
   const betik = sayfaBetigi({ top: kenar.top, bottom: kenar.bottom, left: kenar.left, right: kenar.right });
 
-  // Android geri tuşu: önce sayfa geçmişinde geri, geçmiş bitince uygulamadan çık
+  // Android geri tuşu: önce sayfa geçmişinde geri, geçmiş bitince uygulamadan çık. Tarayıcı sürümünde (GitHub Pages)
+  // sayfalar kabuğun çerçevesinde açılır; geri tuşu önce kabuğa sorulur (window.agoraGeri), o geri gidemezse mesajla bildirir.
   useEffect(() => {
     if (Platform.OS !== 'android') return undefined;
     const abonelik = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (geriGidebilir && web.current) { web.current.goBack(); return true; }
-      return false;
+      if (!web.current) return false;
+      web.current.injectJavaScript(
+        "(function(){if(!(window.agoraGeri&&window.agoraGeri())&&window.ReactNativeWebView)" +
+        "window.ReactNativeWebView.postMessage(JSON.stringify({geri:false}));})();true;");
+      return true;
     });
     return () => abonelik.remove();
-  }, [geriGidebilir]);
+  }, []);
 
   // Site içi bağlantılar uygulamada, site dışı bağlantılar telefonun tarayıcısında açılır
   const istekDenetle = useCallback((istek) => {
@@ -209,6 +213,9 @@ function Forum({ adres, onAdresDegistir }) {
       const v = JSON.parse(olay.nativeEvent.data);
       if (typeof v.koyu === 'boolean') setKoyu(v.koyu);
       if (typeof v.zemin === 'string') setZemin(v.zemin);
+      if (v.geri === false) {
+        if (geriGidebilir.current && web.current) web.current.goBack(); else BackHandler.exitApp();
+      }
     } catch { /* sayfadan beklenmeyen mesaj */ }
   }, []);
 
@@ -247,7 +254,7 @@ function Forum({ adres, onAdresDegistir }) {
         injectedJavaScriptBeforeContentLoaded={betik}
         injectedJavaScript={betik}
         onMessage={mesaj}
-        onNavigationStateChange={(d) => setGeriGidebilir(d.canGoBack)}
+        onNavigationStateChange={(d) => { geriGidebilir.current = d.canGoBack; }}
         onShouldStartLoadWithRequest={istekDenetle}
         onError={() => setHata(true)}
         onRenderProcessGone={() => setAnahtar((n) => n + 1)}

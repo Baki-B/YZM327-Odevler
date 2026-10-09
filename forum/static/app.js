@@ -163,10 +163,11 @@
     navigator.serviceWorker.register(KOK + "/sw.js", { scope: KOK + "/" }).catch(function () {});
   }
 
-  // Android uygulaması (mobil/): geri tuşu önce sayfa geçmişinde geri gider, geçmiş bitince uygulamayı kapatır
+  // Android uygulaması (mobil/): geri tuşu önce sayfa geçmişinde geri gider, geçmiş bitince uygulamayı kapatır.
+  // Tarayıcı sürümünde sayfa kabuğun çerçevesindedir; geri tuşunu orada kabuk yönetir (tarayici/kabuk.js).
   var cap = window.Capacitor;
   var yerel = !!(cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins);
-  if (yerel && cap.Plugins.App) {
+  if (yerel && cap.Plugins.App && window.top === window) {
     cap.Plugins.App.addListener("backButton", function (olay) {
       if (olay.canGoBack) history.back(); else cap.Plugins.App.exitApp();
     });
