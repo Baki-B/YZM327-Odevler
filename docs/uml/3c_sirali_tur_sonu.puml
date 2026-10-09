@@ -1,17 +1,13 @@
 @startuml 3c_sirali_tur_sonu
 !include _stil.iuml
 title Sıralı diyagram — Tur sonu
+hide footbox
 participant "Zamanlayıcı" as Z
-participant "Oylama" as O
-participant "Konular" as K
-database "Veritabanı" as V
+participant "Sistem" as S
+participant "Veritabanı" as V
 
-Z -> O : sonuclandir()
-O -> V : oyları say
-alt bir fikir %75 aldı ya da tek fikir kaldı
-  O -> K : konuyu karara bağla
-else birden fazla fikir kaldı
-  O -> K : sonraki turu başlat
-end
-O -> V : sonucu kaydet
+Z -> S : süre doldu
+S -> V : oyları say
+S -> S : az oy alan fikirleri ele
+S -> V : sonucu kaydet
 @enduml
