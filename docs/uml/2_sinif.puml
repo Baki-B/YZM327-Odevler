@@ -1,0 +1,49 @@
+@startuml 2_sinif
+!include _stil.iuml
+title Sınıf diyagramı
+
+class Kullanici {
+  takma_ad
+  dogum_tarihi
+  yonetici_mi
+}
+class Kategori {
+  ad
+}
+class Konu {
+  baslik
+  aciklama
+  durum
+  tur
+}
+class Mesaj {
+  tip
+  icerik
+}
+class Oylama {
+  tip
+  esik
+  bitis
+}
+class Secenek {
+  metin
+}
+class Oy {
+  secim
+  agirlik
+}
+class Karar {
+  metin
+}
+
+Kullanici "1" -- "*" Konu : açar
+Konu "*" --> "1" Kategori
+Konu "1" *-- "*" Mesaj
+Kullanici "1" -- "*" Mesaj : yazar
+Konu "1" -- "*" Oylama
+Oylama "1" *-- "*" Secenek
+Oylama "1" -- "*" Oy
+Kullanici "1" -- "*" Oy : verir
+Konu "1" -- "0..1" Karar
+Karar --> "1" Secenek : kazanan
+@enduml

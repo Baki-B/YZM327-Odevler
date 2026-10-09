@@ -8,7 +8,7 @@ SOLID ilkeleri ve tasarım desenlerinin projedeki karşılıkları 8. bölümde.
 
 ## 1. Kullanım durumu (use case)
 
-Özet görünüm; aktörler, sistem sınırı ve `include`/`extend` ilişkileriyle UML hâli: [uml/](uml/README.md) 1a ve 1b.
+Aktörler, sistem sınırı ve `include` ilişkisiyle UML hâli: [uml/](uml/README.md).
 
 ```mermaid
 flowchart LR

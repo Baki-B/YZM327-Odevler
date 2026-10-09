@@ -1,0 +1,16 @@
+@startuml 3b_sirali_oy_verme
+!include _stil.iuml
+title Sıralı diyagram — Oy verme
+actor Üye as U
+participant "Web" as W
+participant "Oylama" as O
+database "Veritabanı" as V
+participant "Kayıt defteri" as D
+
+U -> W : oy ver
+W -> O : oy_ver()
+O -> O : oy hakkı ve ağırlığı
+O -> V : oyu kaydet
+O -> D : taahhüdü deftere yaz
+O --> U : makbuz kodu
+@enduml

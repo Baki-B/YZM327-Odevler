@@ -1,0 +1,33 @@
+@startuml 1_kullanim_durumu
+!include _stil.iuml
+title Kullanım durumu diyagramı
+left to right direction
+
+actor Ziyaretçi as Z
+actor Üye as U
+actor Yönetici as Y
+actor "Zamanlayıcı" as T
+U -|> Z
+
+rectangle Agora {
+  usecase "Kayıt ol / giriş yap" as K
+  usecase "Konuları oku" as O
+  usecase "Konu aç" as KA
+  usecase "Yönetmelik denetimi" as D
+  usecase "Mesaj ve fikir yaz" as M
+  usecase "Oy ver" as OY
+  usecase "Şikayet et" as S
+  usecase "Üyeleri ve şikayetleri yönet" as YO
+  usecase "Turu sonuçlandır" as TS
+}
+
+Z --> K
+Z --> O
+U --> KA
+U --> M
+U --> OY
+U --> S
+KA ..> D : <<include>>
+Y --> YO
+T --> TS
+@enduml
