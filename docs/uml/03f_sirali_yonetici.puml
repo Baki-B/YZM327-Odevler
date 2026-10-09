@@ -1,0 +1,32 @@
+@startuml 03f_sirali_yonetici
+!include _stil.iuml
+title Sıralı diyagram 6 — Ayrı yönetici girişi ve üyeyi askıya alma
+autonumber
+actor "Yönetici" as A
+participant "istek.py\n(kimlik)" as I
+participant "yonetim_sayfalari.py" as W
+participant "kullanicilar.py" as K
+participant "yonetim.py" as YN
+database "SQLite" as V
+
+A -> I : GET /yonetim/uyeler
+I -> I : /yonetim altında kimlik yalnızca\nyönetici oturumundan okunur
+I --> A : 302 → /yonetim/giris (üye oturumu paneli açmaz)
+A -> W : POST /yonetim/giris (takma ad, şifre, CSRF)
+W -> K : giris(takma ad, şifre) — hatalı denemeler sayılır
+alt hesap yönetici değil
+  W --> A : "Bu hesap yönetici değil"
+else yönetici
+  W -> W : yönetici oturumu (yonetici_id, oturum sürümü);\nüye oturumuna dokunulmaz
+  W --> A : 302 → /yonetim/uyeler
+end
+A -> W : POST /yonetim/uye/7/aski (gün, neden)
+W -> YN : askiya_al(yonetici, 7, gün, neden)
+YN -> YN : kendisi, başka bir yönetici ya da YZ hesabı mı?\nneden en az 10 karakter mi?
+YN -> V : UPDATE kullanicilar SET askida_bitis
+YN -> V : şeffaflık günlüğü + defter kuyruğuna YONETIM bloğu
+YN -> V : üyeye bildirim
+W -> V : COMMIT
+W --> A : üye sayfası, "askıya alındı"
+note over A, V : Askıdaki üye okuyabilir; yazamaz ve oy veremez\n(istek zincirindeki "askı" adımı POST'ları durdurur).
+@enduml

@@ -1,0 +1,43 @@
+@startuml 02c_sinif_denetim_ve_konu_sayfasi
+!include _stil.iuml
+title Agora — Sınıf diyagramı (3/4): yönetmelik denetimi (Chain of Responsibility) ve konu sayfası (Facade)
+skinparam nodesep 30
+skinparam ranksep 45
+
+package "denetim.py — Chain of Responsibility" {
+  class DenetimIstegi {
+    + baslik, aciklama : metin
+    + kategori_id, konum_id
+    + ust : Konu
+  }
+  abstract class DenetimKurali {
+    + kod : D1..D7
+    + sonraki : DenetimKurali
+    + isle(istek) : bulgular
+    + {abstract} kontrol(istek)
+  }
+  DenetimKurali o--> "0..1" DenetimKurali : sonraki
+  DenetimKurali ..> DenetimIstegi
+  DenetimKurali <|-- SayginDil
+  DenetimKurali <|-- KisiselVeri
+  DenetimKurali <|-- KategoriyeUygunluk
+  DenetimKurali <|-- KonumTutarliligi
+  DenetimKurali <|-- BenzerKonu
+  DenetimKurali <|-- AltKonuIliskisi
+  DenetimKurali <|-- Aciklik
+  class SayginDil <<D1>>
+  class KisiselVeri <<D2>>
+  class KategoriyeUygunluk <<D3>>
+  class KonumTutarliligi <<D4>>
+  class BenzerKonu <<D5>>
+  class AltKonuIliskisi <<D6>>
+  class Aciklik <<D7>>
+}
+
+package "gorunum.py — Facade" {
+  class "gorunum" as gorunum <<Facade>> {
+    + konu_sayfasi(db, ben, konu_id)
+  }
+}
+gorunum ..> "konular, uygunluk, oylama,\nkararlar, devir, kullanicilar, yz" : 7 alt sistemi toplar
+@enduml

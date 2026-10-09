@@ -1,0 +1,151 @@
+@startuml 02a_sinif_alan_modeli
+!include _stil.iuml
+title Agora — Sınıf diyagramı (1/4): alan modeli
+skinparam nodesep 45
+skinparam ranksep 55
+
+enum KonuDurumuKodu <<enumeration>> {
+  TARTISMA
+  OYLAMA
+  KARARA_BAGLANDI
+  SONUCSUZ
+}
+enum TeklifTipi <<enumeration>> {
+  ' KARAR = fikir oylamasının bir turu
+  KARAR
+  MESAJ_SILME
+  KONU_SILME
+  UZMANLIK
+  YONETMELIK
+  KATEGORI
+}
+
+class Kullanici {
+  - ad_soyad : metin «gizli»
+  + takma_ad : metin {benzersiz}
+  - sifre_hash : metin
+  - dogum_tarihi : tarih «gizli»
+  + yz_mi : bool
+  + yonetici_mi : bool
+  + askida_bitis : zaman
+  + oturum_surumu : tamsayı
+}
+class Konum {
+  + ad : metin
+  + tur : ULKE | BOLGE | IL | ILCE
+}
+class Kategori {
+  + ad : metin
+  + kaynak : SISTEM | TOPLULUK
+  + kavramlar : metin
+}
+class Uzmanlik {
+  + baslangic : zaman
+  + bitis : zaman
+}
+class Devir {
+  + kapsam : GENEL | KATEGORI | KONU
+}
+class Konu {
+  + baslik : metin
+  + aciklama : metin
+  + durum : KonuDurumuKodu
+  + tur : 0..5
+  + min_yas, max_yas : tamsayı
+  + tartisma_bitis : zaman
+  + silindi : bool
+}
+class KonuSurumu {
+  + baslik, aciklama : metin
+  + tarih : zaman
+}
+class Mesaj {
+  + tip : ARGUMAN | KARSI_ARGUMAN | SORU
+         | KAYNAK | FIKIR | YZ | SISTEM
+  + icerik : metin
+  + gizli : bool
+}
+class MesajSurumu {
+  + icerik : metin
+  + tarih : zaman
+}
+class Teklif {
+  + tip : TeklifTipi
+  + esik : metin
+  + tur_no : tamsayı
+  + bitis : zaman
+  + durum : ACIK | KABUL | RET | YETERSIZ | BITTI
+}
+class Secenek {
+  + metin : metin
+}
+class Oy {
+  + secim : metin
+  + agirlik : 1 | 10
+  + taahhut : SHA-256
+}
+class Karar {
+  + metin : metin
+}
+class Sikayet {
+  + tur : MESAJ | KONU
+  + neden : metin
+  + durum : ACIK | OYLAMADA | YERSIZ
+}
+class Bildirim {
+  + metin : metin
+  + okundu : bool
+}
+class YonetmelikMaddesi {
+  + kod : T1.. U1.. D1..
+  + metin : metin
+  + ciddiyet : ENGEL | UYARI | KAPALI
+  + korunan : bool
+}
+class Parametre {
+  + kod : metin
+  + deger : metin
+  + korunan : bool
+}
+class DefterBlogu <<A·B·C düğümleri>> {
+  + no : tamsayı
+  + tur : KONU | MESAJ | OY | SONUC | KARAR ...
+  + veri : JSON
+  + onceki : SHA-256
+  + hash : SHA-256
+}
+
+Konum "0..1 üst" -- "*" Konum : il › ilçe
+Kategori "0..1 üst" -- "*" Kategori : alt kategori
+Kullanici "*" --> "0..1" Konum : oturur
+Kullanici "1" -- "*" Uzmanlik
+Uzmanlik "*" --> "1" Kategori : alan
+Kullanici "1 veren" -- "*" Devir
+Devir "*" --> "1 alan" Kullanici
+Kullanici "*" -- "*" Kullanici : takip eder >
+
+Kullanici "1 sahip" -- "*" Konu : açar >
+Konu "*" --> "1" Kategori
+Konu "*" --> "0..1" Konum : katılım kuralı
+Konu "0..1 üst" -- "*" Konu : alt konu / itiraz
+Konu *-- "*" KonuSurumu
+Konu *-- "*" Mesaj
+Mesaj *-- "*" MesajSurumu
+Mesaj "0..1" -- "*" Mesaj : yanıt
+Kullanici "1 yazar" -- "*" Mesaj
+
+Konu "0..1" -- "*" Teklif : oylanır
+Teklif *-- "1..*" Secenek
+Secenek "*" --> "0..1" Mesaj : fikir
+Teklif "1" -- "*" Oy
+Oy "*" --> "1" Kullanici : verir
+Konu "1" -- "0..1" Karar
+Karar "*" --> "1" Secenek : kazanan
+
+Sikayet "*" --> "1" Kullanici : şikayetçi
+Sikayet "*" --> "1" Konu
+Sikayet "*" --> "0..1" Teklif : oylamaya alındı
+Kullanici "1" -- "*" Bildirim
+YonetmelikMaddesi ..> Parametre : {KOD} yer tutucusu
+Oy ..> DefterBlogu : taahhüt yazılır
+@enduml

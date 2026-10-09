@@ -1,0 +1,50 @@
+@startuml 02d_sinif_defter_ve_bildirim
+!include _stil.iuml
+title Agora — Sınıf diyagramı (4/4): kayıt defteri (Observer + Repository) ve anlık bildirim (Adapter)
+skinparam nodesep 35
+skinparam ranksep 45
+
+package "veritabani.py + defter.py — Observer + Repository" {
+  class Baglanti {
+    + defter_kuyrugu : liste
+    + commit()
+    + rollback()
+    + kayit_noktasi() «Memento»
+  }
+  class "commit_aboneligi" as abone <<Observer>>
+  Baglanti ..> abone : commit'te\naboneleri çağırır
+  class "defter" as defter <<modül>> {
+    + ekle(db, tur, veri) «kuyruğa»
+    + _islem_kaydedildi(db) «abone»
+    + dugumlere_yaz(kaynak, kuyruk)
+    + durum(kaynak)
+    + onar(kaynak, ad)
+    + makbuz_dogrula(...)
+  }
+  defter ..|> abone : abone olur
+  abstract class DugumDeposu {
+    + {abstract} bloklar()
+    + {abstract} ekle(yeni)
+    + {abstract} yeniden_kur(zincir)
+    + {abstract} surum()
+    + son_blok()
+    + bul(anahtar)
+  }
+  DugumDeposu <|-- SqliteDugumDeposu
+  DugumDeposu <|-- BellekDugumDeposu
+  defter --> "3" DugumDeposu : düğüm A · B · C
+}
+
+package "anlik.py — Adapter" {
+  abstract class AnlikKanal {
+    + kod
+    + {abstract} etkin(klasor)
+    + {abstract} abonelik_coz(veri)
+    + {abstract} gonder(klasor, abonelik, yuk)
+  }
+  AnlikKanal <|-- WebPushKanali
+  AnlikKanal <|-- FcmKanali
+  WebPushKanali ..> "pywebpush" : uyarlar
+  FcmKanali ..> "Firebase HTTP v1" : uyarlar
+}
+@enduml

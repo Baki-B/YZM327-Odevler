@@ -1,0 +1,106 @@
+@startuml 02b_sinif_konu_ve_oylama
+!include _stil.iuml
+title Agora — Sınıf diyagramı (2/4): konu durumları (State) ve oylama türleri (Strategy + Template Method)
+skinparam nodesep 40
+skinparam ranksep 50
+
+package "konu_durumlari.py — State" {
+  abstract class KonuDurumu {
+    + kod : metin
+    + yazilabilir : bool
+    + kapali : bool
+    + zamanli : bool
+    + sonrakiler : küme
+    + fikir_yazilabilir(konu) : bool
+    + konu_duzenlenebilir() : bool
+    + fikir_duzenlenebilir() : bool
+    + gecis_dogrula(yeni)
+  }
+  class Tartisma
+  class Oylama
+  class KararaBaglandi
+  class Sonucsuz
+  class Kaldirildi
+  class GecersizGecis <<exception>>
+  KonuDurumu <|-- Tartisma
+  KonuDurumu <|-- Oylama
+  KonuDurumu <|-- KararaBaglandi
+  KonuDurumu <|-- Sonucsuz
+  KonuDurumu <|-- Kaldirildi
+  KonuDurumu ..> GecersizGecis : tabloda olmayan\ngeçişte fırlatır
+}
+class "konular" as konular <<modül>> {
+  + konu_ac(db, sahip, form)
+  + fikir_yaz(db, kullanici, konu_id, icerik)
+  + oylamayi_baslat(db, konu_id)
+  + kapat(db, konu_id, durum)
+}
+konular ..> KonuDurumu : durumu(konu) ile\nizin ve geçiş sorar
+
+package "oylama.py + teklif_turleri.py — Strategy + Template Method" {
+  class "oylama" as oylama <<modül>> {
+    + teklif_ac(db, tip, acan_id, ...)
+    + oy_ver(db, teklif_id, kullanici, secim) : makbuz
+    + sayim(db, teklif) : çift oran
+    + sonuclandir(db, teklif_id) «şablon yöntem»
+  }
+  abstract class TeklifTuru {
+    + kod : metin
+    + erken_biter : bool
+    + {abstract} secenekler(db, t)
+    + {abstract} degerlendir(t, tablo, ...)
+    + {abstract} sonuc_durumu(s)
+    + {abstract} uygula(db, t, s, durum)
+    + esik(db) «kanca»
+    + sonucu_tamamla(db, t, s) «kanca»
+    + sonuc_bildirimi(db, t, s, durum) «kanca»
+  }
+  class FikirTuru {
+    kod = KARAR
+  }
+  class EvetHayirTuru
+  class MesajGizlemeTuru {
+    kod = MESAJ_SILME
+  }
+  class KonuKaldirmaTuru {
+    kod = KONU_SILME
+  }
+  class UzmanlikTuru {
+    kod = UZMANLIK
+  }
+  class ForumGeneliTuru
+  class YonetmelikTuru {
+    kod = YONETMELIK
+  }
+  class KategoriTuru {
+    kod = KATEGORI
+  }
+  class TURLER <<Registry>> {
+    + kaydet(sinif) «@kaydet»
+    + tur(kod) : TeklifTuru
+  }
+  TeklifTuru <|-- FikirTuru
+  TeklifTuru <|-- EvetHayirTuru
+  EvetHayirTuru <|-- MesajGizlemeTuru
+  EvetHayirTuru <|-- KonuKaldirmaTuru
+  EvetHayirTuru <|-- UzmanlikTuru
+  EvetHayirTuru <|-- ForumGeneliTuru
+  ForumGeneliTuru <|-- YonetmelikTuru
+  ForumGeneliTuru <|-- KategoriTuru
+  TURLER o-- "6" TeklifTuru
+  oylama ..> TURLER : tur(kod)
+  oylama ..> TeklifTuru : şablonun adımlarını çağırır
+}
+class "sonuclar" as sonuclar <<modül>> {
+  + tur_karari(...) : KABUL | DEVAM | SONUCSUZ «saf işlev»
+  + tur_uygula(db, ...)
+}
+FikirTuru ..> sonuclar
+FikirTuru ..> konular : sonraki tur / kapat
+
+note bottom of oylama
+  sonuclandir(): sayım → sonuc_durumu → sonucu_tamamla
+  → sonuc_bildirimi → uygula. Adımların sırası sabit,
+  türe özgü adımlar TeklifTuru alt sınıfından gelir.
+end note
+@enduml

@@ -1,0 +1,31 @@
+@startuml 03a_sirali_kayit
+!include _stil.iuml
+title Sıralı diyagram 1 — Kayıt olma
+autonumber
+actor "Ziyaretçi" as Z
+participant "hesap.py\n(web rotası)" as W
+participant "kullanicilar.py" as K
+participant "guvenlik.py" as G
+database "SQLite" as V
+participant "defter.py" as D
+
+Z -> W : POST /kayit (ad soyad, takma ad, şifre,\ndoğum tarihi, il › ilçe, CSRF)
+W -> K : kayit(...)
+K -> K : takma ad biçimi, benzer ad yok mu,\nkaba ifade yok mu
+K -> G : sifre_kontrol(sifre, tekrar)
+K -> K : yaş ≥ alt sınır, konum ilçe düzeyinde mi
+alt kurallardan biri sağlanmıyor
+  K --> W : KuralHatasi
+  W --> Z : form yeniden, hata mesajıyla
+else hepsi sağlanıyor
+  K -> G : kurtarma_kodu_uret()
+  K -> G : sifre_hash(sifre), kurtarma_hash(kod)
+  K -> V : INSERT kullanicilar (ad ve doğum tarihi gizli)
+  K -> G : hiz_siniri(aynı adresten saatlik üyelik)
+  K -> D : ekle(UYE) «yalnızca takma ad»
+  K --> W : kullanici_id, kurtarma kodu
+  W -> V : COMMIT
+  W -> W : üye oturumu aç (kullanici_id, oturum sürümü)
+  W --> Z : kurtarma kodu sayfası\n(yalnızca bir kez gösterilir)
+end
+@enduml

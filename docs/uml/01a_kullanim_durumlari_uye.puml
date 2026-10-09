@@ -1,0 +1,63 @@
+@startuml 01a_kullanim_durumlari_uye
+!include _stil.iuml
+title Agora — Kullanım durumları (1/2): ziyaretçi, üye ve uzman
+left to right direction
+
+actor "Ziyaretçi" as Ziy
+actor "Üye" as Uye
+actor "Uzman" as Uzm
+Uzm -|> Uye
+Uye -|> Ziy
+
+rectangle "Agora" {
+  usecase "Konuları oku, ara" as UC_oku
+  usecase "Kayıt defterini incele" as UC_defter
+  usecase "Kayıt ol\n(ad, adres, doğum tarihi, takma ad)" as UC_kayit
+  usecase "Giriş yap / şifreyi\nkurtarma koduyla sıfırla" as UC_giris
+
+  usecase "Konu aç" as UC_konu
+  usecase "Alt konu aç" as UC_alt
+  usecase "İtiraz konusu aç" as UC_itiraz
+  usecase "Mesaj yaz, yanıtla, düzenle" as UC_mesaj
+  usecase "Fikir yaz\n(konu başına bir)" as UC_fikir
+  usecase "Yönetmelik denetimi\n(D1–D7)" as UC_denetim
+
+  usecase "Oy ver" as UC_oy
+  usecase "Katılım uygunluğu\nve oy ağırlığı" as UC_uygun
+  usecase "Gerekçeli uzman oyu ver\n(oyu 10 sayılır)" as UC_uzmanoy
+  usecase "Makbuzla oyunu doğrula" as UC_makbuz
+  usecase "Oy devret" as UC_devir
+  usecase "Mesaj gizleme / konu\nkaldırma oylaması aç" as UC_gizle
+  usecase "Şikayet et" as UC_sikayet
+  usecase "Uzmanlığa başvur" as UC_uzman
+  usecase "Yönetmelik değişikliği\nya da kategori öner" as UC_oner
+}
+
+Ziy --> UC_oku
+Ziy --> UC_defter
+Ziy --> UC_kayit
+Ziy --> UC_giris
+
+Uye --> UC_konu
+Uye --> UC_mesaj
+Uye --> UC_fikir
+Uye --> UC_oy
+Uye --> UC_makbuz
+Uye --> UC_devir
+Uye --> UC_gizle
+Uye --> UC_sikayet
+Uye --> UC_uzman
+Uye --> UC_oner
+Uzm --> UC_uzmanoy
+
+UC_alt ..> UC_konu : <<extend>>
+UC_itiraz ..> UC_konu : <<extend>>
+UC_konu ..> UC_denetim : <<include>>
+UC_mesaj ..> UC_denetim : <<include>>
+UC_fikir ..> UC_denetim : <<include>>
+UC_oy ..> UC_uygun : <<include>>
+UC_uzmanoy ..> UC_oy : <<extend>>
+
+note "Konunun konum ve yaş kuralını sağlamayan\nüye o konuda **gözlemcidir**: okur, ama oy\nveremez ve fikir yazamaz." as N1
+N1 .. UC_uygun
+@enduml

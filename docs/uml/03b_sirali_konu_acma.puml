@@ -1,0 +1,35 @@
+@startuml 03b_sirali_konu_acma
+!include _stil.iuml
+title Sıralı diyagram 2 — Konu açma ve yönetmelik denetimi (Chain of Responsibility)
+autonumber
+actor "Üye" as U
+participant "konu_sayfalari.py\n(web rotası)" as W
+participant "konular.py" as K
+participant "uygunluk.py" as Y
+participant "denetim.py\nD1 → D2 → … → D7" as D
+database "SQLite" as V
+participant "bildirimler.py" as B
+
+U -> W : POST /konu/yeni (başlık, açıklama,\nkategori, konum ve yaş kuralı)
+W -> K : konu_ac(db, sahip, form)
+K -> K : alanları doğrula; alt konuysa\nüstün kuralını yalnızca daraltabilir
+K -> Y : sahip bu kuralı sağlıyor mu?
+K -> D : denetle(başlık, açıklama, kategori, konum)
+loop zincirdeki her halka (D1 Saygılı dil … D7 Açıklık)
+  D -> D : kontrol(istek) → bulgu, ciddiyet\n(ENGEL / UYARI / KAPALI)
+end
+D --> K : rapor {engel, uyarı}
+alt engel var (ör. D2 kişisel veri)
+  K --> W : KuralHatasi("Yönetmelik denetimi engelledi …")
+  W --> U : form, engelleyen madde ve gerekçesiyle
+else engel yok
+  K -> V : INSERT konular (durum = TARTISMA,\ntartışma bitişi = şimdi + 24 saat)
+  K -> V : arama dizini, şeffaflık günlüğü
+  K -> V : defter kuyruğuna KONU bloğu
+  K -> K : sistem mesajı: "24 saat sonra oylama başlar"
+  K -> B : takipçilere bildirim
+  K --> W : konu_id
+  W -> V : COMMIT → defter düğümlere yazar
+  W --> U : konu sayfası (uyarılar varsa gösterilir)
+end
+@enduml

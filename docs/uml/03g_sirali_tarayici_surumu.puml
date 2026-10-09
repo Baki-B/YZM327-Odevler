@@ -1,0 +1,28 @@
+@startuml 03g_sirali_tarayici_surumu
+!include _stil.iuml
+title Sıralı diyagram 7 — Tarayıcı sürümünde (GitHub Pages) bir sayfa isteği
+autonumber
+actor "Ziyaretçi" as Z
+participant "Çerçeve (iframe)\napp/konu/5" as F
+participant "sw.js\n(service worker)" as SW
+participant "kabuk.js\n(index.html)" as K
+participant "isci.js\n(Web Worker)" as I
+participant "Pyodide: Flask\n(forum/ paketi)" as P
+database "SQLite + defter\n(IndexedDB)" as V
+
+Z -> F : bağlantıya dokunur
+F -> SW : GET app/konu/5
+SW -> SW : app/ altında mı? (statik dosyalar hariç)
+SW -> K : postMessage(istek) + MessageChannel
+K -> I : isteği işçiye ilet
+I -> P : WSGI çağrısı: GET /konu/5\n(kök = /YZM327-Odevler/app)
+P -> V : sorgular
+V --> P : satırlar
+P --> I : 200, HTML
+I -> V : değiştiyse dosyaları IndexedDB'ye kaydet
+I --> K : yanıt (durum, başlıklar, gövde)
+K --> SW : yanıt
+SW --> F : Response(HTML)
+F --> Z : sayfa
+note over SW, P : Sunucu yok: Python ziyaretçinin tarayıcısında çalışır.\nGeri tuşu: kabuk çerçevedeki ilerlemeyi sayar.
+@enduml

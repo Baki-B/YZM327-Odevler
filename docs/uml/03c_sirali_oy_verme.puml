@@ -1,0 +1,39 @@
+@startuml 03c_sirali_oy_verme
+!include _stil.iuml
+title Sıralı diyagram 3 — Oy verme ve makbuzla doğrulama
+autonumber
+actor "Üye" as U
+participant "Web katmanı\n(istek zinciri)" as W
+participant "oylama.py" as O
+participant "uygunluk.py" as Y
+database "SQLite\n(Baglanti)" as V
+participant "defter.py\n«abone»" as D
+collections "Düğüm A · B · C" as N
+
+U -> W : POST /oylama/12/oy (seçim, CSRF)
+W -> W : kimlik → askı → CSRF → zamanlayıcı\n→ BEGIN IMMEDIATE (yazma kilidi)
+W -> O : oy_ver(db, teklif, üye, seçim, gerekçe)
+O -> Y : oy_agirligi(üye, bağlam)
+Y --> O : 0 (gözlemci) / 1 (üye) / 10 (alanın uzmanı)
+alt ağırlık = 0
+  O --> W : KuralHatasi("Bu konuda gözlemcisin")
+  W --> U : hata mesajı
+else oy hakkı var
+  opt uzman (ağırlık > 1)
+    O -> O : gerekçe zorunlu, oy herkese açık
+  end
+  O -> O : makbuz üret;\ntaahhüt = SHA-256(teklif | seçim | makbuz)
+  O -> V : INSERT oylar … WHERE oylama hâlâ açık
+  O -> V : defter kuyruğuna OY bloğu (taahhüt, seçim değil)
+  O --> W : makbuz
+  W -> V : COMMIT
+  V -> D : commit olayı → _islem_kaydedildi()
+  D -> N : çoğunluk zincirinin sonuna ekle
+  W --> U : makbuz kodu (bir kez gösterilir)
+end
+== Daha sonra ==
+U -> W : POST /defter/makbuz (oylama, makbuz)
+W -> D : makbuz_dogrula(teklif, makbuz, seçenekler)
+D -> N : taahhüdü zincirde ara
+D --> U : "Oyun blok #N'de kayıtlı; seçimin: …"
+@enduml
