@@ -1,0 +1,41 @@
+@startuml 03d_sirali_tur_sonu
+!include _stil.iuml
+title Sıralı diyagram 4 — Tur sonu: sonuçlandırma (Template Method + Strategy, Memento)
+autonumber
+participant "gorevler.tick\n(zamanlayıcı)" as Z
+database "SQLite" as V
+participant "oylama.sonuclandir\n«şablon yöntem»" as O
+participant "FikirTuru\n«strateji»" as T
+participant "sonuclar.py" as S
+participant "konular.py" as K
+participant "yz.py\n(Bilge)" as YZ
+
+Z -> V : süresi dolan açık oylamaları bul
+loop her oylama için
+  Z -> V : kayit_noktasi() — SAVEPOINT + kuyruk hatırası
+  Z -> O : sonuclandir(teklif_id)
+  O -> O : sayim(): her fikir için ağırlıklı pay ve kişi payı;\noran = küçüğü; çekimserler paydada; yeter sayı
+  O -> T : sonuc_durumu(s), sonucu_tamamla(s)
+  T -> S : tur_karari() «saf işlev»
+  S --> T : KABUL / DEVAM / SONUCSUZ
+  O -> V : UPDATE teklif durumu (yalnızca hâlâ ACIK ise)
+  O -> V : defter kuyruğuna SONUC bloğu
+  O -> T : sonuc_bildirimi(), uygula()
+  T -> S : tur_uygula()
+  alt KABUL (%75 ezici üstünlük, tek kalan ya da 5. turda en yüksek)
+    S -> K : kapat(konu, KARARA_BAGLANDI), karar kaydı
+  else DEVAM (eşik altındakiler elendi, birden fazla fikir kaldı)
+    S -> K : sonraki_tur(konu, tur + 1, kalanlar)
+  else SONUCSUZ (yeter sayı yok / eşitlik)
+    S -> K : kapat(konu, SONUCSUZ)
+  end
+  S -> YZ : tur_ozeti() — sayılar kararın kendisinden
+  alt hata yok
+    Z -> V : RELEASE
+  else bu oylamada hata
+    Z -> V : ROLLBACK TO kayıt noktası;\nkuyruklar hatıradan geri yüklenir
+    note right : yalnızca bu oylama geri alınır,\ndiğerleri sürer
+  end
+end
+Z -> V : COMMIT → defter aboneleri blokları yazar
+@enduml

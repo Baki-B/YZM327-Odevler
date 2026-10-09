@@ -10,6 +10,7 @@ Yazılım Mühendisliğine Giriş dersi ödevi.
 |---|---|
 | [docs/rapor/Agora_Proje_Raporu.pdf](docs/rapor/Agora_Proje_Raporu.pdf) | **Proje raporu** (PDF, kapak + 4 sayfa): teknik ayrıntılar, SOLID ve GoF desenleri, problem çerçeveleme, ölçümler, dağıtım. Kaynağı `docs/rapor/rapor.html` |
 | [docs/analiz.md](docs/analiz.md) | **Problem çerçeveleme ve gereksinim analizi:** YZ gerekli mi?, tek sayfalık kanvas, iş/ürün/koruyucu metrikler, ölçülmüş temel çizgi ve hata analizi, kısıtlar, paydaşlar, ön-otopsi, ölçülmüş gecikme ve ölçeklenme |
+| [docs/uml/](docs/uml/README.md) | **UML diyagramları** (tek PDF: [Agora_UML_Diyagramlari.pdf](docs/uml/Agora_UML_Diyagramlari.pdf)): 2 kullanım durumu, 4 sınıf (alan modeli ve desenler), 7 sıralı diyagram |
 | [docs/tasarim.md](docs/tasarim.md) | UML diyagramları; **SOLID ilkeleri ve GoF tasarım desenleri** (State, Strategy, Template Method, Chain of Responsibility, Adapter, Memento, Observer, Repository, Facade) dosya dosya, sınırları ve sınıf diyagramlarıyla |
 | [docs/rehber.md](docs/rehber.md) | Uygulamanın bütün ayrıntıları ve kullanılan mimariler, sade bir dille |
 | [laboratuvar/](laboratuvar/README.md) | **S02-50 mini laboratuvarı:** Türkçe/İngilizce token oranı (tiktoken), nedensel maskeli dikkat ısı haritası (NumPy), sıcaklık deneyi, YZ kodlama aracının önerdiği import'ların doğrulanması; **S01-49 soru 6:** YZ'nin yazdığı testlerin doğruluğu ve mutasyon testi |

@@ -1,0 +1,54 @@
+@startuml 01b_kullanim_durumlari_yonetim
+!include _stil.iuml
+title Agora — Kullanım durumları (2/2): yönetici ve otomatik işler
+left to right direction
+
+actor "Yönetici" as Yon
+actor "Zamanlayıcı\n(sistem)" as Zam
+actor "Yapay zeka üye\n(Bilge)" as YZ
+
+rectangle "Agora" {
+  package "Yönetim paneli (üye arayüzünden ayrı)" {
+    usecase "Yönetici girişi\n(ayrı oturum)" as UC_ygiris
+    usecase "Üyeleri yönet\n(yönetici yap, askıya al)" as UC_uyeler
+    usecase "Şikayeti oylamaya al\nya da yersiz bul" as UC_ysikayet
+    usecase "Toplu bildirim, site duyurusu,\nkategori, yedek" as UC_site
+    usecase "Kayıt defterini denetle ve onar" as UC_onar
+    usecase "Süreyi ilerlet\n(yalnızca sunum kipi)" as UC_ilerlet
+  }
+  usecase "Gizleme / kaldırma\noylaması aç" as UC_gizle
+  package "Otomatik işler" {
+    usecase "Tartışmayı oylamaya geçir\n(24 saat dolunca)" as UC_gecir
+    usecase "Turu sonuçlandır\n(eleme, ezici üstünlük, karar)" as UC_tur
+    usecase "Tartışma ve tur özeti yaz" as UC_ozet
+    usecase "Olayı kayıt defterine yaz" as UC_blok
+  }
+}
+
+Yon --> UC_ygiris
+Yon --> UC_uyeler
+Yon --> UC_ysikayet
+Yon --> UC_site
+Yon --> UC_onar
+Yon --> UC_ilerlet
+UC_uyeler ..> UC_ygiris : <<include>>
+UC_ysikayet ..> UC_ygiris : <<include>>
+UC_site ..> UC_ygiris : <<include>>
+UC_onar ..> UC_ygiris : <<include>>
+UC_ilerlet ..> UC_ygiris : <<include>>
+UC_ysikayet ..> UC_gizle : <<include>>
+
+Zam --> UC_gecir
+Zam --> UC_tur
+UC_tur ..> UC_ozet : <<include>>
+UC_tur ..> UC_blok : <<include>>
+UC_gecir ..> UC_blok : <<include>>
+YZ --> UC_ozet
+
+note right of Yon
+  Yönetici kararlara karışamaz:
+  içerik silemez, uzman atayamaz,
+  oylamaların sonucuna dokunamaz.
+  Her işlemi şeffaflık günlüğüne yazılır.
+end note
+@enduml

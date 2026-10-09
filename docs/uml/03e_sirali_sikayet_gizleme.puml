@@ -1,0 +1,33 @@
+@startuml 03e_sirali_sikayet_gizleme
+!include _stil.iuml
+title Sıralı diyagram 5 — Şikayetten gizleme oylamasına
+autonumber
+actor "Üyeler (en az 3)" as U
+actor "Yönetici" as Y
+participant "sikayetler.py" as S
+participant "konular.py" as K
+participant "oylama.py" as O
+participant "bildirimler.py" as B
+database "SQLite" as V
+
+U -> S : sikayet_et(mesaj, neden, açıklama)
+S -> V : INSERT sikayetler (durum = ACIK)
+S -> S : aynı içeriği şikayet eden kişi sayısı
+opt sayı = şikayet tabanı (3)
+  S -> B : yöneticilere bildirim
+end
+Y -> S : oylamaya_al(sikayet_id)\n(yönetici oturumuyla, yönetim panelinden)
+S -> K : mesaj_silme_teklifi([mesaj], neden)
+K -> O : teklif_ac(MESAJ_SILME, eşik = 3/4)
+O --> K : teklif_id
+S -> V : şikayetleri OYLAMADA olarak kapat,\nşeffaflık günlüğü
+S -> B : şikayetçilere "oylama açıldı"
+note over Y, O : Yönetici mesajı kendisi silemez;\nkararı oylama verir.
+... oylama süresi ya da herkes oy verdi ...
+O -> O : sonuclandir() → MesajGizlemeTuru.uygula()
+alt evet ≥ 3/4
+  O -> K : mesaji_gizle(mesaj, not) — içerik gizlenir, iz kalır
+else 3/4'e ulaşmadı
+  O -> V : mesaj olduğu gibi kalır
+end
+@enduml

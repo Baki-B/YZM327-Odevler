@@ -1,10 +1,14 @@
 # Agora — Tasarım Belgesi
 
-Bu belgedeki diyagramlar Mermaid ile yazılmıştır (GitHub'da ve VS Code'da Mermaid eklentisiyle çizilir).
+Bu belgedeki diyagramlar Mermaid ile yazılmıştır (GitHub'da ve VS Code'da Mermaid eklentisiyle çizilir). Standart UML gösterimiyle
+kullanım durumu, sınıf ve sıralı diyagramların tamamı [uml/](uml/README.md) klasöründe ve tek PDF'te:
+[Agora_UML_Diyagramlari.pdf](uml/Agora_UML_Diyagramlari.pdf).
 Problem çerçeveleme, metrikler, ölçümler ve işlevsel olmayan gereksinimler [analiz.md](analiz.md) dosyasındadır.
 SOLID ilkeleri ve tasarım desenlerinin projedeki karşılıkları 8. bölümde.
 
 ## 1. Kullanım durumu (use case)
+
+Özet görünüm; aktörler, sistem sınırı ve `include`/`extend` ilişkileriyle UML hâli: [uml/](uml/README.md) 1a ve 1b.
 
 ```mermaid
 flowchart LR
