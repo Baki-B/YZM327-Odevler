@@ -1,20 +1,13 @@
 @startuml 3a_sirali_konu_acma
 !include _stil.iuml
 title Sıralı diyagram — Konu açma
-actor Üye as U
-participant "Web" as W
-participant "Konular" as K
-participant "Denetim" as D
-database "Veritabanı" as V
+hide footbox
+participant "Üye" as U
+participant "Sistem" as S
+participant "Veritabanı" as V
 
-U -> W : konu formunu gönder
-W -> K : konu_ac()
-K -> D : denetle()
-D --> K : rapor
-alt kurala aykırı
-  K --> U : hata mesajı
-else uygun
-  K -> V : konuyu kaydet (TARTISMA)
-  K --> U : konu sayfası
-end
+U -> S : konu bilgilerini gönder
+S -> S : kurallara uygun mu?
+S -> V : konuyu kaydet
+S --> U : konu açıldı
 @enduml
