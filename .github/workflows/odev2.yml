@@ -1,0 +1,29 @@
+# 2. Ödev (USB Makro Klavye) — çekirdeği derler ve birim testlerini çalıştırır.
+# Yalnızca odev2-usb-klavye/ değiştiğinde çalışır; 1. ödevin (Agora) iş
+# akışlarından bağımsızdır.
+name: 2. Ödev (USB Makro Klavye)
+
+on:
+  push:
+    paths: ["odev2-usb-klavye/**", ".github/workflows/odev2.yml"]
+  pull_request:
+    paths: ["odev2-usb-klavye/**", ".github/workflows/odev2.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Derle (çekirdek + benzetim + testler)
+        working-directory: odev2-usb-klavye
+        run: make all
+      - name: Birim testleri (başarısızsa geçmez)
+        working-directory: odev2-usb-klavye
+        run: make test
+      - name: Benzetim duman testi (smoke)
+        working-directory: odev2-usb-klavye
+        run: ./bin/benzetim ornek_ayar.conf

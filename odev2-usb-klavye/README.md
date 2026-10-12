@@ -1,91 +1,109 @@
 # 2. Ödev — USB Makro Klavye (STM32)
 
-> Bu klasör **2. ödeve** aittir. 1. ödev (Agora forum) deponun kökünde durur; bu iki ödevin
-> dosyaları birbirine karışmaz. 2. ödevle ilgili her şey bu `odev2-usb-klavye/` klasörünün içindedir.
+> Bu klasör **2. ödeve** aittir. 1. ödev (Agora forum) deponun kökünde durur; iki
+> ödevin dosyaları birbirine karışmaz. 2. ödevle ilgili her şey bu
+> `odev2-usb-klavye/` klasörünün içindedir.
 
 ## Tek cümleyle
 
-Bilgisayara takılınca kendini **ikinci bir klavyeymiş gibi** tanıtan, takılır takılmaz bir tarayıcı
-(ya da uygulama) açıp sonra **önceden ayarladığın tuşlara otomatik basan** küçük bir USB cihazı.
-Knight Online gibi oyunlarda "sürekli ASD'ye bas" diyen oto-tuş programlarının yazılım değil,
-**donanım** hâli.
+Bilgisayara takılınca kendini **ikinci bir klavyeymiş gibi** tanıtan, takılır
+takılmaz bir tarayıcı açıp sonra **önceden ayarladığın tuşlara otomatik basan**
+küçük bir USB cihazı. Oyunlardaki (ör. Knight Online) "sürekli ASD'ye bas"
+oto-tuş programlarının yazılım değil, **donanım** hâli. Teknik adıyla
+programlanabilir bir **USB HID makro klavye**.
 
-## Neden ilginç / "sihir" nerede?
+## Nasıl çalışır (kısaca)
 
-Normalde bir programın senin yerine tuşa basması için bilgisayara ayrıca bir yazılım kurman gerekir.
-Burada ise basmayı yapan şey **cihazın kendisi**. İşletim sistemi (Windows ya da Linux) bu cihazı
-sıradan bir klavye zanneder; çünkü cihaz USB üzerinden tam olarak gerçek bir klavyenin konuştuğu dilde
-konuşur. Bu yüzden:
+İşletim sistemi, USB'den klavye dilinde konuşan her aygıtı sıradan bir klavye
+sanar. Bu yüzden **sürücü kurulmaz** (tak-çalıştır) ve **işletim sisteminden
+bağımsızdır**: cihaz aynı kalır, Windows da Linux da kendi klavyesi sanır
+("Windows içinde Windows, Linux içinde Linux"). Takılınca cihaz önce bir tarayıcı
+açar, sonra ayarladığın tuşlara belirli aralıklarla basar.
 
-- **Hiçbir sürücü (driver) kurulmaz.** Tak-çalıştır. Her klavye zaten böyle çalışır.
-- **İşletim sisteminden bağımsızdır.** Windows'a takınca Windows klavyesi, Linux'a takınca Linux
-  klavyesi gibi görünür. Cihaz "harf gönderir", o harfi kim alırsa alsın fark etmez. Senin dediğin
-  *"Windows içinde Windows, Linux içinde Linux"* kısmı tam olarak bu: cihaz aynı kalır, her sistem
-  kendi klavyesi sanır.
+Ayrıntılı anlatım: [`belgeler/analiz.md`](belgeler/analiz.md).
 
-Bu tür cihazların genel teknik adı **HID klavye** (bkz. alttaki terim listesi). Oyuncuların kullandığı
-makro klavyeler, programlanabilir tuş takımları aynı prensiple çalışır.
+## Mimari — mantık donanımdan ayrı
 
-## Cihaz takılınca ne oluyor? (akış)
+Projenin kalbi: **ne yapılacağı** (hangi tuşlar, tarayıcı nasıl açılır) ile
+**nasıl yapılacağı** (gerçek USB sinyali) birbirinden ayrıdır.
 
-1. Cihazı USB'ye takarsın.
-2. Bilgisayar onu **yeni bir klavye** olarak görür (ekranda hiçbir kurulum çıkmaz).
-3. Cihaz, ezbere bildiği tuş dizisini yazmaya başlar. Örneğin bir tarayıcı/uygulama açmak için:
-   - **Windows:** `Win+R` → `chrome https://...` yazar → `Enter`. (Çalıştır kutusu)
-   - **Linux:** masaüstüne göre `Win` / terminal kısayolu → komut → `Enter`.
-4. Site/uygulama açıldıktan sonra cihaz asıl işine geçer: **senin ayarladığın tuşlara belirli aralıklarla
-   basmaya** başlar (örn. `A`, `S`, `D` sırayla, her 200 ms'de bir).
+- **`cekirdek/`** — donanım bilmeyen saf C++ mantık. Kart olmadan bilgisayarda
+  derlenip test edilir.
+- **`arduino/`** — çekirdeği gerçek USB-HID klavyeye bağlayan STM32 taslağı.
+- **`benzetim/`** — çekirdeği konsola bağlar; cihazın ne yapacağını gösterir.
+- **`testler/`** — çekirdeği test sahtelerine bağlar; birim testleri.
 
-## Ayarları nasıl yapacaksın?
+Uygulanan SOLID ilkeleri ve GoF desenleri (Strategy, Factory, Command, Builder,
+State, Adapter, Observer, Facade) dosya dosya: [`belgeler/tasarim.md`](belgeler/tasarim.md)
+(UML sınıf/durum/sıralı diyagramlarıyla).
 
-"Hangi tuşlara, ne sıklıkla, ne kadar süre bassın?" bilgisini cihazın hatırlaması gerekir. İki yaygın yol var:
+## Çalıştır (kart gerekmez)
 
-- **Basit yol:** Tuş dizisini ve zamanlamayı doğrudan cihazın yazılımına (firmware) gömmek. Değiştirmek
-  için yeniden programlarsın. Ödev için en kolay başlangıç budur.
-- **Esnek yol:** Cihazın küçük bir ayar modu olur. Mesela takılınca önce bir ayar sayfası/uygulaması açar,
-  sen "A S D, 200 ms" dersin, cihaz bunu belleğine kaydeder, sonraki takmalarda onu uygular. Bu kısım
-  ödevin "ileri seviye" hedefi olabilir.
-
-## Donanım: neden STM32?
-
-**STM32**, içinde USB donanımı hazır gelen ucuz bir mikrodenetleyici (küçük bilgisayar-çip). "Kendini
-klavye gibi tanıtma" (USB HID) işini kütüphaneyle hazır verir, bu yüzden sıfırdan USB yazmak zorunda
-kalmazsın. Başlangıç için uygun kartlar: **STM32F103 "Blue Pill"** ya da **STM32F4** serisi. (Alternatif
-olarak aynı mantık Raspberry Pi Pico / ATmega32U4 ile de kurulabilir; ödevde STM32 istendiği için ona
-odaklanıyoruz.)
-
-Kabaca ihtiyaç listesi:
-
-- 1 adet STM32 geliştirme kartı (USB'den beslenen ve veri gönderebilen)
-- Programlamak için ST-Link ya da kartın USB bootloader'ı
-- Yazılım tarafında: STM32 HID kütüphanesi (kartı klavye yapan hazır kod)
-
-## Önerilen klasör düzeni (ileride dolacak)
-
-```
-odev2-usb-klavye/
-├── README.md          ← bu dosya (ödevin açıklaması)
-├── donanim/           ← kart seçimi, bağlantı şeması, fotoğraf
-├── yazilim/           ← STM32 firmware kodu (kartı klavye yapan + tuş dizisi)
-└── belgeler/          ← rapor, ekran görüntüleri, test notları
+```bash
+cd odev2-usb-klavye
+make test        # birim testleri (çekirdek mantığı; ~1 sn)
+make benzetim    # cihazın ne yapacağını konsolda gösterir
 ```
 
-(Şimdilik yalnızca bu README var; kodu ve belgeleri yazdıkça bu alt klasörler eklenecek.)
+Kendi ayarınla benzetim:
 
-## Yol haritası (sırayla)
+```bash
+make benzetim AYAR=ornek_ayar.conf
+```
 
-1. **Klavye ol.** STM32'yi, bilgisayara takınca tek bir harf (örn. sürekli `A`) yazan bir klavye yap.
-   Bu çalışırsa işin kalbi tamamdır.
-2. **Tarayıcı aç.** Takılınca `Win+R` → `chrome ...` → `Enter` dizisini yazdır.
-3. **Makroyu ekle.** Site açıldıktan sonra `A S D` döngüsünü belirli aralıkla bastır.
-4. **İki sistemde dene.** Windows ve Linux'ta ayrı ayrı test et, farklı kısayolları ayarla.
-5. **Ayarlanabilir yap** (isteğe bağlı/ileri): tuş ve süreyi dışarıdan değiştirilebilir hâle getir.
+Örnek benzetim çıktısı (kısaltılmış):
+
+```
+[durum] BASLATILIYOR
+  kisayol: [GUI]+'r'
+  yaz    : "chrome https://baki-b.github.io/YZM327-Odevler/"
+  tus    : [ENTER]
+[durum] CALISIYOR
+  bas    : 'a'   (bekle 200 ms)
+  bas    : 's'   (bekle 200 ms)
+  bas    : 'd'   (bekle 200 ms)
+  ...
+```
+
+## Ayarlar
+
+Satır tabanlı yapılandırma (`ornek_ayar.conf`):
+
+| Anahtar | Ne | Varsayılan |
+|---|---|---|
+| `platform` | `windows` / `linux` | windows |
+| `url` | açılacak adres | Agora sitesi |
+| `tuslar` | sırayla basılacak tuşlar | `a,s,d` |
+| `aralik_ms` | tuşlar arası bekleme | 200 |
+| `tekrar` | kaç tur (0 = sonsuz) | 0 |
+| `baslangic_gecikme_ms` | tarayıcı açılma beklemesi | 1500 |
+| `linux_terminal` | Linux terminal kısayolu | `ctrl+alt+t` |
+
+Kartta ayarlar doğrudan taslaktaki `setup()` içinde belirlenir (basit yol);
+metinden ayrıştırma bilgisayar/benzetim tarafında kullanılır (esnek yol).
+
+## Donanıma yükleme (kart gelince)
+
+Önerilen kart: **STM32F411 "Black Pill"**. Taslak: `arduino/tusmatik/`. Derleme
+ve yükleme adımları, Arduino ayarları ve bağlantı: [`arduino/BENIOKU.md`](arduino/BENIOKU.md).
+
+Çekirdek tek kaynaktır: Arduino taslağı aynı `cekirdek/` kodunu kullanır, yalnızca
+en alttaki ince katmanı (USB-HID, `delay/millis`, LED) ekler.
+
+## Yol haritası (durum)
+
+1. ✅ Klavye ol (çekirdek + USB-HID adaptörü yazıldı).
+2. ✅ Tarayıcı aç (Windows ve Linux stratejileri, testli).
+3. ✅ Makro döngüsü (tuşlar + aralık + tekrar, testli).
+4. ✅ İki sistem (Windows/Linux ayarı, testli).
+5. ✅ Ayarlanabilir (metin yapılandırma + ayrıştırıcı, testli).
+6. ⬜ Karta yükleyip gerçek bilgisayarda doğrulama (donanım gelince).
 
 ## Kapsam ve dürüst not
 
-Bu, **kendi bilgisayarında, kendi oyun/otomasyon kullanımın** için yaptığın programlanabilir bir makro
-klavyedir — piyasadaki oyuncu makro klavyeleriyle aynı fikir. Başkasının bilgisayarına gizlice bir şey
-yaptırmak gibi bir amacı yoktur; cihazı sen takar, sen ayarlarsın, ne yaptığı görünür.
+Bu, kendi bilgisayarında, kendi oyun/otomasyon kullanımın için programladığın bir
+makro klavyedir — piyasadaki oyuncu makro klavyeleriyle aynı fikir. Cihazı sen
+takar, sen ayarlarsın, ne yaptığı görünür.
 
 ---
 
@@ -94,7 +112,6 @@ yaptırmak gibi bir amacı yoktur; cihazı sen takar, sen ayarlarsın, ne yaptı
 | Terim | Türkçesi | Tek cümlelik tanım |
 |---|---|---|
 | **USB HID** | İnsan Arayüz Aygıtı | Klavye/fare gibi aygıtların bilgisayarla sürücüsüz konuştuğu standart; cihazımız kendini bu sınıfta "klavye" diye tanıtır. |
-| **Firmware** | Cihaz yazılımı (gömülü yazılım) | Mikrodenetleyicinin içine yazılan, cihazın ne yapacağını belirleyen kalıcı program. |
-| **Mikrodenetleyici** | Mikrodenetleyici | İçinde işlemci, bellek ve giriş-çıkış olan tek çipten minik bilgisayar (STM32 bir örnektir). |
-| **Bootloader** | Önyükleyici | Çipe yeni yazılımı yüklemeyi sağlayan, çipte hazır gelen küçük program. |
-| **Makro** | Makro | Önceden tanımlanmış, tek seferde tetiklenen tuş/işlem dizisi. |
+| **Firmware** | Cihaz yazılımı | Mikrodenetleyicinin içine yazılan, cihazın ne yapacağını belirleyen kalıcı program. |
+| **Adapter (bağdaştırıcı)** | Bağdaştırıcı deseni | Soyut bir arabirimi farklı somut dünyalara (USB, konsol, test) uyarlayan ince katman. |
+| **Bağımlılık enjeksiyonu** | Bağımlılık enjeksiyonu | Bir sınıfın ihtiyaçlarını (klavye, saat) dışarıdan, yapıcıdan vermek; böylece gerçeği yerine sahtesi konabilir. |
