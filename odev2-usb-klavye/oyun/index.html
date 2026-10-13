@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talim Botu</title>
+<style>
+  :root {
+    --arka: #f4f5f7; --kart: #ffffff; --metin: #1b1d22; --soluk: #6b7280;
+    --cizgi: #e3e6ea; --vurgu: #c7382f; --can: #dc2626; --xp: #2563eb; --yesil: #16a34a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-tema="light"]) {
+      --arka: #14161a; --kart: #1e2127; --metin: #eceef2; --soluk: #9aa3af;
+      --cizgi: #2c313a; --vurgu: #f0564b; --can: #ef4444; --xp: #60a5fa; --yesil: #34d399;
+    }
+  }
+  :root[data-tema="dark"] {
+    --arka: #14161a; --kart: #1e2127; --metin: #eceef2; --soluk: #9aa3af;
+    --cizgi: #2c313a; --vurgu: #f0564b; --can: #ef4444; --xp: #60a5fa; --yesil: #34d399;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--arka); color: var(--metin);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .kart {
+    background: var(--kart); border: 1px solid var(--cizgi); border-radius: 16px;
+    padding: 24px; width: 100%; max-width: 440px; box-shadow: 0 8px 30px rgba(0,0,0,.08);
+  }
+  h1 { font-size: 20px; margin: 0 0 2px; }
+  .alt { color: var(--soluk); font-size: 13px; margin: 0 0 18px; }
+  .sahne {
+    text-align: center; font-size: 76px; line-height: 1; padding: 14px 0 6px;
+    user-select: none; transition: transform .05s;
+  }
+  .sahne.vur { transform: scale(1.12) rotate(-3deg); }
+  .hasar {
+    text-align: center; height: 22px; font-weight: 700; color: var(--vurgu);
+    font-size: 17px; opacity: 0; transition: opacity .1s;
+  }
+  .hasar.gor { opacity: 1; }
+  .bar { height: 12px; background: var(--cizgi); border-radius: 99px; overflow: hidden; margin: 4px 0 14px; }
+  .bar > span { display: block; height: 100%; width: 100%; transition: width .08s; }
+  .can > span { background: var(--can); }
+  .xp > span { background: var(--xp); }
+  .etiket { display: flex; justify-content: space-between; font-size: 12px; color: var(--soluk); margin-bottom: 2px; }
+  .izgara { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0 18px; }
+  .kutu { background: var(--arka); border: 1px solid var(--cizgi); border-radius: 12px; padding: 10px; text-align: center; }
+  .kutu b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; }
+  .kutu small { color: var(--soluk); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  .tuslar { display: flex; gap: 8px; justify-content: center; }
+  .tus {
+    border: 1px solid var(--cizgi); border-radius: 10px; padding: 8px 0; width: 84px; text-align: center;
+    font-size: 13px; color: var(--soluk); transition: all .08s;
+  }
+  .tus b { display: block; font-size: 18px; color: var(--metin); }
+  .tus.bas { border-color: var(--vurgu); background: color-mix(in srgb, var(--vurgu) 14%, transparent); }
+  .durum { text-align: center; margin-top: 14px; font-size: 12px; color: var(--soluk); }
+  .combo { color: var(--yesil); font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="kart">
+    <h1>⚔️ Talim Botu</h1>
+    <p class="alt">Kuklayı döv, seviye atla. Tuşlar: <b>A</b> sol · <b>S</b> darbe · <b>D</b> sağ.
+      (Metin2 tarzı "grind" mantığının sade hâli.)</p>
+
+    <div class="sahne" id="sahne">🎯</div>
+    <div class="hasar" id="hasar">0</div>
+
+    <div class="etiket"><span>Kukla canı</span><span id="canYazi">60 / 60</span></div>
+    <div class="bar can"><span id="canBar"></span></div>
+
+    <div class="etiket"><span>Sonraki seviye</span><span id="xpYazi">0 / 100</span></div>
+    <div class="bar xp"><span id="xpBar" style="width:0%"></span></div>
+
+    <div class="izgara">
+      <div class="kutu"><b id="seviye">1</b><small>Seviye</small></div>
+      <div class="kutu"><b id="oldurme">0</b><small>Öldürme</small></div>
+      <div class="kutu"><b id="vurus">0</b><small>Vuruş</small></div>
+    </div>
+
+    <div class="tuslar">
+      <div class="tus" id="tusA"><b>A</b>sol kesik</div>
+      <div class="tus" id="tusS"><b>S</b>darbe</div>
+      <div class="tus" id="tusD"><b>D</b>sağ kesik</div>
+    </div>
+
+    <div class="durum">Combo: <span class="combo" id="combo">0</span> · Son tuş: <span id="sonTus">—</span></div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+  const KUKLA_CAN = 60, XP_BOLUM = 100, XP_ODUL = 25;
+  const HASAR = { a: 8, s: 12, d: 16 };
+
+  // Oyun durumu. Test bu nesneyi window.durum üzerinden okur.
+  const durum = { vurus: 0, combo: 0, oldurme: 0, seviye: 1, xp: 0, dummyCan: KUKLA_CAN };
+  window.durum = durum;
+
+  const $ = (id) => document.getElementById(id);
+  const sahne = $("sahne"), hasarEl = $("hasar");
+
+  function ciz() {
+    $("vurus").textContent = durum.vurus;
+    $("oldurme").textContent = durum.oldurme;
+    $("seviye").textContent = durum.seviye;
+    $("combo").textContent = durum.combo;
+    $("canYazi").textContent = durum.dummyCan + " / " + KUKLA_CAN;
+    $("canBar").style.width = (100 * durum.dummyCan / KUKLA_CAN) + "%";
+    $("xpYazi").textContent = durum.xp + " / " + XP_BOLUM;
+    $("xpBar").style.width = (100 * durum.xp / XP_BOLUM) + "%";
+  }
+
+  function vur(tus) {
+    const hasar = HASAR[tus];
+    durum.vurus++;
+    durum.combo++;
+    durum.dummyCan -= hasar;
+
+    if (durum.dummyCan <= 0) {
+      durum.oldurme++;
+      durum.xp += XP_ODUL;
+      while (durum.xp >= XP_BOLUM) { durum.xp -= XP_BOLUM; durum.seviye++; }
+      durum.dummyCan = KUKLA_CAN;
+      sahne.textContent = "💥";
+      setTimeout(() => { sahne.textContent = "🎯"; }, 90);
+    }
+
+    // Görsel geri bildirim
+    hasarEl.textContent = "-" + hasar;
+    hasarEl.classList.add("gor");
+    sahne.classList.add("vur");
+    const tusEl = $("tus" + tus.toUpperCase());
+    tusEl.classList.add("bas");
+    $("sonTus").textContent = tus.toUpperCase();
+    setTimeout(() => {
+      hasarEl.classList.remove("gor");
+      sahne.classList.remove("vur");
+      tusEl.classList.remove("bas");
+    }, 90);
+
+    ciz();
+  }
+
+  window.addEventListener("keydown", (e) => {
+    const tus = e.key.toLowerCase();
+    if (tus === "a" || tus === "s" || tus === "d") {
+      vur(tus);
+    } else {
+      durum.combo = 0;  // yanlış tuş combo'yu kırar
+      ciz();
+    }
+  });
+
+  ciz();
+})();
+</script>
+</body>
+</html>

@@ -82,6 +82,17 @@ Satır tabanlı yapılandırma (`ornek_ayar.conf`):
 Kartta ayarlar doğrudan taslaktaki `setup()` içinde belirlenir (basit yol);
 metinden ayrıştırma bilgisayar/benzetim tarafında kullanılır (esnek yol).
 
+## Basit bir oyunda deneme (donanım gerekmez)
+
+20 yıl önce Metin2 / Knight Online gibi oyunlarda seviye atlamak için tuşa basan
+makrolar kullanılırdı. Aynı fikri basit, kontrollü bir oyunda deniyoruz:
+`oyun/` klasöründe A/S/D ile oynanan bir "kuklayı döv, seviye atla" oyunu var.
+
+`make oyun-test`, cihazın göndereceği a-s-d tuşlarının **aynısını** ekransız
+(headless) tarayıcıya bastırır ve skorun yükseldiğini doğrular — yani otomatik
+klavyenin oyunu gerçekten oynattığını kart olmadan kanıtlar (`node` + `playwright`
+gerekir). Ayrıntı ve ekran görüntüsü: [`oyun/BENIOKU.md`](oyun/BENIOKU.md).
+
 ## Donanıma yükleme (kart gelince)
 
 Önerilen kart: **STM32F411 "Black Pill"**. Taslak: `arduino/tusmatik/`. Derleme
@@ -97,7 +108,8 @@ en alttaki ince katmanı (USB-HID, `delay/millis`, LED) ekler.
 3. ✅ Makro döngüsü (tuşlar + aralık + tekrar, testli).
 4. ✅ İki sistem (Windows/Linux ayarı, testli).
 5. ✅ Ayarlanabilir (metin yapılandırma + ayrıştırıcı, testli).
-6. ⬜ Karta yükleyip gerçek bilgisayarda doğrulama (donanım gelince).
+6. ✅ Basit oyunda deneme (`oyun/`; otomatik tuşlar oyunu oynattı, testli).
+7. ⬜ Karta yükleyip gerçek bilgisayarda doğrulama (donanım gelince).
 
 ## Kapsam ve dürüst not
 

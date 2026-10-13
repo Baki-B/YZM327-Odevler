@@ -8,7 +8,7 @@ BIN      := bin
 CEKIRDEK := $(wildcard cekirdek/*.cpp)
 TEST_SRC := $(wildcard testler/*.cpp)
 
-.PHONY: all test benzetim temizle
+.PHONY: all test benzetim oyun-test temizle
 all: $(BIN)/testler $(BIN)/benzetim
 
 $(BIN):
@@ -27,6 +27,11 @@ test: $(BIN)/testler
 # Benzetimi çalıştır. Kendi ayarınla:  make benzetim AYAR=ornek_ayar.conf
 benzetim: $(BIN)/benzetim
 	./$(BIN)/benzetim $(AYAR)
+
+# Oyun testi: cihazın a-s-d tuşlarını ekransız tarayıcıda oyuna bastırır.
+# node + playwright gerekir (CI'da değil; yerel deneme içindir).
+oyun-test:
+	node oyun/test_oyun.mjs
 
 temizle:
 	rm -rf $(BIN)
