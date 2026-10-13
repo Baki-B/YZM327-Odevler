@@ -21,69 +21,68 @@ Ayarlar temelAyar() {
 
 TEST(surucu_acilis_sonra_turlar) {
     Ayarlar a = temelAyar();
-    KayitKlavye k;
+    KayitGirdi g;
     SahteSaat s;
-    SahteGozlemci g;
-    Surucu surucu(a, baslaticiYap(a.platform), k, s, &g);
+    SahteGozlemci gz;
+    Surucu surucu(a, baslaticiYap(a.platform), g, g, s, &gz);
 
     surucu.calis(2);
 
-    CHECK_EQ(k.birlesik(),
+    CHECK_EQ(g.birlesik(),
              std::string("KIS:GUI+r|YAZ:chrome https://ornek.test/|OZEL:ENTER|"
                          "HARF:a|HARF:s|HARF:d|HARF:a|HARF:s|HARF:d"));
     CHECK(surucu.durum() == Durum::CALISIYOR);  // tekrar=0, bitmez
     CHECK_EQ(surucu.yapilanTur(), static_cast<uint32_t>(2));
-    // 400 (Win+R sonrası) + 1500 (baslangic) + 2 tur * 3 tus * 200
     CHECK_EQ(s.toplam, static_cast<uint32_t>(400 + 1500 + 2 * 3 * 200));
 }
 
 TEST(surucu_gozlemci_gecisleri) {
     Ayarlar a = temelAyar();
-    KayitKlavye k;
+    KayitGirdi g;
     SahteSaat s;
-    SahteGozlemci g;
-    Surucu surucu(a, baslaticiYap(a.platform), k, s, &g);
+    SahteGozlemci gz;
+    Surucu surucu(a, baslaticiYap(a.platform), g, g, s, &gz);
 
     surucu.calis(1);
 
-    CHECK_EQ(g.gecisler.size(), static_cast<std::size_t>(2));
-    CHECK(g.gecisler[0] == Durum::BASLATILIYOR);
-    CHECK(g.gecisler[1] == Durum::CALISIYOR);
+    CHECK_EQ(gz.gecisler.size(), static_cast<std::size_t>(2));
+    CHECK(gz.gecisler[0] == Durum::BASLATILIYOR);
+    CHECK(gz.gecisler[1] == Durum::CALISIYOR);
 }
 
 TEST(surucu_tekrar_sinirinda_biter) {
     Ayarlar a = temelAyar();
     a.tekrar = 2;
-    KayitKlavye k;
+    KayitGirdi g;
     SahteSaat s;
-    SahteGozlemci g;
-    Surucu surucu(a, baslaticiYap(a.platform), k, s, &g);
+    SahteGozlemci gz;
+    Surucu surucu(a, baslaticiYap(a.platform), g, g, s, &gz);
 
     surucu.calis(5);  // 5 istense de 2 turda biter
 
     CHECK_EQ(surucu.yapilanTur(), static_cast<uint32_t>(2));
     CHECK(surucu.durum() == Durum::BITTI);
-    CHECK(g.gecisler.back() == Durum::BITTI);
+    CHECK(gz.gecisler.back() == Durum::BITTI);
 }
 
 TEST(surucu_baslatmadan_tur_yoksayilir) {
     Ayarlar a = temelAyar();
-    KayitKlavye k;
+    KayitGirdi g;
     SahteSaat s;
-    Surucu surucu(a, baslaticiYap(a.platform), k, s);
+    Surucu surucu(a, baslaticiYap(a.platform), g, g, s);
 
     surucu.birTur();  // önce baslat gerekir
 
-    CHECK(k.olaylar.empty());
+    CHECK(g.olaylar.empty());
     CHECK(surucu.durum() == Durum::BEKLIYOR);
     CHECK_EQ(surucu.yapilanTur(), static_cast<uint32_t>(0));
 }
 
 TEST(surucu_durdur_ve_devam) {
     Ayarlar a = temelAyar();
-    KayitKlavye k;
+    KayitGirdi g;
     SahteSaat s;
-    Surucu surucu(a, baslaticiYap(a.platform), k, s);
+    Surucu surucu(a, baslaticiYap(a.platform), g, g, s);
 
     surucu.baslat();                              // CALISIYOR
     CHECK(surucu.durum() == Durum::CALISIYOR);
@@ -95,4 +94,38 @@ TEST(surucu_durdur_ve_devam) {
     CHECK(surucu.durum() == Durum::CALISIYOR);
     surucu.birTur();                              // şimdi bir tur çalışır
     CHECK_EQ(surucu.yapilanTur(), static_cast<uint32_t>(1));
+}
+
+// Fare eylemi + tarayıcı açma kapalı: oyuncu zaten oyunda, makro sadece tıklar.
+TEST(surucu_fare_eylemi_tarayici_kapali) {
+    Ayarlar a = temelAyar();
+    a.tarayiciAc = false;
+    a.eylem = Eylem::FARE;
+    a.fareDugmeleri = {FareDugme::SOL, FareDugme::SAG};
+    KayitGirdi g;
+    SahteSaat s;
+    SahteGozlemci gz;
+    Surucu surucu(a, baslaticiYap(a.platform), g, g, s, &gz);
+
+    surucu.calis(2);
+
+    CHECK_EQ(g.birlesik(), std::string("FARE:SOL|FARE:SAG|FARE:SOL|FARE:SAG"));
+    CHECK(surucu.durum() == Durum::CALISIYOR);
+    // Tarayıcı açılmadığı için BASLATILIYOR yaşanmaz; ilk geçiş CALISIYOR olur.
+    CHECK_EQ(gz.gecisler.size(), static_cast<std::size_t>(1));
+    CHECK(gz.gecisler[0] == Durum::CALISIYOR);
+    // Sadece fare aralıkları beklendi (açılış beklemesi yok).
+    CHECK_EQ(s.toplam, static_cast<uint32_t>(2 * 2 * 200));
+}
+
+TEST(surucu_tarayici_kapali_tus_eylemi) {
+    Ayarlar a = temelAyar();
+    a.tarayiciAc = false;  // eylem=TUS (varsayılan)
+    KayitGirdi g;
+    SahteSaat s;
+    Surucu surucu(a, baslaticiYap(a.platform), g, g, s);
+
+    surucu.calis(1);
+
+    CHECK_EQ(g.birlesik(), std::string("HARF:a|HARF:s|HARF:d"));  // açılış dizisi yok
 }

@@ -1,11 +1,14 @@
 # Orman Farmı (.io) — makro klavyeyi deneme oyunu
 
-20 yıl önce Metin2 / Knight Online gibi oyunlarda seviye atlamak için tuşa basan
-makrolar kullanılırdı. Bu klasör, aynı fikri **basit ve kontrollü** bir oyunda
-denemek içindir: **glor.io / dynast.io tarzı** tepeden bakışlı bir haritada
-**W/A/S/D** ile gezersin; ağaçlara vurunca odun, taşlara vurunca taş farmlanır.
-Tuşlar yön tuşlarıdır (yukarı/sol/aşağı/sağ) — yani makronun `w,a,s,d` ayarıyla
-birebir. Toplanan kaynak biter, bir süre sonra yeniden büyür (sürekli farm).
+20 yıl önce Metin2 / Knight Online gibi oyunlarda seviye atlamak için tuşa/tıka
+basan makrolar kullanılırdı. Bu klasör, aynı fikri **glor.io / dynast.io tarzı**
+basit bir farm oyununda denemek içindir.
+
+Gerçek kullanım: **oyuncu (insan)** karakteri kaynakların yanına götürür ve
+oto-vuruşu ağaca/taşa ayarlar; **makro (cihaz)** ise sadece **sol/sağ fare tıkını**
+sürekli spamlar. Oyunda oto-hedef, oyuncuya en yakın kaynağa kilitlidir; her tık
+onu vurur, canı bitince odun/taş toplanır, kaynak bir süre sonra yeniden büyür
+(sürekli farm). Yani makronun eylemi **tuş değil, fare tıklamasıdır**.
 
 ## Dosyalar
 
@@ -18,29 +21,31 @@ birebir. Toplanan kaynak biter, bir süre sonra yeniden büyür (sürekli farm).
 
 ## Elle oyna
 
-Tarayıcıda `index.html`'i aç, W/A/S/D ile haritada gez. Menzilindeki ağaç ve
-taşlara otomatik vurulur; canları bitince kaynak toplanır (odun/taş), XP artar,
-seviye atlanır. Kaynak bir süre sonra aynı yerde yeniden büyür.
+Tarayıcıda `index.html`'i aç, **sol/sağ tık** ile vur. Oto-hedef en yakın kaynağa
+kilitlidir (sarı halka ve nişan çizgisi); her tık onu keser, canı bitince odun/taş
+toplanır, XP/seviye artar, kaynak bir süre sonra yeniden büyür. İstersen
+<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ile oyuncuyu gezdirip hedefi
+değiştirebilirsin (makro bunu yapmaz; onu sen yaparsın).
 
 ## Otomatik test (donanım gerekmez)
 
-Cihazın yaptığının aynısını yapar: w-a-s-d tuşlarını tur tur basar (haritada
-gezinir) ve oyunun tepkisini ölçer. Ekransız (headless) Chromium kullanır;
-`node` + `playwright` gerekir.
+Cihazın yaptığının aynısını yapar: sol/sağ fare tıklarını tur tur basar ve oyunun
+tepkisini ölçer. Ekransız (headless) Chromium kullanır; `node` + `playwright` gerekir.
 
 ```bash
 node oyun/test_oyun.mjs       # ya da:  make oyun-test
 ```
 
-Beklenen sonuç: 40 tur × 4 tuş = **160 hamle**, hem odun hem taş farmlanır,
-**seviye atlanır** ve `ekran_goruntusu.png` güncellenir. Bu, "otomatik klavyeye basan
-cihaz oyunu oynatır mı?" sorusunun donanımsız kanıtıdır.
+Beklenen sonuç: 40 tur × 2 tık = **80 tık**, hem odun hem taş farmlanır,
+**seviye atlanır** ve `ekran_goruntusu.png` güncellenir. Bu, "otomatik tıklayan
+cihaz oyunu farmlar mı?" sorusunun donanımsız kanıtıdır.
 
 ## Gerçek cihazla
 
-Kart gelince `arduino/tusmatik/` taslağındaki `ayar.url`'yi oyunun adresine,
-`ayar.tuslar`'ı `{'w','a','s','d'}`'ye ayarlayıp yükle. Takınca cihaz oyunu açıp
-haritada gezip farmlamaya başlar.
+Kart gelince `arduino/tusmatik/` taslağındaki ayarı fare moduna koy:
+`ayar.tarayiciAc = false; ayar.eylem = FARE; ayar.fareDugmeleri = {SOL, SAG};`
+(taslakta örneği hazır). Takınca cihaz sadece tıklamaya başlar; sen oyuncuyu
+kaynağın yanına koyup oto-vuruşu ayarladığın sürece farmlar.
 
 ## Not
 

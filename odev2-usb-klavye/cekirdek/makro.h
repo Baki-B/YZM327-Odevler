@@ -3,6 +3,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "cihaz.h"
+#include "fare.h"
 #include "komut.h"
 
 namespace makro {
@@ -13,8 +15,8 @@ class Makro {
 public:
     void ekle(std::unique_ptr<Komut> k) { komutlar_.push_back(std::move(k)); }
 
-    void calistir(KlavyeCikti& cikti, Saat& saat) const {
-        for (const auto& k : komutlar_) k->calistir(cikti, saat);
+    void calistir(Cihaz& cihaz) const {
+        for (const auto& k : komutlar_) k->calistir(cihaz);
     }
 
     std::size_t boyut() const { return komutlar_.size(); }
@@ -25,8 +27,6 @@ private:
 };
 
 // Builder (Yapıcı) deseni: makroyu adım adım, okunur bir akıcı arayüzle kurar.
-// Komutların nasıl inşa edildiği (new, unique_ptr) tek yerde toplanır; çağıran
-// kod bu ayrıntıyla uğraşmaz.
 class MakroYapici {
 public:
     MakroYapici& metin(const std::string& m) {
@@ -43,6 +43,10 @@ public:
     }
     MakroYapici& harf(char h) {
         makro_.ekle(std::make_unique<HarfKomutu>(h));
+        return *this;
+    }
+    MakroYapici& fareTikla(FareDugme d) {
+        makro_.ekle(std::make_unique<FareTiklaKomutu>(d));
         return *this;
     }
     MakroYapici& bekle(uint32_t ms) {

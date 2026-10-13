@@ -32,19 +32,25 @@ flowchart TD
     end
     subgraph Port["Soyut arabirimler (port)"]
         KC["KlavyeCikti"]
+        FC["FareCikti"]
         SA["Saat"]
         GZ["DurumGozlemci"]
     end
     subgraph Uyarlama["Bağdaştırıcılar (Adapter)"]
-        AR["ArduinoKlavye / ArduinoSaat / LedGozlemci\n(STM32 USB-HID)"]
-        KO["KonsolKlavye / KonsolSaat\n(benzetim)"]
-        TS["KayitKlavye / SahteSaat / SahteGozlemci\n(testler)"]
+        AR["ArduinoKlavye / ArduinoFare / ArduinoSaat / LedGozlemci\n(STM32 USB-HID klavye+fare)"]
+        KO["KonsolKlavye / KonsolFare / KonsolSaat\n(benzetim)"]
+        TS["KayitGirdi / SahteSaat / SahteGozlemci\n(testler)"]
     end
-    S --> KC & SA & GZ
+    S --> KC & FC & SA & GZ
     KC -.uygular.-> AR & KO & TS
+    FC -.uygular.-> AR & KO & TS
     SA -.uygular.-> AR & KO & TS
     GZ -.uygular.-> AR & KO & TS
 ```
+
+Cihaz **bileşik bir USB-HID aygıttır**: hem klavye hem fare. Klavye tarayıcıyı
+açar (tuş dizisi), fare ise farm oyununda tıklar. Komutlara klavye+fare+saat tek
+bir `Cihaz` nesnesinde (Parametre Nesnesi) birlikte verilir.
 
 Ok yönü bağımlılığı gösterir: **her şey içeriye, soyut arabirimlere** bağlıdır;
 somut donanım en dışta durur ve içeriye hiçbir şey dayatmaz.
@@ -60,23 +66,33 @@ classDiagram
         +kisayol(degistiriciler, harf)
         +harfVur(harf)
     }
+    class FareCikti {
+        <<arabirim>>
+        +tikla(dugme)
+        +bas(dugme) +birak(dugme)
+    }
     class Saat {
         <<arabirim>>
         +bekle(ms)
         +suAn()
     }
+    class Cihaz {
+        +klavye: KlavyeCikti
+        +fare: FareCikti
+        +saat: Saat
+    }
     class Komut {
         <<arabirim>>
-        +calistir(cikti, saat)
+        +calistir(cihaz)
         +tanim()
     }
     class Makro {
         +ekle(komut)
-        +calistir(cikti, saat)
+        +calistir(cihaz)
     }
     class MakroYapici {
         +metin() +ozel() +kisayol()
-        +harf() +bekle() +kur()
+        +harf() +fareTikla() +bekle() +kur()
     }
     class PlatformBaslatici {
         <<arabirim>>
@@ -98,13 +114,17 @@ classDiagram
     Komut <|.. HarfKomutu
     Komut <|.. OzelTusKomutu
     Komut <|.. KisayolKomutu
+    Komut <|.. FareTiklaKomutu
     Komut <|.. BeklemeKomutu
+    Cihaz o-- KlavyeCikti
+    Cihaz o-- FareCikti
+    Cihaz o-- Saat
+    Komut ..> Cihaz : kullanır
     Makro o-- Komut : komutlar
     MakroYapici ..> Makro : kurar
     PlatformBaslatici <|.. WindowsBaslatici
     PlatformBaslatici <|.. LinuxBaslatici
-    Surucu ..> KlavyeCikti
-    Surucu ..> Saat
+    Surucu ..> Cihaz : klavye+fare+saat
     Surucu ..> PlatformBaslatici
     Surucu *-- Makro : açılış + tur
     Surucu ..> DurumSoyut : geçerli durum
@@ -133,19 +153,28 @@ sequenceDiagram
     participant PC as Bilgisayar
     participant S as Surucu
     participant St as Durum (State)
-    participant O as KlavyeCikti (Adapter)
+    participant K as KlavyeCikti (Adapter)
+    participant F as FareCikti (Adapter)
     PC->>S: baslat()
     S->>St: baslat(ctx)
     St->>S: tarayiciyiAc()
-    S->>O: kisayol(GUI, 'r')
-    S->>O: metinYaz("chrome <url>")
-    S->>O: ozelTusVur(ENTER)
+    alt tarayiciAc = evet (tuş modu)
+        S->>K: kisayol(GUI, 'r')
+        S->>K: metinYaz("chrome <url>")
+        S->>K: ozelTusVur(ENTER)
+    else tarayiciAc = hayir (fare modu)
+        Note over S: açılış atlanır
+    end
     St->>S: durumaGec(CALISIYOR)
     loop her tur
         PC->>S: birTur()
         S->>St: birTur(ctx)
         St->>S: makroTuru()
-        S->>O: harfVur('a') / harfVur('s') / harfVur('d')
+        alt eylem = tus
+            S->>K: harfVur('a') / 's' / 'd'
+        else eylem = fare
+            S->>F: tikla(SOL) / tikla(SAG)
+        end
     end
 ```
 
@@ -155,9 +184,9 @@ sequenceDiagram
 |---|---|---|
 | **S**RP | Tek sorumluluk | Her sınıfın tek işi var: `Ayarlar` yapılandırmayı tutar/ayrıştırır, `MakroYapici` makro kurar, `PlatformBaslatici` açılış dizisini üretir, `Surucu` yalnızca akışı yönetir. |
 | **O**CP | Açık/Kapalı | Yeni platform = yeni `PlatformBaslatici` sınıfı; yeni adım türü = yeni `Komut` sınıfı. Var olan kod değişmez (`baslatici.*`, `komut.h`). |
-| **L**SP | Liskov yerine koyma | `KonsolKlavye`, `ArduinoKlavye`, `KayitKlavye` her yerde `KlavyeCikti` yerine sorunsuz geçer; test sahteleri bu yüzden mümkün. |
-| **I**SP | Arabirim ayrımı | `KlavyeCikti` ve `Saat` ayrı, küçük arabirimlerdir. Saat isteyen kod klavye arabirimine bağlanmaz. |
-| **D**IP | Bağımlılığı tersine çevirme | Üst katman `Surucu`, somut donanıma değil `KlavyeCikti`/`Saat` soyutlamalarına bağlıdır; bağımlılıklar yapıcıdan enjekte edilir. |
+| **L**SP | Liskov yerine koyma | `KonsolKlavye`, `ArduinoKlavye`, `KayitGirdi` her yerde `KlavyeCikti` (ve `FareCikti`) yerine sorunsuz geçer; test sahteleri bu yüzden mümkün. |
+| **I**SP | Arabirim ayrımı | `KlavyeCikti`, `FareCikti` ve `Saat` ayrı, küçük arabirimlerdir. Yalnızca fare gereken kod klavyeye bağlanmaz. |
+| **D**IP | Bağımlılığı tersine çevirme | Üst katman `Surucu`, somut donanıma değil `KlavyeCikti`/`FareCikti`/`Saat` soyutlamalarına bağlıdır; bağımlılıklar yapıcıdan enjekte edilir. |
 
 *DIP günlük örneği:* müdür (üst katman) işi "birine" verir; o kişinin stajyer mi
 kıdemli mi olduğuna bakmaz, yeter ki "iş yapabilen" tanımına uysun. Burada o
@@ -169,20 +198,23 @@ tanım `KlavyeCikti` arabirimidir.
 |---|---|---|---|
 | **Strategy** | Strateji | `cekirdek/baslatici.*` | Tarayıcı açma dizisi Windows ve Linux'ta farklı; her biri ayrı strateji. |
 | **Factory** | Fabrika | `baslaticiYap()` | Platforma göre doğru stratejiyi üretir; çağıran somut sınıfı bilmez. |
-| **Command** | Komut | `cekirdek/komut.h` | Her makro adımı "kendini çalıştır" diyen bir nesne; makro bunları türünü bilmeden işler. |
+| **Command** | Komut | `cekirdek/komut.h` | Her makro adımı "kendini çalıştır" diyen bir nesne (harf, özel tuş, kısayol, **fare tık**, bekleme); makro bunları türünü bilmeden işler. |
 | **Builder** | Yapıcı | `MakroYapici` (`cekirdek/makro.h`) | Makro adım adım, okunur akıcı arayüzle kurulur; nesne oluşturma ayrıntısı tek yerde. |
 | **State** | Durum | `cekirdek/durum.*` | Cihazın her durumu ayrı sınıf; aynı isteğe duruma göre farklı tepki (if-zinciri yok). |
-| **Adapter** | Bağdaştırıcı | `arduino/`, `benzetim/`, `testler/sahteler.h` | Soyut `KlavyeCikti`/`Saat`, gerçek USB-HID'ye / konsola / test sahtesine uyarlanır. |
+| **Adapter** | Bağdaştırıcı | `arduino/`, `benzetim/`, `testler/sahteler.h` | Soyut `KlavyeCikti`/`FareCikti`/`Saat`, gerçek USB-HID klavye+fareye / konsola / test sahtesine uyarlanır. |
 | **Observer** | Gözlemci | `cekirdek/gozlemci.h` | Sürücü durum değişince gözlemcilere haber verir (LED, konsol log); gevşek bağ. |
 | **Facade** | Cephe | `cekirdek/surucu.*` | Tüm parçaları gizleyip dışarıya küçük bir arayüz sunar: `baslat/birTur/durdur/calis`. |
+| **Parametre Nesnesi** | Parametre nesnesi | `cekirdek/cihaz.h` | Klavye+fare+saat tek `Cihaz` nesnesinde toplanıp komutlara birlikte verilir; imzalar sade kalır, yeni çıkış eklemek kolaylaşır. |
 
 ## 8. Test stratejisi
 
 - Çekirdek saf C++ olduğu için **kart olmadan** test edilir (`testler/`).
 - `Saat` soyut olduğundan testler **gerçek zaman beklemeden** zamanlamayı
   doğrular: `SahteSaat` yalnızca istenen süreleri sayar.
-- `KlavyeCikti` soyut olduğundan `KayitKlavye` gönderilen tuşları dizge olarak
-  kaydeder; test beklenen diziyle karşılaştırır.
+- `KlavyeCikti`/`FareCikti` soyut olduğundan `KayitGirdi` gönderilen tuş ve
+  tıkları tek sıralı dizge olarak kaydeder; test beklenen diziyle karşılaştırır.
+- Ayrıca `oyun/` altında gerçek bir farm oyunu, cihazın gönderdiği **fare tıkların**
+  aynısıyla ekransız tarayıcıda oynatılarak uçtan uca denenir (`make oyun-test`).
 - Çalıştırma: `make test` (CI'da her gönderimde otomatik; `.github/workflows/odev2.yml`).
 
 ## 9. Dizin yapısı

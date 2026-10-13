@@ -48,6 +48,21 @@ OzelTus degistiriciye(const std::string& ad) {
     throw AyarHatasi("bilinmeyen değiştirici tuş: '" + ad + "'");
 }
 
+FareDugme fareDugmeye(const std::string& ad) {
+    std::string a = kucuk(ad);
+    if (a == "sol" || a == "left") return FareDugme::SOL;
+    if (a == "sag" || a == "sağ" || a == "right") return FareDugme::SAG;
+    if (a == "orta" || a == "middle") return FareDugme::ORTA;
+    throw AyarHatasi("bilinmeyen fare düğmesi: '" + ad + "'");
+}
+
+bool evetMi(const std::string& anahtar, const std::string& deger) {
+    std::string d = kucuk(deger);
+    if (d == "evet" || d == "true" || d == "1" || d == "aç" || d == "ac") return true;
+    if (d == "hayir" || d == "hayır" || d == "false" || d == "0" || d == "kapa") return false;
+    throw AyarHatasi("'" + anahtar + "' evet/hayir olmalı: '" + deger + "'");
+}
+
 }  // namespace
 
 Ayarlar Ayarlar::metinden(const std::string& metin) {
@@ -72,9 +87,22 @@ Ayarlar Ayarlar::metinden(const std::string& metin) {
             if (d == "windows") a.platform = Platform::WINDOWS;
             else if (d == "linux") a.platform = Platform::LINUX;
             else throw AyarHatasi("platform windows ya da linux olmalı: '" + deger + "'");
+        } else if (anahtar == "tarayici_ac") {
+            a.tarayiciAc = evetMi(anahtar, deger);
         } else if (anahtar == "url") {
             if (deger.empty()) throw AyarHatasi("url boş olamaz");
             a.url = deger;
+        } else if (anahtar == "eylem") {
+            std::string d = kucuk(deger);
+            if (d == "tus" || d == "tuş") a.eylem = Eylem::TUS;
+            else if (d == "fare" || d == "mouse") a.eylem = Eylem::FARE;
+            else throw AyarHatasi("eylem tus ya da fare olmalı: '" + deger + "'");
+        } else if (anahtar == "fare_dugmeleri") {
+            std::vector<FareDugme> d;
+            for (const auto& parca : parcala(deger, ','))
+                if (!parca.empty()) d.push_back(fareDugmeye(parca));
+            if (d.empty()) throw AyarHatasi("en az bir fare düğmesi gerekli");
+            a.fareDugmeleri = d;
         } else if (anahtar == "tuslar") {
             std::vector<char> t;
             for (const auto& parca : parcala(deger, ',')) {

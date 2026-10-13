@@ -1,35 +1,39 @@
 #pragma once
-// Test sahteleri (test doubles): gerçek klavye/saat/LED yerine davranışı kaydeden
-// basit uygulamalar. KlavyeCikti ve Saat soyut olduğu için (DIP) test bunları
-// sorunsuzca yerine koyabilir (Liskov: her yerde gerçeğinin yerini tutarlar).
+// Test sahteleri (test doubles): gerçek klavye/fare/saat/LED yerine davranışı
+// kaydeden basit uygulamalar. Arabirimler soyut olduğu için (DIP) test bunları
+// yerine koyabilir (Liskov: her yerde gerçeğinin yerini tutarlar).
 #include <string>
 #include <vector>
 
+#include "../cekirdek/cihaz.h"
+#include "../cekirdek/fare.h"
 #include "../cekirdek/gozlemci.h"
 #include "../cekirdek/klavye_cikti.h"
 #include "../cekirdek/saat.h"
 
 namespace makro {
 
-// Gönderilen tuşları okunur dizgeler hâlinde kaydeder.
-class KayitKlavye : public KlavyeCikti {
+// Hem klavye hem fare olaylarını tek bir sıralı listede kaydeder (sıralamayı da
+// sınayabilmek için birleşik).
+class KayitGirdi : public KlavyeCikti, public FareCikti {
 public:
     std::vector<std::string> olaylar;
 
+    // KlavyeCikti
     void metinYaz(const std::string& metin) override { olaylar.push_back("YAZ:" + metin); }
-    void ozelTusVur(OzelTus tus) override {
-        olaylar.push_back(std::string("OZEL:") + ozelTusAdi(tus));
-    }
+    void ozelTusVur(OzelTus tus) override { olaylar.push_back(std::string("OZEL:") + ozelTusAdi(tus)); }
     void kisayol(const std::vector<OzelTus>& degistiriciler, char harf) override {
         std::string s = "KIS:";
-        for (OzelTus t : degistiriciler) {
-            s += ozelTusAdi(t);
-            s += "+";
-        }
+        for (OzelTus t : degistiriciler) { s += ozelTusAdi(t); s += "+"; }
         s += harf;
         olaylar.push_back(s);
     }
     void harfVur(char harf) override { olaylar.push_back(std::string("HARF:") + harf); }
+
+    // FareCikti
+    void tikla(FareDugme dugme) override { olaylar.push_back(std::string("FARE:") + fareDugmeAdi(dugme)); }
+    void bas(FareDugme dugme) override { olaylar.push_back(std::string("FAREBAS:") + fareDugmeAdi(dugme)); }
+    void birak(FareDugme dugme) override { olaylar.push_back(std::string("FAREBIRAK:") + fareDugmeAdi(dugme)); }
 
     std::string birlesik(const std::string& ayrac = "|") const {
         std::string s;

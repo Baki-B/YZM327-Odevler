@@ -28,7 +28,7 @@
   h1 { font-size:20px; margin:0 0 2px; }
   .alt { color:var(--soluk); font-size:12.5px; margin:0 0 14px; line-height:1.5; }
   canvas { width:100%; height:auto; aspect-ratio:420/300; display:block; border-radius:12px;
-    border:1px solid var(--cizgi); touch-action:none; }
+    border:1px solid var(--cizgi); touch-action:none; cursor:crosshair; }
   .izgara { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:14px 0 12px; }
   .kutu { background:var(--arka); border:1px solid var(--cizgi); border-radius:12px; padding:9px 4px; text-align:center; }
   .kutu b { display:block; font-size:21px; font-variant-numeric:tabular-nums; }
@@ -45,9 +45,10 @@
 <body>
   <div class="kart">
     <h1>🌲 Orman Farmı <span style="color:var(--soluk);font-size:14px">.io</span></h1>
-    <p class="alt"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ile haritada gez;
-      <b style="color:var(--yesil)">ağaçlara</b> vurunca odun, <b style="color:var(--tas)">taşlara</b> vurunca
-      taş farmlanır. Toplanan kaynak biter, bir süre sonra yeniden büyür. (glor.io / dynast.io tarzı.)</p>
+    <p class="alt">Oyuncu kaynakların yanında. Oto-hedef <b>en yakın kaynağa</b> kilitli;
+      <b>sol/sağ fare tık</b> ile vurup <b style="color:var(--yesil)">odun</b> ve
+      <b style="color:var(--tas)">taş</b> farmlanır. (Makro sadece tıklar; yürümeyi
+      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ile sen yaparsın.)</p>
 
     <canvas id="harita" width="420" height="300"></canvas>
 
@@ -55,30 +56,30 @@
       <div class="kutu"><b class="odunDeger" id="odun">0</b><small>🪵 Odun</small></div>
       <div class="kutu"><b class="tasDeger" id="tas">0</b><small>🪨 Taş</small></div>
       <div class="kutu"><b id="seviye">1</b><small>Seviye</small></div>
-      <div class="kutu"><b id="hamle">0</b><small>Hamle</small></div>
+      <div class="kutu"><b id="tik">0</b><small>Tık</small></div>
     </div>
 
     <div class="etiket"><span>Sonraki seviye</span><span id="xpYazi">0 / 100</span></div>
     <div class="xpbar"><span id="xpBar"></span></div>
 
-    <div class="durum">Toplam kaynak: <b id="toplam">0</b> · Yön: <span id="yon">—</span></div>
+    <div class="durum">Toplam kaynak: <b id="toplam">0</b> · Hedef: <span id="hedefAd">—</span></div>
   </div>
 
 <script>
 (() => {
   "use strict";
   const G = { w: 420, h: 300 };
-  const ADIM = 22, MENZIL = 58, HASAR = 12, XP_BOLUM = 100, YENIDEN_MS = 1200, OTO_MS = 200;
+  const ADIM = 22, HASAR = 12, XP_BOLUM = 100, YENIDEN_MS = 1200, XP_ODUL = 15;
   const CAN = { agac: 24, tas: 36 };
-  const XP_ODUL = 15;
+  const AD = { agac: "Ağaç 🌳", tas: "Taş 🪨" };
 
   const cv = document.getElementById("harita");
   const cx = cv.getContext("2d");
 
-  // Oyuncu haritanın ortasında başlar.
-  const oyuncu = { x: G.w / 2, y: G.h / 2, yon: "—" };
+  // Oyuncu kaynakların ortasında (insan oraya yürümüş varsayılır).
+  const oyuncu = { x: G.w / 2, y: G.h / 2 };
 
-  // Kaynakları haritaya ızgara olarak yerleştir (yoğun farm alanı).
+  // Kaynakları ızgara olarak yerleştir.
   const kaynaklar = [];
   let sayac = 0;
   for (let y = 38; y <= 262; y += 56) {
@@ -88,75 +89,91 @@
     }
   }
 
-  // Oyun durumu. Test bunu window.durum üzerinden okur.
-  const durum = { hamle: 0, odun: 0, tas: 0, toplam: 0, seviye: 1, xp: 0 };
+  const durum = { tik: 0, odun: 0, tas: 0, toplam: 0, seviye: 1, xp: 0 };
   window.durum = durum;
 
-  const vurusEfekt = [];  // görsel: {x,y,bitis}
+  const vurusEfekt = [];
   const $ = (id) => document.getElementById(id);
+
+  // Oto-hedef: oyuncuya en yakın, şu an toplanabilir (büyümeyen) kaynak.
+  function hedefSec(now) {
+    let en = -1, enUz = Infinity;
+    for (let i = 0; i < kaynaklar.length; i++) {
+      const k = kaynaklar[i];
+      if (k.yeniden > now) continue;
+      const dx = k.x - oyuncu.x, dy = k.y - oyuncu.y, uz = dx * dx + dy * dy;
+      if (uz < enUz) { enUz = uz; en = i; }
+    }
+    return en;
+  }
 
   function hudCiz() {
     $("odun").textContent = durum.odun;
     $("tas").textContent = durum.tas;
     $("seviye").textContent = durum.seviye;
-    $("hamle").textContent = durum.hamle;
+    $("tik").textContent = durum.tik;
     $("toplam").textContent = durum.toplam;
-    $("yon").textContent = oyuncu.yon;
     $("xpYazi").textContent = durum.xp + " / " + XP_BOLUM;
     $("xpBar").style.width = (100 * durum.xp / XP_BOLUM) + "%";
+    const h = hedefSec(performance.now());
+    $("hedefAd").textContent = h < 0 ? "—" : AD[kaynaklar[h].tur];
   }
 
-  function topla(k, now) {
-    if (k.tur === "agac") durum.odun++; else durum.tas++;
-    durum.toplam++;
-    durum.xp += XP_ODUL;
-    while (durum.xp >= XP_BOLUM) { durum.xp -= XP_BOLUM; durum.seviye++; }
-    k.yeniden = now + YENIDEN_MS;   // bir süre sonra yeniden büyür
-  }
-
-  // "Vuruş": menzildeki kaynaklara hasar ver, bitenleri topla.
-  function salla(now) {
-    for (const k of kaynaklar) {
-      if (k.yeniden > now) continue;                 // yeniden büyüyor
-      const dx = k.x - oyuncu.x, dy = k.y - oyuncu.y;
-      if (dx * dx + dy * dy <= MENZIL * MENZIL) {
-        k.can -= HASAR;
-        vurusEfekt.push({ x: k.x, y: k.y, bitis: now + 120 });
-        if (k.can <= 0) { k.can = k.maxCan; topla(k, now); }
+  // Bir tık: oto-hedeflenen kaynağa vur; bitti ise topla.
+  function tikla() {
+    durum.tik++;
+    const now = performance.now();
+    const h = hedefSec(now);
+    if (h >= 0) {
+      const k = kaynaklar[h];
+      k.can -= HASAR;
+      vurusEfekt.push({ x: k.x, y: k.y, bitis: now + 110 });
+      if (k.can <= 0) {
+        if (k.tur === "agac") durum.odun++; else durum.tas++;
+        durum.toplam++;
+        durum.xp += XP_ODUL;
+        while (durum.xp >= XP_BOLUM) { durum.xp -= XP_BOLUM; durum.seviye++; }
+        k.can = k.maxCan;
+        k.yeniden = now + YENIDEN_MS;   // bir süre sonra yeniden büyür
       }
     }
-  }
-
-  function hareket(dx, dy, yon) {
-    oyuncu.x = Math.max(12, Math.min(G.w - 12, oyuncu.x + dx));
-    oyuncu.y = Math.max(12, Math.min(G.h - 12, oyuncu.y + dy));
-    oyuncu.yon = yon;
-    durum.hamle++;
-    salla(performance.now());   // hareket ettikçe (vurdukça) farmla
     hudCiz();
   }
 
+  // Sol ve sağ tık (ikisi de vurur). Sağ tık menüsünü engelle.
+  window.addEventListener("mousedown", tikla);
+  window.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  // İnsan için yürüme (makro bunu kullanmaz).
   window.addEventListener("keydown", (e) => {
     const t = e.key.toLowerCase();
-    if (t === "w") hareket(0, -ADIM, "↑");
-    else if (t === "s") hareket(0, ADIM, "↓");
-    else if (t === "a") hareket(-ADIM, 0, "←");
-    else if (t === "d") hareket(ADIM, 0, "→");
+    if (t === "w") oyuncu.y = Math.max(12, oyuncu.y - ADIM);
+    else if (t === "s") oyuncu.y = Math.min(G.h - 12, oyuncu.y + ADIM);
+    else if (t === "a") oyuncu.x = Math.max(12, oyuncu.x - ADIM);
+    else if (t === "d") oyuncu.x = Math.min(G.w - 12, oyuncu.x + ADIM);
     else return;
-    if (["w", "a", "s", "d"].includes(t)) e.preventDefault();
+    e.preventDefault();
+    hudCiz();
   });
 
-  // Çizim + arada otomatik vuruş (insan oynarken de farmlasın).
-  let sonOto = 0;
   function cizKare(now) {
-    if (now - sonOto >= OTO_MS) { salla(now); hudCiz(); sonOto = now; }
-
-    // Harita zemini (çimen) + ızgara
+    // Zemin + ızgara
     cx.fillStyle = "#5c8a4a";
     cx.fillRect(0, 0, G.w, G.h);
     cx.strokeStyle = "rgba(255,255,255,.06)";
     for (let x = 0; x <= G.w; x += 30) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, G.h); cx.stroke(); }
     for (let y = 0; y <= G.h; y += 30) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(G.w, y); cx.stroke(); }
+
+    const hedef = hedefSec(now);
+
+    // Hedef işaretçisi (nişan çizgisi)
+    if (hedef >= 0) {
+      const k = kaynaklar[hedef];
+      cx.strokeStyle = "rgba(255,255,255,.5)"; cx.lineWidth = 1.5;
+      cx.beginPath(); cx.moveTo(oyuncu.x, oyuncu.y); cx.lineTo(k.x, k.y); cx.stroke();
+      cx.strokeStyle = "#fde047"; cx.lineWidth = 2;
+      cx.beginPath(); cx.arc(k.x, k.y, 18, 0, Math.PI * 2); cx.stroke();
+    }
 
     // Kaynaklar
     cx.textAlign = "center"; cx.textBaseline = "middle";
@@ -167,7 +184,6 @@
       cx.beginPath(); cx.arc(k.x, k.y, 13, 0, Math.PI * 2); cx.fill();
       cx.font = "17px system-ui,'Segoe UI Emoji',sans-serif";
       cx.fillText(k.tur === "agac" ? "🌳" : "🪨", k.x, k.y + 1);
-      // can çubuğu (hasar görmüşse)
       if (!buyuyor && k.can < k.maxCan) {
         cx.globalAlpha = 1;
         cx.fillStyle = "rgba(0,0,0,.35)"; cx.fillRect(k.x - 14, k.y - 22, 28, 4);
@@ -180,13 +196,9 @@
     for (let i = vurusEfekt.length - 1; i >= 0; i--) {
       const v = vurusEfekt[i];
       if (v.bitis < now) { vurusEfekt.splice(i, 1); continue; }
-      cx.strokeStyle = "rgba(255,255,255,.8)"; cx.lineWidth = 2;
-      cx.beginPath(); cx.arc(v.x, v.y, 18, 0, Math.PI * 2); cx.stroke();
+      cx.strokeStyle = "rgba(255,255,255,.85)"; cx.lineWidth = 2;
+      cx.beginPath(); cx.arc(v.x, v.y, 20, 0, Math.PI * 2); cx.stroke();
     }
-
-    // Menzil halkası
-    cx.strokeStyle = "rgba(255,255,255,.18)"; cx.lineWidth = 1;
-    cx.beginPath(); cx.arc(oyuncu.x, oyuncu.y, MENZIL, 0, Math.PI * 2); cx.stroke();
 
     // Oyuncu
     cx.fillStyle = "#f59e0b";

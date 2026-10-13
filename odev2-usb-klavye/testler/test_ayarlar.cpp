@@ -4,6 +4,8 @@
 
 using makro::Ayarlar;
 using makro::AyarHatasi;
+using makro::Eylem;
+using makro::FareDugme;
 using makro::OzelTus;
 using makro::Platform;
 
@@ -46,6 +48,36 @@ TEST(ayarlar_linux_terminal_kisayolu) {
 TEST(ayarlar_yorum_ve_bos_satir_atlanir) {
     Ayarlar a = Ayarlar::metinden("\n  # sadece yorum\n\naralik_ms = 42 # satir sonu yorumu\n");
     CHECK_EQ(a.aralikMs, static_cast<uint32_t>(42));
+}
+
+TEST(ayarlar_fare_eylemi) {
+    Ayarlar a = Ayarlar::metinden(
+        "eylem = fare\n"
+        "tarayici_ac = hayir\n"
+        "fare_dugmeleri = sol,sag\n");
+    CHECK(a.eylem == Eylem::FARE);
+    CHECK(a.tarayiciAc == false);
+    CHECK_EQ(a.fareDugmeleri.size(), static_cast<std::size_t>(2));
+    CHECK(a.fareDugmeleri[0] == FareDugme::SOL);
+    CHECK(a.fareDugmeleri[1] == FareDugme::SAG);
+}
+
+TEST(ayarlar_varsayilan_eylem_tus) {
+    Ayarlar a;
+    CHECK(a.eylem == Eylem::TUS);
+    CHECK(a.tarayiciAc == true);
+}
+
+TEST(ayarlar_gecersiz_eylem_hata) {
+    bool hata = false;
+    try { Ayarlar::metinden("eylem = ayak\n"); } catch (const AyarHatasi&) { hata = true; }
+    CHECK(hata);
+}
+
+TEST(ayarlar_gecersiz_fare_dugmesi_hata) {
+    bool hata = false;
+    try { Ayarlar::metinden("fare_dugmeleri = sol,ustmenu\n"); } catch (const AyarHatasi&) { hata = true; }
+    CHECK(hata);
 }
 
 TEST(ayarlar_bilinmeyen_anahtar_hata) {

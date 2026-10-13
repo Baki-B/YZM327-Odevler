@@ -2,11 +2,11 @@
 
 ## 1. Problem
 
-Bilgisayara takılınca kendini **ikinci bir klavye** olarak tanıtan, takılır
-takılmaz bir tarayıcı/uygulama açıp ardından **önceden ayarlanmış tuşlara
-otomatik basan** bir USB cihazı. Oyunlardaki (ör. Knight Online) "sürekli ASD'ye
-bas" oto-tuş mantığının donanım karşılığı. Teknik adıyla bir **USB HID klavye
-öykünücüsü** (programlanabilir makro klavye).
+Bilgisayara takılınca kendini **klavye ve fare** olarak tanıtan (bileşik USB-HID),
+önceden ayarlanan eylemi sürekli tekrarlayan bir USB cihazı. İki kullanım:
+(1) **tuş modu** — tarayıcı açıp ayarlı tuşlara basar (Knight Online tarzı "sürekli
+ASD"); (2) **fare modu** — glor.io / dynast.io gibi farm oyunlarında sol/sağ tık
+spamlar. Teknik adıyla programlanabilir bir **USB HID makro aygıtı**.
 
 ## 2. Neden işe yarıyor (çekirdek gözlem)
 
@@ -22,11 +22,13 @@ sıradan bir klavye kabul eder. Bu yüzden:
 
 **İşlevsel:**
 
-1. Takılınca kendini USB-HID klavye olarak tanıtmak.
-2. Ayarlanabilir bir adresi tarayıcıda açmak (Windows: Çalıştır kutusu; Linux:
-   terminal + `xdg-open`).
-3. Ayarlanan tuşlara, ayarlanan aralıkla, ayarlanan tekrar sayısınca basmak.
-4. Yapılandırılabilir olmak: tuşlar, aralık, tekrar, adres, platform.
+1. Takılınca kendini USB-HID klavye **ve fare** olarak tanıtmak.
+2. (İsteğe bağlı) ayarlanabilir bir adresi tarayıcıda açmak (Windows: Çalıştır
+   kutusu; Linux: terminal + `xdg-open`). Oyuncu zaten oyundaysa bu adım atlanır.
+3. Ayarlanan eylemi (tuşa basma ya da **fare tıklama**) ayarlanan aralıkla,
+   ayarlanan tekrar sayısınca yapmak.
+4. Yapılandırılabilir olmak: eylem türü (tus/fare), tuşlar/fare düğmeleri, aralık,
+   tekrar, tarayıcı açma, adres, platform.
 
 **İşlevsel olmayan:**
 

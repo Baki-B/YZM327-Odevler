@@ -4,8 +4,8 @@ namespace makro {
 
 namespace {
 
-// Ayarlardan açılış makrosunu kurar: platform stratejisi + ardından tarayıcının
-// açılması için bekleme.
+// Ayarlardan açılış makrosunu kurar: platform stratejisi + tarayıcının açılması
+// için bekleme. (Yalnızca tarayiciAc açıksa kullanılır.)
 Makro acilisMakrosuKur(const PlatformBaslatici& baslatici, const Ayarlar& ayar) {
     MakroYapici yapici;
     baslatici.komutlariEkle(yapici, ayar);
@@ -13,10 +13,16 @@ Makro acilisMakrosuKur(const PlatformBaslatici& baslatici, const Ayarlar& ayar) 
     return yapici.kur();
 }
 
-// Ayarlardan bir makro turunu kurar: her tuşa bas, aralık kadar bekle.
+// Ayarlardan bir makro turunu kurar. Eylem türüne göre:
+//  - TUS  : her tuşa bas, aralık kadar bekle.
+//  - FARE : her fare düğmesine tıkla, aralık kadar bekle (asıl farm eylemi).
 Makro turMakrosuKur(const Ayarlar& ayar) {
     MakroYapici yapici;
-    for (char t : ayar.tuslar) yapici.harf(t).bekle(ayar.aralikMs);
+    if (ayar.eylem == Eylem::FARE) {
+        for (FareDugme d : ayar.fareDugmeleri) yapici.fareTikla(d).bekle(ayar.aralikMs);
+    } else {
+        for (char t : ayar.tuslar) yapici.harf(t).bekle(ayar.aralikMs);
+    }
     return yapici.kur();
 }
 
@@ -24,12 +30,14 @@ Makro turMakrosuKur(const Ayarlar& ayar) {
 
 Surucu::Surucu(const Ayarlar& ayar,
                std::unique_ptr<PlatformBaslatici> baslatici,
-               KlavyeCikti& cikti,
+               KlavyeCikti& klavye,
+               FareCikti& fare,
                Saat& saat,
                DurumGozlemci* gozlemci)
     : ayar_(ayar),
       baslatici_(std::move(baslatici)),
-      cikti_(cikti),
+      klavye_(klavye),
+      fare_(fare),
       saat_(saat),
       gozlemci_(gozlemci),
       acilisMakrosu_(acilisMakrosuKur(*baslatici_, ayar_)),
@@ -49,13 +57,17 @@ void Surucu::calis(uint32_t turSayisi) {
 }
 
 void Surucu::tarayiciyiAc() {
+    // Oyuncu zaten oyundaysa tarayıcı açmaya gerek yok; makro sadece eylemi tekrarlar.
+    if (!ayar_.tarayiciAc) return;
     // BASLATILIYOR kalıcı bir durum değil, anlık bir evredir; yalnızca gözlemciye bildirilir.
     gozlemciBildir(Durum::BASLATILIYOR);
-    acilisMakrosu_.calistir(cikti_, saat_);
+    Cihaz c = cihaz();
+    acilisMakrosu_.calistir(c);
 }
 
 void Surucu::makroTuru() {
-    turMakrosu_.calistir(cikti_, saat_);
+    Cihaz c = cihaz();
+    turMakrosu_.calistir(c);
     ++yapilanTur_;
     if (ayar_.tekrar > 0 && yapilanTur_ >= ayar_.tekrar) durumaGec(Durum::BITTI);
 }

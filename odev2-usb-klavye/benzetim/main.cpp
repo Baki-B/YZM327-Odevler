@@ -11,6 +11,7 @@
 #include "../cekirdek/baslatici.h"
 #include "../cekirdek/gozlemci.h"
 #include "../cekirdek/surucu.h"
+#include "konsol_fare.h"
 #include "konsol_klavye.h"
 #include "konsol_saat.h"
 
@@ -49,20 +50,27 @@ int main(int argc, char** argv) {
         }
     }
 
-    std::cout << "=== USB Makro Klavye — Benzetim ===\n";
-    std::cout << "Platform : " << platformAdi(ayar.platform) << "\n";
-    std::cout << "Adres    : " << ayar.url << "\n";
-    std::cout << "Tuslar   : ";
-    for (char t : ayar.tuslar) std::cout << "'" << t << "' ";
-    std::cout << "\nAralik   : " << ayar.aralikMs << " ms\n";
-    std::cout << "Tekrar   : " << (ayar.tekrar == 0 ? std::string("sonsuz (cihazda)") : std::to_string(ayar.tekrar)) << "\n";
+    std::cout << "=== USB Makro Klavye+Fare — Benzetim ===\n";
+    std::cout << "Platform    : " << platformAdi(ayar.platform) << "\n";
+    std::cout << "Tarayici ac : " << (ayar.tarayiciAc ? "evet" : "hayir (sadece eylem)") << "\n";
+    if (ayar.tarayiciAc) std::cout << "Adres       : " << ayar.url << "\n";
+    if (ayar.eylem == makro::Eylem::FARE) {
+        std::cout << "Eylem       : fare tik  ->  ";
+        for (makro::FareDugme d : ayar.fareDugmeleri) std::cout << "[" << makro::fareDugmeAdi(d) << "] ";
+    } else {
+        std::cout << "Eylem       : tus       ->  ";
+        for (char t : ayar.tuslar) std::cout << "'" << t << "' ";
+    }
+    std::cout << "\nAralik      : " << ayar.aralikMs << " ms\n";
+    std::cout << "Tekrar      : " << (ayar.tekrar == 0 ? std::string("sonsuz (cihazda)") : std::to_string(ayar.tekrar)) << "\n";
     std::cout << "-----------------------------------\n";
 
     makro::KonsolKlavye klavye;
+    makro::KonsolFare fare;
     makro::KonsolSaat saat;  // benzetimde gerçek bekleme yok
     KonsolGozlemci gozlemci;
 
-    makro::Surucu surucu(ayar, makro::baslaticiYap(ayar.platform), klavye, saat, &gozlemci);
+    makro::Surucu surucu(ayar, makro::baslaticiYap(ayar.platform), klavye, fare, saat, &gozlemci);
 
     // Sonsuz tekrar benzetimde sonlanmaz; demo için 3 tur gösterilir.
     uint32_t turSayisi = (ayar.tekrar == 0) ? 3 : ayar.tekrar;

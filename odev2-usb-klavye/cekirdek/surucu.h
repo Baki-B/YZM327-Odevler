@@ -3,7 +3,9 @@
 #include <memory>
 #include "ayarlar.h"
 #include "baslatici.h"
+#include "cihaz.h"
 #include "durum.h"
+#include "fare.h"
 #include "gozlemci.h"
 #include "klavye_cikti.h"
 #include "makro.h"
@@ -23,7 +25,8 @@ class Surucu : public DurumBaglami {
 public:
     Surucu(const Ayarlar& ayar,
            std::unique_ptr<PlatformBaslatici> baslatici,
-           KlavyeCikti& cikti,
+           KlavyeCikti& klavye,
+           FareCikti& fare,
            Saat& saat,
            DurumGozlemci* gozlemci = nullptr);
 
@@ -47,9 +50,12 @@ public:
 private:
     void gozlemciBildir(Durum d);
 
+    Cihaz cihaz() { return Cihaz{klavye_, fare_, saat_}; }
+
     Ayarlar ayar_;
     std::unique_ptr<PlatformBaslatici> baslatici_;
-    KlavyeCikti& cikti_;
+    KlavyeCikti& klavye_;
+    FareCikti& fare_;
     Saat& saat_;
     DurumGozlemci* gozlemci_;
 

@@ -6,11 +6,15 @@
 
 ## Tek cümleyle
 
-Bilgisayara takılınca kendini **ikinci bir klavyeymiş gibi** tanıtan, takılır
-takılmaz bir tarayıcı açıp sonra **önceden ayarladığın tuşlara otomatik basan**
-küçük bir USB cihazı. Oyunlardaki (ör. Knight Online) "sürekli ASD'ye bas"
-oto-tuş programlarının yazılım değil, **donanım** hâli. Teknik adıyla
-programlanabilir bir **USB HID makro klavye**.
+Bilgisayara takılınca kendini **klavye ve fare** gibi tanıtan (bileşik USB-HID),
+önceden ayarlanan eylemi (**tuşa basma** ya da **fare tıklama**) sürekli tekrarlayan
+küçük bir USB cihazı. Oyunlardaki oto-tuş/oto-tık botlarının yazılım değil,
+**donanım** hâli. İki tipik kullanım:
+
+- **Tuş modu:** Takılınca tarayıcı açıp (Win+R → chrome …) ayarlı tuşlara basar
+  (ör. Knight Online tarzı "sürekli ASD").
+- **Fare modu:** glor.io / dynast.io gibi farm oyunlarında; oyuncu karakteri
+  kaynağın yanına koyup oto-vuruşu ayarlar, cihaz sadece **sol/sağ tık** spamlar.
 
 ## Nasıl çalışır (kısaca)
 
@@ -72,9 +76,12 @@ Satır tabanlı yapılandırma (`ornek_ayar.conf`):
 | Anahtar | Ne | Varsayılan |
 |---|---|---|
 | `platform` | `windows` / `linux` | windows |
+| `tarayici_ac` | `evet` / `hayir` (hayır = sadece eylemi tekrarla) | evet |
 | `url` | açılacak adres | Agora sitesi |
-| `tuslar` | sırayla basılacak tuşlar | `a,s,d` |
-| `aralik_ms` | tuşlar arası bekleme | 200 |
+| `eylem` | `tus` / `fare` (tekrarlanan eylem türü) | tus |
+| `tuslar` | `eylem=tus` iken basılacak tuşlar | `a,s,d` |
+| `fare_dugmeleri` | `eylem=fare` iken tıklanacak düğmeler (`sol,sag`) | `sol` |
+| `aralik_ms` | eylemler arası bekleme | 200 |
 | `tekrar` | kaç tur (0 = sonsuz) | 0 |
 | `baslangic_gecikme_ms` | tarayıcı açılma beklemesi | 1500 |
 | `linux_terminal` | Linux terminal kısayolu | `ctrl+alt+t` |
@@ -84,16 +91,15 @@ metinden ayrıştırma bilgisayar/benzetim tarafında kullanılır (esnek yol).
 
 ## Basit bir oyunda deneme (donanım gerekmez)
 
-20 yıl önce Metin2 / Knight Online gibi oyunlarda seviye atlamak için tuşa basan
-makrolar kullanılırdı. Aynı fikri basit, kontrollü bir oyunda deniyoruz:
-`oyun/` klasöründe **glor.io / dynast.io tarzı** tepeden bakışlı bir haritada
-**W/A/S/D** ile gezip ağaçlardan odun, taşlardan taş farmladığın bir
-"Orman Farmı" oyunu var.
+`oyun/` klasöründe **glor.io / dynast.io tarzı** bir farm oyunu var: oyuncu
+kaynakların yanında durur, oto-hedef en yakın ağaç/taşa kilitlenir, **sol/sağ fare
+tıkı** ile odun ve taş farmlanır. Gerçek senaryoyla birebir: insan konumlanır,
+makro sadece tıklar.
 
-`make oyun-test`, cihazın göndereceği w-a-s-d tuşlarının **aynısını** ekransız
+`make oyun-test`, cihazın göndereceği **fare tıklarının** aynısını ekransız
 (headless) tarayıcıya bastırır ve kaynakların farmlandığını doğrular — yani otomatik
-klavyenin oyunu gerçekten oynattığını kart olmadan kanıtlar (`node` + `playwright`
-gerekir). Ayrıntı ve ekran görüntüsü: [`oyun/BENIOKU.md`](oyun/BENIOKU.md).
+tıklayan cihazın oyunu gerçekten farmladığını kart olmadan kanıtlar (`node` +
+`playwright` gerekir). Ayrıntı ve ekran görüntüsü: [`oyun/BENIOKU.md`](oyun/BENIOKU.md).
 
 ## Donanıma yükleme (kart gelince)
 

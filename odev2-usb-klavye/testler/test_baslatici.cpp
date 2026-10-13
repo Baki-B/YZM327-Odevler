@@ -7,15 +7,16 @@
 using namespace makro;
 
 namespace {
-// Başlatıcının ürettiği komutları bir sahte klavyede çalıştırıp olayları toplar.
+// Başlatıcının ürettiği komutları sahte cihazda çalıştırıp olayları toplar.
 std::string baslaticiOlaylari(const PlatformBaslatici& b, const Ayarlar& a) {
     MakroYapici yapici;
     b.komutlariEkle(yapici, a);
     Makro m = yapici.kur();
-    KayitKlavye k;
+    KayitGirdi g;
     SahteSaat s;
-    m.calistir(k, s);
-    return k.birlesik();
+    Cihaz c{g, g, s};
+    m.calistir(c);
+    return g.birlesik();
 }
 }  // namespace
 

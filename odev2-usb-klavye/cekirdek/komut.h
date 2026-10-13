@@ -2,19 +2,19 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include "klavye_cikti.h"
-#include "saat.h"
+#include "cihaz.h"
+#include "fare.h"
 #include "tuslar.h"
 
 // Command (Komut) deseni: her makro adımı, "kendini çalıştır" diyebilen küçük
-// bir nesnedir. Böylece makro, türünü bilmeden komutları sırayla işleten tek
-// bir döngüden ibaret olur (Açık/Kapalı ilkesi: yeni bir adım türü eklemek,
-// var olan döngüyü değiştirmeden yeni bir Komut sınıfı yazmaktır).
+// bir nesnedir. Çalıştırırken cihazın giriş-çıkışını (klavye + fare + saat) tek
+// bir Cihaz bağlamından alır. Yeni bir adım türü eklemek, var olan döngüyü
+// değiştirmeden yeni bir Komut sınıfı yazmaktır (Açık/Kapalı ilkesi).
 namespace makro {
 
 struct Komut {
     virtual ~Komut() = default;
-    virtual void calistir(KlavyeCikti& cikti, Saat& saat) = 0;
+    virtual void calistir(Cihaz& cihaz) = 0;
     virtual std::string tanim() const = 0;  // günlük/test için okunur açıklama
 };
 
@@ -22,7 +22,7 @@ struct Komut {
 struct MetinYazKomutu : Komut {
     std::string metin;
     explicit MetinYazKomutu(std::string m) : metin(std::move(m)) {}
-    void calistir(KlavyeCikti& cikti, Saat&) override { cikti.metinYaz(metin); }
+    void calistir(Cihaz& c) override { c.klavye.metinYaz(metin); }
     std::string tanim() const override { return "metin:" + metin; }
 };
 
@@ -30,7 +30,7 @@ struct MetinYazKomutu : Komut {
 struct OzelTusKomutu : Komut {
     OzelTus tus;
     explicit OzelTusKomutu(OzelTus t) : tus(t) {}
-    void calistir(KlavyeCikti& cikti, Saat&) override { cikti.ozelTusVur(tus); }
+    void calistir(Cihaz& c) override { c.klavye.ozelTusVur(tus); }
     std::string tanim() const override { return std::string("ozel:") + ozelTusAdi(tus); }
 };
 
@@ -39,7 +39,7 @@ struct KisayolKomutu : Komut {
     std::vector<OzelTus> degistiriciler;
     char harf;
     KisayolKomutu(std::vector<OzelTus> d, char h) : degistiriciler(std::move(d)), harf(h) {}
-    void calistir(KlavyeCikti& cikti, Saat&) override { cikti.kisayol(degistiriciler, harf); }
+    void calistir(Cihaz& c) override { c.klavye.kisayol(degistiriciler, harf); }
     std::string tanim() const override;
 };
 
@@ -47,15 +47,23 @@ struct KisayolKomutu : Komut {
 struct HarfKomutu : Komut {
     char harf;
     explicit HarfKomutu(char h) : harf(h) {}
-    void calistir(KlavyeCikti& cikti, Saat&) override { cikti.harfVur(harf); }
+    void calistir(Cihaz& c) override { c.klavye.harfVur(harf); }
     std::string tanim() const override { return std::string("harf:") + harf; }
+};
+
+// Fare tıkla (sol/sağ) — asıl farm eylemi.
+struct FareTiklaKomutu : Komut {
+    FareDugme dugme;
+    explicit FareTiklaKomutu(FareDugme d) : dugme(d) {}
+    void calistir(Cihaz& c) override { c.fare.tikla(dugme); }
+    std::string tanim() const override { return std::string("fare:") + fareDugmeAdi(dugme); }
 };
 
 // Belirtilen süre kadar bekle.
 struct BeklemeKomutu : Komut {
     uint32_t ms;
     explicit BeklemeKomutu(uint32_t m) : ms(m) {}
-    void calistir(KlavyeCikti&, Saat& saat) override { saat.bekle(ms); }
+    void calistir(Cihaz& c) override { c.saat.bekle(ms); }
     std::string tanim() const override { return "bekle:" + std::to_string(ms); }
 };
 

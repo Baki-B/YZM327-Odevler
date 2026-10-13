@@ -1,43 +1,61 @@
+#include "../cekirdek/cihaz.h"
 #include "../cekirdek/komut.h"
 #include "mini_test.h"
 #include "sahteler.h"
 
 using namespace makro;
 
-TEST(komut_metin_yazar) {
-    KayitKlavye k;
+namespace {
+// Her test için klavye+fare+saat'i tek bağlamda toplayan yardımcı.
+struct Ortam {
+    KayitGirdi g;
     SahteSaat s;
-    MetinYazKomutu("merhaba").calistir(k, s);
-    CHECK_EQ(k.birlesik(), std::string("YAZ:merhaba"));
+    Cihaz cihaz() { return Cihaz{g, g, s}; }
+};
+}  // namespace
+
+TEST(komut_metin_yazar) {
+    Ortam o;
+    auto c = o.cihaz();
+    MetinYazKomutu("merhaba").calistir(c);
+    CHECK_EQ(o.g.birlesik(), std::string("YAZ:merhaba"));
 }
 
 TEST(komut_harf_vurur) {
-    KayitKlavye k;
-    SahteSaat s;
-    HarfKomutu('a').calistir(k, s);
-    CHECK_EQ(k.birlesik(), std::string("HARF:a"));
+    Ortam o;
+    auto c = o.cihaz();
+    HarfKomutu('a').calistir(c);
+    CHECK_EQ(o.g.birlesik(), std::string("HARF:a"));
 }
 
 TEST(komut_ozel_tus) {
-    KayitKlavye k;
-    SahteSaat s;
-    OzelTusKomutu(OzelTus::ENTER).calistir(k, s);
-    CHECK_EQ(k.birlesik(), std::string("OZEL:ENTER"));
+    Ortam o;
+    auto c = o.cihaz();
+    OzelTusKomutu(OzelTus::ENTER).calistir(c);
+    CHECK_EQ(o.g.birlesik(), std::string("OZEL:ENTER"));
 }
 
 TEST(komut_kisayol) {
-    KayitKlavye k;
-    SahteSaat s;
-    KisayolKomutu({OzelTus::GUI}, 'r').calistir(k, s);
-    CHECK_EQ(k.birlesik(), std::string("KIS:GUI+r"));
+    Ortam o;
+    auto c = o.cihaz();
+    KisayolKomutu({OzelTus::GUI}, 'r').calistir(c);
+    CHECK_EQ(o.g.birlesik(), std::string("KIS:GUI+r"));
+}
+
+TEST(komut_fare_tikla) {
+    Ortam o;
+    auto c = o.cihaz();
+    FareTiklaKomutu(FareDugme::SOL).calistir(c);
+    FareTiklaKomutu(FareDugme::SAG).calistir(c);
+    CHECK_EQ(o.g.birlesik(), std::string("FARE:SOL|FARE:SAG"));
 }
 
 TEST(komut_bekleme_saati_cagirir) {
-    KayitKlavye k;
-    SahteSaat s;
-    BeklemeKomutu(250).calistir(k, s);
-    CHECK(k.olaylar.empty());  // tuş göndermez
-    CHECK_EQ(s.toplam, static_cast<uint32_t>(250));
+    Ortam o;
+    auto c = o.cihaz();
+    BeklemeKomutu(250).calistir(c);
+    CHECK(o.g.olaylar.empty());  // tuş/tık göndermez
+    CHECK_EQ(o.s.toplam, static_cast<uint32_t>(250));
 }
 
 TEST(komut_tanimlari) {
@@ -45,6 +63,7 @@ TEST(komut_tanimlari) {
     CHECK_EQ(HarfKomutu('q').tanim(), std::string("harf:q"));
     CHECK_EQ(OzelTusKomutu(OzelTus::TAB).tanim(), std::string("ozel:TAB"));
     CHECK_EQ(BeklemeKomutu(100).tanim(), std::string("bekle:100"));
+    CHECK_EQ(FareTiklaKomutu(FareDugme::SOL).tanim(), std::string("fare:SOL"));
     CHECK_EQ(KisayolKomutu({OzelTus::CTRL, OzelTus::ALT}, 't').tanim(),
              std::string("kisayol:CTRL+ALT+t"));
 }

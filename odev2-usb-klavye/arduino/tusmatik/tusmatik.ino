@@ -10,6 +10,7 @@
 // açılmalıdır. Derleme/yükleme adımları: arduino/BENIOKU.md.
 
 #include <Keyboard.h>  // STM32duino USB-HID klavye kütüphanesi
+#include <Mouse.h>     // STM32duino USB-HID fare kütüphanesi
 
 #include <memory>
 #include <string>
@@ -18,6 +19,7 @@
 // Çekirdek arabirimleri ve sınıfları (tek kaynak — kopya yok).
 #include "../../cekirdek/ayarlar.h"
 #include "../../cekirdek/baslatici.h"
+#include "../../cekirdek/fare.h"
 #include "../../cekirdek/gozlemci.h"
 #include "../../cekirdek/klavye_cikti.h"
 #include "../../cekirdek/saat.h"
@@ -59,6 +61,24 @@ public:
     void harfVur(char harf) override { Keyboard.write(harf); }
 };
 
+// Soyut fare düğmesini Arduino fare koduna çevirir.
+char arduinoFareKodu(makro::FareDugme d) {
+    switch (d) {
+        case makro::FareDugme::SOL:  return MOUSE_LEFT;
+        case makro::FareDugme::SAG:  return MOUSE_RIGHT;
+        case makro::FareDugme::ORTA: return MOUSE_MIDDLE;
+    }
+    return MOUSE_LEFT;
+}
+
+// FareCikti'nin gerçek USB-HID uyarlaması.
+class ArduinoFare : public makro::FareCikti {
+public:
+    void tikla(makro::FareDugme d) override { Mouse.click(arduinoFareKodu(d)); }
+    void bas(makro::FareDugme d) override { Mouse.press(arduinoFareKodu(d)); }
+    void birak(makro::FareDugme d) override { Mouse.release(arduinoFareKodu(d)); }
+};
+
 // Saat'in gerçek uyarlaması (donanım zamanlayıcısı).
 class ArduinoSaat : public makro::Saat {
 public:
@@ -76,6 +96,7 @@ public:
 
 // Nesneler setup()'tan sonra da yaşamalı: genel (global) tutulur.
 ArduinoKlavye g_klavye;
+ArduinoFare g_fare;
 ArduinoSaat g_saat;
 LedGozlemci g_led;
 std::unique_ptr<makro::Surucu> g_surucu;
@@ -87,22 +108,29 @@ std::unique_ptr<makro::Surucu> g_surucu;
 void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     Keyboard.begin();
+    Mouse.begin();
 
     // Ayarlar burada elle belirlenir ("basit yol"). Değiştirip yeniden yükle.
     // (Metinden ayrıştırma — "esnek yol" — bilgisayar/benzetim tarafındadır.)
+    //
+    // Örnek: .io farm oyununda fare tıklama botu. Oyuncu karakteri ağacın yanına
+    // götürüp oto-vuruşu ağaca ayarlar; cihaz takılınca sadece sol tık spamlar.
     makro::Ayarlar ayar;
-    ayar.platform = makro::Platform::WINDOWS;             // windows / linux
-    ayar.url = "https://baki-b.github.io/YZM327-Odevler/";
-    ayar.tuslar = {'a', 's', 'd'};
-    ayar.aralikMs = 200;
-    ayar.tekrar = 0;                                      // 0 = sonsuz
-    ayar.baslangicGecikmeMs = 1500;
+    ayar.tarayiciAc = false;                 // oyuncu zaten oyunda; tarayıcı açma
+    ayar.eylem = makro::Eylem::FARE;         // asıl eylem: fare tıklaması
+    ayar.fareDugmeleri = {makro::FareDugme::SOL};  // sürekli sol tık (gerekirse SAG ekle)
+    ayar.aralikMs = 150;                     // tıklar arası
+    ayar.tekrar = 0;                         // 0 = sonsuz
+    //
+    // Alternatif — tarayıcı açıp tuş basan kullanım için:
+    //   ayar.tarayiciAc = true; ayar.platform = makro::Platform::WINDOWS;
+    //   ayar.url = "..."; ayar.eylem = makro::Eylem::TUS; ayar.tuslar = {'a','s','d'};
 
     g_surucu = std::make_unique<makro::Surucu>(
-        ayar, makro::baslaticiYap(ayar.platform), g_klavye, g_saat, &g_led);
+        ayar, makro::baslaticiYap(ayar.platform), g_klavye, g_fare, g_saat, &g_led);
 
-    delay(1500);         // bilgisayar yeni klavyeyi tanısın diye bekle
-    g_surucu->baslat();  // tarayıcıyı aç, çalışmaya başla
+    delay(1500);         // bilgisayar yeni aygıtı tanısın diye bekle
+    g_surucu->baslat();  // (gerekiyorsa) tarayıcıyı aç, çalışmaya başla
 }
 
 void loop() {
