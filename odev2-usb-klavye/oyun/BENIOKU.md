@@ -1,9 +1,10 @@
-# Talim Botu — makro klavyeyi deneme oyunu
+# Canavar Farmı — makro klavyeyi deneme oyunu
 
 20 yıl önce Metin2 / Knight Online gibi oyunlarda seviye atlamak için tuşa basan
 makrolar kullanılırdı. Bu klasör, aynı fikri **basit ve kontrollü** bir oyunda
-denemek içindir: kuklayı döv, seviye atla. Tuşlar **A** (sol kesik), **S**
-(darbe), **D** (sağ kesik) — yani cihazın varsayılan `a,s,d` makrosuyla birebir.
+denemek içindir: canavarlar sırayla gelir, vurup öldürdükçe XP ve altın farmlarsın.
+Tuşlar **A** (hızlı), **S** (darbe), **D** (ağır vuruş) — yani cihazın varsayılan
+`a,s,d` makrosuyla birebir. Her 5. canavar bir ejderha (boss), her 5. vuruş kritik.
 
 ## Dosyalar
 
@@ -16,8 +17,8 @@ denemek içindir: kuklayı döv, seviye atla. Tuşlar **A** (sol kesik), **S**
 
 ## Elle oyna
 
-Tarayıcıda `index.html`'i aç, A/S/D'ye bas. Her tuş kuklaya vurur; can biterse
-kukla yeniden gelir, XP ve seviye artar.
+Tarayıcıda `index.html`'i aç, A/S/D'ye bas. Her tuş gelen canavara vurur; canı
+biterse ölür, sıradaki canavar gelir, XP ve altın farmlanır, seviye atlanır.
 
 ## Otomatik test (donanım gerekmez)
 
@@ -29,9 +30,9 @@ gerekir.
 node oyun/test_oyun.mjs       # ya da:  make oyun-test
 ```
 
-Beklenen sonuç: 40 tur × 3 tuş = **120 vuruş**, kuklalar ölür, **seviye atlanır**
-ve `ekran_goruntusu.png` güncellenir. Bu, "otomatik klavyeye basan cihaz oyunu
-oynatır mı?" sorusunun donanımsız kanıtıdır.
+Beklenen sonuç: 40 tur × 3 tuş = **120 vuruş**, canavarlar ölür, XP/altın farmlanır,
+**seviye atlanır** ve `ekran_goruntusu.png` güncellenir. Bu, "otomatik klavyeye basan
+cihaz oyunu oynatır mı?" sorusunun donanımsız kanıtıdır.
 
 ## Gerçek cihazla
 

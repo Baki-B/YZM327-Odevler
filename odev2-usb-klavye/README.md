@@ -86,7 +86,8 @@ metinden ayrıştırma bilgisayar/benzetim tarafında kullanılır (esnek yol).
 
 20 yıl önce Metin2 / Knight Online gibi oyunlarda seviye atlamak için tuşa basan
 makrolar kullanılırdı. Aynı fikri basit, kontrollü bir oyunda deniyoruz:
-`oyun/` klasöründe A/S/D ile oynanan bir "kuklayı döv, seviye atla" oyunu var.
+`oyun/` klasöründe A/S/D ile canavar dövüp XP/altın farmladığın bir
+"Canavar Farmı" oyunu var (sırayla gelen canavarlar, ejderha bosslar, kritik vuruş).
 
 `make oyun-test`, cihazın göndereceği a-s-d tuşlarının **aynısını** ekransız
 (headless) tarayıcıya bastırır ve skorun yükseldiğini doğrular — yani otomatik

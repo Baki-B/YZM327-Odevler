@@ -3,144 +3,186 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Talim Botu</title>
+<title>Canavar Farmı</title>
 <style>
   :root {
-    --arka: #f4f5f7; --kart: #ffffff; --metin: #1b1d22; --soluk: #6b7280;
-    --cizgi: #e3e6ea; --vurgu: #c7382f; --can: #dc2626; --xp: #2563eb; --yesil: #16a34a;
+    --arka:#f3f4f6; --kart:#ffffff; --metin:#161922; --soluk:#6b7280; --cizgi:#e4e7ec;
+    --vurgu:#7c3aed; --can:#dc2626; --xp:#2563eb; --altin:#d97706; --yesil:#16a34a; --krit:#f59e0b;
+    --arena1:#faf5ff; --arena2:#eef2ff;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-tema="light"]) {
-      --arka: #14161a; --kart: #1e2127; --metin: #eceef2; --soluk: #9aa3af;
-      --cizgi: #2c313a; --vurgu: #f0564b; --can: #ef4444; --xp: #60a5fa; --yesil: #34d399;
+      --arka:#0f1116; --kart:#1b1e25; --metin:#eceef3; --soluk:#99a1ae; --cizgi:#2b303a;
+      --vurgu:#a78bfa; --can:#ef4444; --xp:#60a5fa; --altin:#fbbf24; --yesil:#34d399; --krit:#fbbf24;
+      --arena1:#1e1a2e; --arena2:#18203a;
     }
   }
   :root[data-tema="dark"] {
-    --arka: #14161a; --kart: #1e2127; --metin: #eceef2; --soluk: #9aa3af;
-    --cizgi: #2c313a; --vurgu: #f0564b; --can: #ef4444; --xp: #60a5fa; --yesil: #34d399;
+    --arka:#0f1116; --kart:#1b1e25; --metin:#eceef3; --soluk:#99a1ae; --cizgi:#2b303a;
+    --vurgu:#a78bfa; --can:#ef4444; --xp:#60a5fa; --altin:#fbbf24; --yesil:#34d399; --krit:#fbbf24;
+    --arena1:#1e1a2e; --arena2:#18203a;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing:border-box; }
   body {
-    margin: 0; background: var(--arka); color: var(--metin);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    padding: 16px;
+    margin:0; background:var(--arka); color:var(--metin); padding:16px;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
   }
-  .kart {
-    background: var(--kart); border: 1px solid var(--cizgi); border-radius: 16px;
-    padding: 24px; width: 100%; max-width: 440px; box-shadow: 0 8px 30px rgba(0,0,0,.08);
-  }
-  h1 { font-size: 20px; margin: 0 0 2px; }
-  .alt { color: var(--soluk); font-size: 13px; margin: 0 0 18px; }
-  .sahne {
-    text-align: center; font-size: 76px; line-height: 1; padding: 14px 0 6px;
-    user-select: none; transition: transform .05s;
-  }
-  .sahne.vur { transform: scale(1.12) rotate(-3deg); }
-  .hasar {
-    text-align: center; height: 22px; font-weight: 700; color: var(--vurgu);
-    font-size: 17px; opacity: 0; transition: opacity .1s;
-  }
-  .hasar.gor { opacity: 1; }
-  .bar { height: 12px; background: var(--cizgi); border-radius: 99px; overflow: hidden; margin: 4px 0 14px; }
-  .bar > span { display: block; height: 100%; width: 100%; transition: width .08s; }
-  .can > span { background: var(--can); }
-  .xp > span { background: var(--xp); }
-  .etiket { display: flex; justify-content: space-between; font-size: 12px; color: var(--soluk); margin-bottom: 2px; }
-  .izgara { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0 18px; }
-  .kutu { background: var(--arka); border: 1px solid var(--cizgi); border-radius: 12px; padding: 10px; text-align: center; }
-  .kutu b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; }
-  .kutu small { color: var(--soluk); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
-  .tuslar { display: flex; gap: 8px; justify-content: center; }
-  .tus {
-    border: 1px solid var(--cizgi); border-radius: 10px; padding: 8px 0; width: 84px; text-align: center;
-    font-size: 13px; color: var(--soluk); transition: all .08s;
-  }
-  .tus b { display: block; font-size: 18px; color: var(--metin); }
-  .tus.bas { border-color: var(--vurgu); background: color-mix(in srgb, var(--vurgu) 14%, transparent); }
-  .durum { text-align: center; margin-top: 14px; font-size: 12px; color: var(--soluk); }
-  .combo { color: var(--yesil); font-weight: 700; }
+  .kart { background:var(--kart); border:1px solid var(--cizgi); border-radius:18px;
+    padding:22px; width:100%; max-width:460px; box-shadow:0 10px 34px rgba(0,0,0,.10); }
+  h1 { font-size:20px; margin:0 0 2px; }
+  .alt { color:var(--soluk); font-size:12.5px; margin:0 0 16px; line-height:1.5; }
+
+  .arena { position:relative; border:1px solid var(--cizgi); border-radius:14px; overflow:hidden;
+    background:linear-gradient(160deg,var(--arena1),var(--arena2)); padding:18px 14px 14px; text-align:center; }
+  .sira { position:absolute; top:10px; right:12px; font-size:12px; color:var(--soluk); }
+  .sira b { font-size:20px; vertical-align:middle; filter:grayscale(.3); opacity:.8; }
+  .ad { font-weight:700; font-size:14px; margin-bottom:6px; }
+  .ad .boss { color:var(--altin); }
+  .canavar { font-size:84px; line-height:1; display:inline-block; transition:transform .06s; }
+  .canavar.vur { transform:scale(1.14) rotate(-4deg); }
+  .canavar.bossCanavar { filter:drop-shadow(0 0 10px var(--altin)); }
+  .hasar { position:absolute; left:0; right:0; top:34px; height:24px; font-weight:800; font-size:20px;
+    color:var(--can); opacity:0; transition:opacity .08s, transform .2s; pointer-events:none; }
+  .hasar.gor { opacity:1; transform:translateY(-10px); }
+  .hasar.krit { color:var(--krit); font-size:26px; }
+  .cbar { height:12px; background:rgba(127,127,127,.22); border-radius:99px; overflow:hidden; margin:12px 6px 2px; }
+  .cbar > span { display:block; height:100%; background:var(--can); width:100%; transition:width .07s; }
+  .cyazi { font-size:11px; color:var(--soluk); margin-top:3px; }
+
+  .etiket { display:flex; justify-content:space-between; font-size:12px; color:var(--soluk); margin:16px 0 2px; }
+  .xpbar { height:10px; background:var(--cizgi); border-radius:99px; overflow:hidden; }
+  .xpbar > span { display:block; height:100%; background:var(--xp); width:0%; transition:width .1s; }
+
+  .izgara { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:14px 0 16px; }
+  .kutu { background:var(--arka); border:1px solid var(--cizgi); border-radius:12px; padding:9px 4px; text-align:center; }
+  .kutu b { display:block; font-size:21px; font-variant-numeric:tabular-nums; }
+  .kutu small { color:var(--soluk); font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; }
+  .altinDeger { color:var(--altin); }
+
+  .tuslar { display:flex; gap:8px; justify-content:center; }
+  .tus { border:1px solid var(--cizgi); border-radius:11px; padding:8px 0; width:96px; text-align:center;
+    font-size:12px; color:var(--soluk); transition:all .08s; }
+  .tus b { display:block; font-size:17px; color:var(--metin); }
+  .tus.bas { border-color:var(--vurgu); background:color-mix(in srgb, var(--vurgu) 15%, transparent); transform:translateY(1px); }
+  .durum { text-align:center; margin-top:13px; font-size:12px; color:var(--soluk); }
+  .combo { color:var(--yesil); font-weight:700; }
 </style>
 </head>
 <body>
   <div class="kart">
-    <h1>⚔️ Talim Botu</h1>
-    <p class="alt">Kuklayı döv, seviye atla. Tuşlar: <b>A</b> sol · <b>S</b> darbe · <b>D</b> sağ.
-      (Metin2 tarzı "grind" mantığının sade hâli.)</p>
+    <h1>⚔️ Canavar Farmı</h1>
+    <p class="alt">Canavarlar sırayla gelir; <b>A</b> hızlı · <b>S</b> darbe · <b>D</b> ağır vuruşla öldür,
+      XP ve altın farmla. Her 5. canavar bir <b style="color:var(--altin)">ejderha</b> (boss). Her 5. vuruş kritik (×2).</p>
 
-    <div class="sahne" id="sahne">🎯</div>
-    <div class="hasar" id="hasar">0</div>
-
-    <div class="etiket"><span>Kukla canı</span><span id="canYazi">60 / 60</span></div>
-    <div class="bar can"><span id="canBar"></span></div>
+    <div class="arena">
+      <div class="sira">Sıradaki: <b id="sonraki">👺</b></div>
+      <div class="ad" id="canavarAd">Goblin</div>
+      <div class="canavar" id="canavar">👺</div>
+      <div class="hasar" id="hasar">0</div>
+      <div class="cbar"><span id="canBar"></span></div>
+      <div class="cyazi" id="canYazi">50 / 50</div>
+    </div>
 
     <div class="etiket"><span>Sonraki seviye</span><span id="xpYazi">0 / 100</span></div>
-    <div class="bar xp"><span id="xpBar" style="width:0%"></span></div>
+    <div class="xpbar"><span id="xpBar"></span></div>
 
     <div class="izgara">
       <div class="kutu"><b id="seviye">1</b><small>Seviye</small></div>
       <div class="kutu"><b id="oldurme">0</b><small>Öldürme</small></div>
+      <div class="kutu"><b class="altinDeger" id="altin">0</b><small>Altın</small></div>
       <div class="kutu"><b id="vurus">0</b><small>Vuruş</small></div>
     </div>
 
     <div class="tuslar">
-      <div class="tus" id="tusA"><b>A</b>sol kesik</div>
-      <div class="tus" id="tusS"><b>S</b>darbe</div>
-      <div class="tus" id="tusD"><b>D</b>sağ kesik</div>
+      <div class="tus" id="tusA"><b>A</b>hızlı · 8</div>
+      <div class="tus" id="tusS"><b>S</b>darbe · 12</div>
+      <div class="tus" id="tusD"><b>D</b>ağır · 16</div>
     </div>
 
-    <div class="durum">Combo: <span class="combo" id="combo">0</span> · Son tuş: <span id="sonTus">—</span></div>
+    <div class="durum">Combo: <span class="combo" id="combo">0</span> · Son vuruş: <span id="sonTus">—</span></div>
   </div>
 
 <script>
 (() => {
   "use strict";
-  const KUKLA_CAN = 60, XP_BOLUM = 100, XP_ODUL = 25;
   const HASAR = { a: 8, s: 12, d: 16 };
+  const XP_BOLUM = 100, CRIT_HER = 5, BOSS_HER = 5;
+  const TIPLER = [
+    { emoji: "👺", ad: "Goblin" },
+    { emoji: "🧟", ad: "Zombi" },
+    { emoji: "🐺", ad: "Kurt" },
+    { emoji: "👹", ad: "İblis" },
+  ];
+  const BOSS = { emoji: "🐲", ad: "Ejderha" };
 
-  // Oyun durumu. Test bu nesneyi window.durum üzerinden okur.
-  const durum = { vurus: 0, combo: 0, oldurme: 0, seviye: 1, xp: 0, dummyCan: KUKLA_CAN };
+  // Oyun durumu. Test bunu window.durum üzerinden okur.
+  const durum = {
+    vurus: 0, combo: 0, oldurme: 0, seviye: 1, xp: 0, altin: 0,
+    canavarCan: 0, canavarMaxCan: 0, canavarAd: "", bossMu: false,
+  };
   window.durum = durum;
 
   const $ = (id) => document.getElementById(id);
-  const sahne = $("sahne"), hasarEl = $("hasar");
+  const canavarEl = $("canavar"), hasarEl = $("hasar");
+
+  function tipSec(sira) { return (sira % BOSS_HER === BOSS_HER - 1) ? BOSS : TIPLER[sira % TIPLER.length]; }
+
+  function canavarUret() {
+    const sira = durum.oldurme;                 // kaçıncı canavar
+    durum.bossMu = (sira % BOSS_HER === BOSS_HER - 1);
+    const tip = tipSec(sira);
+    const temelCan = 40 + durum.seviye * 10;     // seviye arttıkça canavar güçlenir (gerçek farm)
+    durum.canavarMaxCan = durum.bossMu ? temelCan * 2 : temelCan;
+    durum.canavarCan = durum.canavarMaxCan;
+    durum.canavarAd = tip.ad;
+
+    canavarEl.textContent = tip.emoji;
+    canavarEl.classList.toggle("bossCanavar", durum.bossMu);
+    $("canavarAd").innerHTML = durum.bossMu ? '<span class="boss">👑 ' + tip.ad + '</span>' : tip.ad;
+    const sonraki = tipSec(sira + 1);
+    $("sonraki").textContent = sonraki.emoji;
+  }
 
   function ciz() {
     $("vurus").textContent = durum.vurus;
     $("oldurme").textContent = durum.oldurme;
     $("seviye").textContent = durum.seviye;
+    $("altin").textContent = durum.altin;
     $("combo").textContent = durum.combo;
-    $("canYazi").textContent = durum.dummyCan + " / " + KUKLA_CAN;
-    $("canBar").style.width = (100 * durum.dummyCan / KUKLA_CAN) + "%";
+    $("canYazi").textContent = Math.max(0, durum.canavarCan) + " / " + durum.canavarMaxCan;
+    $("canBar").style.width = (100 * Math.max(0, durum.canavarCan) / durum.canavarMaxCan) + "%";
     $("xpYazi").textContent = durum.xp + " / " + XP_BOLUM;
     $("xpBar").style.width = (100 * durum.xp / XP_BOLUM) + "%";
   }
 
   function vur(tus) {
-    const hasar = HASAR[tus];
     durum.vurus++;
     durum.combo++;
-    durum.dummyCan -= hasar;
+    let hasar = HASAR[tus];
+    const krit = (durum.vurus % CRIT_HER === 0);
+    if (krit) hasar *= 2;
+    durum.canavarCan -= hasar;
 
-    if (durum.dummyCan <= 0) {
+    if (durum.canavarCan <= 0) {
+      const kat = durum.bossMu ? 3 : 1;
       durum.oldurme++;
-      durum.xp += XP_ODUL;
+      durum.xp += kat * (20 + durum.seviye * 5);
+      durum.altin += kat * (5 + durum.seviye * 2);
       while (durum.xp >= XP_BOLUM) { durum.xp -= XP_BOLUM; durum.seviye++; }
-      durum.dummyCan = KUKLA_CAN;
-      sahne.textContent = "💥";
-      setTimeout(() => { sahne.textContent = "🎯"; }, 90);
+      canavarUret();                              // sıradaki canavar gelir
     }
 
     // Görsel geri bildirim
-    hasarEl.textContent = "-" + hasar;
-    hasarEl.classList.add("gor");
-    sahne.classList.add("vur");
+    hasarEl.textContent = (krit ? "KRİTİK -" : "-") + hasar;
+    hasarEl.className = "hasar gor" + (krit ? " krit" : "");
+    canavarEl.classList.add("vur");
     const tusEl = $("tus" + tus.toUpperCase());
     tusEl.classList.add("bas");
     $("sonTus").textContent = tus.toUpperCase();
     setTimeout(() => {
-      hasarEl.classList.remove("gor");
-      sahne.classList.remove("vur");
+      hasarEl.className = "hasar";
+      canavarEl.classList.remove("vur");
       tusEl.classList.remove("bas");
     }, 90);
 
@@ -149,14 +191,11 @@
 
   window.addEventListener("keydown", (e) => {
     const tus = e.key.toLowerCase();
-    if (tus === "a" || tus === "s" || tus === "d") {
-      vur(tus);
-    } else {
-      durum.combo = 0;  // yanlış tuş combo'yu kırar
-      ciz();
-    }
+    if (tus === "a" || tus === "s" || tus === "d") vur(tus);
+    else { durum.combo = 0; ciz(); }             // yanlış tuş combo'yu kırar
   });
 
+  canavarUret();
   ciz();
 })();
 </script>
