@@ -17,9 +17,9 @@ const buDizin = path.dirname(fileURLToPath(import.meta.url));
 const oyunYolu = "file://" + path.join(buDizin, "index.html");
 const ekranYolu = path.join(buDizin, "ekran_goruntusu.png");
 
-// Cihazın makro ayarıyla aynı: tuşlar a-s-d, aralıklı basılır.
-const TUSLAR = ["a", "s", "d"];
-const TUR = 40;                 // 40 tur × 3 tuş = 120 vuruş
+// Cihazın makro ayarıyla aynı: haritada WASD ile gezilir (glor.io/dynast.io tarzı).
+const TUSLAR = ["w", "a", "s", "d"];
+const TUR = 40;                 // 40 tur × 4 tuş = 160 hamle
 const ARALIK_MS = 25;           // testte hızlı; cihazda 200 ms
 
 function kontrol(kosul, mesaj) {
@@ -32,8 +32,8 @@ try {
   const sayfa = await tarayici.newPage({ viewport: { width: 480, height: 760 } });
   await sayfa.goto(oyunYolu);
 
-  const basla = await sayfa.evaluate(() => window.durum.vurus);
-  console.log("Baslangic vurus:", basla);
+  const basla = await sayfa.evaluate(() => window.durum.toplam);
+  console.log("Baslangic toplam kaynak:", basla);
 
   // Makronun yaptığı şey: her tur, sırayla tuşlara bas, aralık kadar bekle.
   for (let t = 0; t < TUR; t++) {
@@ -50,10 +50,11 @@ try {
   console.log("Ekran goruntusu:", ekranYolu);
 
   console.log("\n=== Dogrulamalar ===");
-  kontrol(son.vurus === TUR * TUSLAR.length, `vurus sayisi ${TUR * TUSLAR.length} olmali (oldu: ${son.vurus})`);
-  kontrol(son.oldurme > 0, `en az bir kukla oldurulmeli (oldu: ${son.oldurme})`);
+  kontrol(son.hamle === TUR * TUSLAR.length, `hamle sayisi ${TUR * TUSLAR.length} olmali (oldu: ${son.hamle})`);
+  kontrol(son.toplam > 0, `en az bir kaynak farmlanmali (oldu: ${son.toplam})`);
+  kontrol(son.odun > 0 && son.tas > 0, `hem odun hem tas farmlanmali (odun: ${son.odun}, tas: ${son.tas})`);
   kontrol(son.seviye > 1, `seviye atlanmali (oldu: ${son.seviye})`);
-  kontrol(son.vurus > basla, "skor baslangictan yuksek olmali");
+  kontrol(son.toplam > basla, "toplam kaynak baslangictan yuksek olmali");
 } finally {
   await tarayici.close();
 }

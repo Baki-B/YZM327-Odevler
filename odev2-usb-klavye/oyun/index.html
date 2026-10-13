@@ -3,200 +3,201 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Canavar Farmı</title>
+<title>Orman Farmı io</title>
 <style>
   :root {
     --arka:#f3f4f6; --kart:#ffffff; --metin:#161922; --soluk:#6b7280; --cizgi:#e4e7ec;
-    --vurgu:#7c3aed; --can:#dc2626; --xp:#2563eb; --altin:#d97706; --yesil:#16a34a; --krit:#f59e0b;
-    --arena1:#faf5ff; --arena2:#eef2ff;
+    --odun:#b45309; --tas:#64748b; --xp:#2563eb; --yesil:#16a34a;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-tema="light"]) {
       --arka:#0f1116; --kart:#1b1e25; --metin:#eceef3; --soluk:#99a1ae; --cizgi:#2b303a;
-      --vurgu:#a78bfa; --can:#ef4444; --xp:#60a5fa; --altin:#fbbf24; --yesil:#34d399; --krit:#fbbf24;
-      --arena1:#1e1a2e; --arena2:#18203a;
+      --odun:#f59e0b; --tas:#94a3b8; --xp:#60a5fa; --yesil:#34d399;
     }
   }
   :root[data-tema="dark"] {
     --arka:#0f1116; --kart:#1b1e25; --metin:#eceef3; --soluk:#99a1ae; --cizgi:#2b303a;
-    --vurgu:#a78bfa; --can:#ef4444; --xp:#60a5fa; --altin:#fbbf24; --yesil:#34d399; --krit:#fbbf24;
-    --arena1:#1e1a2e; --arena2:#18203a;
+    --odun:#f59e0b; --tas:#94a3b8; --xp:#60a5fa; --yesil:#34d399;
   }
   * { box-sizing:border-box; }
-  body {
-    margin:0; background:var(--arka); color:var(--metin); padding:16px;
+  body { margin:0; background:var(--arka); color:var(--metin); padding:16px;
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    min-height:100vh; display:flex; align-items:center; justify-content:center;
-  }
+    min-height:100vh; display:flex; align-items:center; justify-content:center; }
   .kart { background:var(--kart); border:1px solid var(--cizgi); border-radius:18px;
-    padding:22px; width:100%; max-width:460px; box-shadow:0 10px 34px rgba(0,0,0,.10); }
+    padding:20px; width:100%; max-width:460px; box-shadow:0 10px 34px rgba(0,0,0,.10); }
   h1 { font-size:20px; margin:0 0 2px; }
-  .alt { color:var(--soluk); font-size:12.5px; margin:0 0 16px; line-height:1.5; }
-
-  .arena { position:relative; border:1px solid var(--cizgi); border-radius:14px; overflow:hidden;
-    background:linear-gradient(160deg,var(--arena1),var(--arena2)); padding:18px 14px 14px; text-align:center; }
-  .sira { position:absolute; top:10px; right:12px; font-size:12px; color:var(--soluk); }
-  .sira b { font-size:20px; vertical-align:middle; filter:grayscale(.3); opacity:.8; }
-  .ad { font-weight:700; font-size:14px; margin-bottom:6px; }
-  .ad .boss { color:var(--altin); }
-  .canavar { font-size:84px; line-height:1; display:inline-block; transition:transform .06s; }
-  .canavar.vur { transform:scale(1.14) rotate(-4deg); }
-  .canavar.bossCanavar { filter:drop-shadow(0 0 10px var(--altin)); }
-  .hasar { position:absolute; left:0; right:0; top:34px; height:24px; font-weight:800; font-size:20px;
-    color:var(--can); opacity:0; transition:opacity .08s, transform .2s; pointer-events:none; }
-  .hasar.gor { opacity:1; transform:translateY(-10px); }
-  .hasar.krit { color:var(--krit); font-size:26px; }
-  .cbar { height:12px; background:rgba(127,127,127,.22); border-radius:99px; overflow:hidden; margin:12px 6px 2px; }
-  .cbar > span { display:block; height:100%; background:var(--can); width:100%; transition:width .07s; }
-  .cyazi { font-size:11px; color:var(--soluk); margin-top:3px; }
-
-  .etiket { display:flex; justify-content:space-between; font-size:12px; color:var(--soluk); margin:16px 0 2px; }
-  .xpbar { height:10px; background:var(--cizgi); border-radius:99px; overflow:hidden; }
-  .xpbar > span { display:block; height:100%; background:var(--xp); width:0%; transition:width .1s; }
-
-  .izgara { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:14px 0 16px; }
+  .alt { color:var(--soluk); font-size:12.5px; margin:0 0 14px; line-height:1.5; }
+  canvas { width:100%; height:auto; aspect-ratio:420/300; display:block; border-radius:12px;
+    border:1px solid var(--cizgi); touch-action:none; }
+  .izgara { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:14px 0 12px; }
   .kutu { background:var(--arka); border:1px solid var(--cizgi); border-radius:12px; padding:9px 4px; text-align:center; }
   .kutu b { display:block; font-size:21px; font-variant-numeric:tabular-nums; }
   .kutu small { color:var(--soluk); font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; }
-  .altinDeger { color:var(--altin); }
-
-  .tuslar { display:flex; gap:8px; justify-content:center; }
-  .tus { border:1px solid var(--cizgi); border-radius:11px; padding:8px 0; width:96px; text-align:center;
-    font-size:12px; color:var(--soluk); transition:all .08s; }
-  .tus b { display:block; font-size:17px; color:var(--metin); }
-  .tus.bas { border-color:var(--vurgu); background:color-mix(in srgb, var(--vurgu) 15%, transparent); transform:translateY(1px); }
-  .durum { text-align:center; margin-top:13px; font-size:12px; color:var(--soluk); }
-  .combo { color:var(--yesil); font-weight:700; }
+  .odunDeger { color:var(--odun); } .tasDeger { color:var(--tas); }
+  .etiket { display:flex; justify-content:space-between; font-size:12px; color:var(--soluk); margin:2px 0; }
+  .xpbar { height:10px; background:var(--cizgi); border-radius:99px; overflow:hidden; }
+  .xpbar > span { display:block; height:100%; background:var(--xp); width:0%; transition:width .1s; }
+  .durum { text-align:center; margin-top:12px; font-size:12px; color:var(--soluk); }
+  kbd { background:var(--arka); border:1px solid var(--cizgi); border-bottom-width:2px; border-radius:6px;
+    padding:1px 6px; font-family:inherit; font-size:12px; }
 </style>
 </head>
 <body>
   <div class="kart">
-    <h1>⚔️ Canavar Farmı</h1>
-    <p class="alt">Canavarlar sırayla gelir; <b>A</b> hızlı · <b>S</b> darbe · <b>D</b> ağır vuruşla öldür,
-      XP ve altın farmla. Her 5. canavar bir <b style="color:var(--altin)">ejderha</b> (boss). Her 5. vuruş kritik (×2).</p>
+    <h1>🌲 Orman Farmı <span style="color:var(--soluk);font-size:14px">.io</span></h1>
+    <p class="alt"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ile haritada gez;
+      <b style="color:var(--yesil)">ağaçlara</b> vurunca odun, <b style="color:var(--tas)">taşlara</b> vurunca
+      taş farmlanır. Toplanan kaynak biter, bir süre sonra yeniden büyür. (glor.io / dynast.io tarzı.)</p>
 
-    <div class="arena">
-      <div class="sira">Sıradaki: <b id="sonraki">👺</b></div>
-      <div class="ad" id="canavarAd">Goblin</div>
-      <div class="canavar" id="canavar">👺</div>
-      <div class="hasar" id="hasar">0</div>
-      <div class="cbar"><span id="canBar"></span></div>
-      <div class="cyazi" id="canYazi">50 / 50</div>
+    <canvas id="harita" width="420" height="300"></canvas>
+
+    <div class="izgara">
+      <div class="kutu"><b class="odunDeger" id="odun">0</b><small>🪵 Odun</small></div>
+      <div class="kutu"><b class="tasDeger" id="tas">0</b><small>🪨 Taş</small></div>
+      <div class="kutu"><b id="seviye">1</b><small>Seviye</small></div>
+      <div class="kutu"><b id="hamle">0</b><small>Hamle</small></div>
     </div>
 
     <div class="etiket"><span>Sonraki seviye</span><span id="xpYazi">0 / 100</span></div>
     <div class="xpbar"><span id="xpBar"></span></div>
 
-    <div class="izgara">
-      <div class="kutu"><b id="seviye">1</b><small>Seviye</small></div>
-      <div class="kutu"><b id="oldurme">0</b><small>Öldürme</small></div>
-      <div class="kutu"><b class="altinDeger" id="altin">0</b><small>Altın</small></div>
-      <div class="kutu"><b id="vurus">0</b><small>Vuruş</small></div>
-    </div>
-
-    <div class="tuslar">
-      <div class="tus" id="tusA"><b>A</b>hızlı · 8</div>
-      <div class="tus" id="tusS"><b>S</b>darbe · 12</div>
-      <div class="tus" id="tusD"><b>D</b>ağır · 16</div>
-    </div>
-
-    <div class="durum">Combo: <span class="combo" id="combo">0</span> · Son vuruş: <span id="sonTus">—</span></div>
+    <div class="durum">Toplam kaynak: <b id="toplam">0</b> · Yön: <span id="yon">—</span></div>
   </div>
 
 <script>
 (() => {
   "use strict";
-  const HASAR = { a: 8, s: 12, d: 16 };
-  const XP_BOLUM = 100, CRIT_HER = 5, BOSS_HER = 5;
-  const TIPLER = [
-    { emoji: "👺", ad: "Goblin" },
-    { emoji: "🧟", ad: "Zombi" },
-    { emoji: "🐺", ad: "Kurt" },
-    { emoji: "👹", ad: "İblis" },
-  ];
-  const BOSS = { emoji: "🐲", ad: "Ejderha" };
+  const G = { w: 420, h: 300 };
+  const ADIM = 22, MENZIL = 58, HASAR = 12, XP_BOLUM = 100, YENIDEN_MS = 1200, OTO_MS = 200;
+  const CAN = { agac: 24, tas: 36 };
+  const XP_ODUL = 15;
 
-  // Oyun durumu. Test bunu window.durum üzerinden okur.
-  const durum = {
-    vurus: 0, combo: 0, oldurme: 0, seviye: 1, xp: 0, altin: 0,
-    canavarCan: 0, canavarMaxCan: 0, canavarAd: "", bossMu: false,
-  };
-  window.durum = durum;
+  const cv = document.getElementById("harita");
+  const cx = cv.getContext("2d");
 
-  const $ = (id) => document.getElementById(id);
-  const canavarEl = $("canavar"), hasarEl = $("hasar");
+  // Oyuncu haritanın ortasında başlar.
+  const oyuncu = { x: G.w / 2, y: G.h / 2, yon: "—" };
 
-  function tipSec(sira) { return (sira % BOSS_HER === BOSS_HER - 1) ? BOSS : TIPLER[sira % TIPLER.length]; }
-
-  function canavarUret() {
-    const sira = durum.oldurme;                 // kaçıncı canavar
-    durum.bossMu = (sira % BOSS_HER === BOSS_HER - 1);
-    const tip = tipSec(sira);
-    const temelCan = 40 + durum.seviye * 10;     // seviye arttıkça canavar güçlenir (gerçek farm)
-    durum.canavarMaxCan = durum.bossMu ? temelCan * 2 : temelCan;
-    durum.canavarCan = durum.canavarMaxCan;
-    durum.canavarAd = tip.ad;
-
-    canavarEl.textContent = tip.emoji;
-    canavarEl.classList.toggle("bossCanavar", durum.bossMu);
-    $("canavarAd").innerHTML = durum.bossMu ? '<span class="boss">👑 ' + tip.ad + '</span>' : tip.ad;
-    const sonraki = tipSec(sira + 1);
-    $("sonraki").textContent = sonraki.emoji;
+  // Kaynakları haritaya ızgara olarak yerleştir (yoğun farm alanı).
+  const kaynaklar = [];
+  let sayac = 0;
+  for (let y = 38; y <= 262; y += 56) {
+    for (let x = 40; x <= 384; x += 58) {
+      const tur = (sayac++ % 3 === 0) ? "tas" : "agac";
+      kaynaklar.push({ x, y, tur, maxCan: CAN[tur], can: CAN[tur], yeniden: 0 });
+    }
   }
 
-  function ciz() {
-    $("vurus").textContent = durum.vurus;
-    $("oldurme").textContent = durum.oldurme;
+  // Oyun durumu. Test bunu window.durum üzerinden okur.
+  const durum = { hamle: 0, odun: 0, tas: 0, toplam: 0, seviye: 1, xp: 0 };
+  window.durum = durum;
+
+  const vurusEfekt = [];  // görsel: {x,y,bitis}
+  const $ = (id) => document.getElementById(id);
+
+  function hudCiz() {
+    $("odun").textContent = durum.odun;
+    $("tas").textContent = durum.tas;
     $("seviye").textContent = durum.seviye;
-    $("altin").textContent = durum.altin;
-    $("combo").textContent = durum.combo;
-    $("canYazi").textContent = Math.max(0, durum.canavarCan) + " / " + durum.canavarMaxCan;
-    $("canBar").style.width = (100 * Math.max(0, durum.canavarCan) / durum.canavarMaxCan) + "%";
+    $("hamle").textContent = durum.hamle;
+    $("toplam").textContent = durum.toplam;
+    $("yon").textContent = oyuncu.yon;
     $("xpYazi").textContent = durum.xp + " / " + XP_BOLUM;
     $("xpBar").style.width = (100 * durum.xp / XP_BOLUM) + "%";
   }
 
-  function vur(tus) {
-    durum.vurus++;
-    durum.combo++;
-    let hasar = HASAR[tus];
-    const krit = (durum.vurus % CRIT_HER === 0);
-    if (krit) hasar *= 2;
-    durum.canavarCan -= hasar;
+  function topla(k, now) {
+    if (k.tur === "agac") durum.odun++; else durum.tas++;
+    durum.toplam++;
+    durum.xp += XP_ODUL;
+    while (durum.xp >= XP_BOLUM) { durum.xp -= XP_BOLUM; durum.seviye++; }
+    k.yeniden = now + YENIDEN_MS;   // bir süre sonra yeniden büyür
+  }
 
-    if (durum.canavarCan <= 0) {
-      const kat = durum.bossMu ? 3 : 1;
-      durum.oldurme++;
-      durum.xp += kat * (20 + durum.seviye * 5);
-      durum.altin += kat * (5 + durum.seviye * 2);
-      while (durum.xp >= XP_BOLUM) { durum.xp -= XP_BOLUM; durum.seviye++; }
-      canavarUret();                              // sıradaki canavar gelir
+  // "Vuruş": menzildeki kaynaklara hasar ver, bitenleri topla.
+  function salla(now) {
+    for (const k of kaynaklar) {
+      if (k.yeniden > now) continue;                 // yeniden büyüyor
+      const dx = k.x - oyuncu.x, dy = k.y - oyuncu.y;
+      if (dx * dx + dy * dy <= MENZIL * MENZIL) {
+        k.can -= HASAR;
+        vurusEfekt.push({ x: k.x, y: k.y, bitis: now + 120 });
+        if (k.can <= 0) { k.can = k.maxCan; topla(k, now); }
+      }
     }
+  }
 
-    // Görsel geri bildirim
-    hasarEl.textContent = (krit ? "KRİTİK -" : "-") + hasar;
-    hasarEl.className = "hasar gor" + (krit ? " krit" : "");
-    canavarEl.classList.add("vur");
-    const tusEl = $("tus" + tus.toUpperCase());
-    tusEl.classList.add("bas");
-    $("sonTus").textContent = tus.toUpperCase();
-    setTimeout(() => {
-      hasarEl.className = "hasar";
-      canavarEl.classList.remove("vur");
-      tusEl.classList.remove("bas");
-    }, 90);
-
-    ciz();
+  function hareket(dx, dy, yon) {
+    oyuncu.x = Math.max(12, Math.min(G.w - 12, oyuncu.x + dx));
+    oyuncu.y = Math.max(12, Math.min(G.h - 12, oyuncu.y + dy));
+    oyuncu.yon = yon;
+    durum.hamle++;
+    salla(performance.now());   // hareket ettikçe (vurdukça) farmla
+    hudCiz();
   }
 
   window.addEventListener("keydown", (e) => {
-    const tus = e.key.toLowerCase();
-    if (tus === "a" || tus === "s" || tus === "d") vur(tus);
-    else { durum.combo = 0; ciz(); }             // yanlış tuş combo'yu kırar
+    const t = e.key.toLowerCase();
+    if (t === "w") hareket(0, -ADIM, "↑");
+    else if (t === "s") hareket(0, ADIM, "↓");
+    else if (t === "a") hareket(-ADIM, 0, "←");
+    else if (t === "d") hareket(ADIM, 0, "→");
+    else return;
+    if (["w", "a", "s", "d"].includes(t)) e.preventDefault();
   });
 
-  canavarUret();
-  ciz();
+  // Çizim + arada otomatik vuruş (insan oynarken de farmlasın).
+  let sonOto = 0;
+  function cizKare(now) {
+    if (now - sonOto >= OTO_MS) { salla(now); hudCiz(); sonOto = now; }
+
+    // Harita zemini (çimen) + ızgara
+    cx.fillStyle = "#5c8a4a";
+    cx.fillRect(0, 0, G.w, G.h);
+    cx.strokeStyle = "rgba(255,255,255,.06)";
+    for (let x = 0; x <= G.w; x += 30) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, G.h); cx.stroke(); }
+    for (let y = 0; y <= G.h; y += 30) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(G.w, y); cx.stroke(); }
+
+    // Kaynaklar
+    cx.textAlign = "center"; cx.textBaseline = "middle";
+    for (const k of kaynaklar) {
+      const buyuyor = k.yeniden > now;
+      cx.globalAlpha = buyuyor ? 0.28 : 1;
+      cx.fillStyle = k.tur === "agac" ? "#2f6b34" : "#6b7280";
+      cx.beginPath(); cx.arc(k.x, k.y, 13, 0, Math.PI * 2); cx.fill();
+      cx.font = "17px system-ui,'Segoe UI Emoji',sans-serif";
+      cx.fillText(k.tur === "agac" ? "🌳" : "🪨", k.x, k.y + 1);
+      // can çubuğu (hasar görmüşse)
+      if (!buyuyor && k.can < k.maxCan) {
+        cx.globalAlpha = 1;
+        cx.fillStyle = "rgba(0,0,0,.35)"; cx.fillRect(k.x - 14, k.y - 22, 28, 4);
+        cx.fillStyle = "#ef4444"; cx.fillRect(k.x - 14, k.y - 22, 28 * k.can / k.maxCan, 4);
+      }
+      cx.globalAlpha = 1;
+    }
+
+    // Vuruş efektleri
+    for (let i = vurusEfekt.length - 1; i >= 0; i--) {
+      const v = vurusEfekt[i];
+      if (v.bitis < now) { vurusEfekt.splice(i, 1); continue; }
+      cx.strokeStyle = "rgba(255,255,255,.8)"; cx.lineWidth = 2;
+      cx.beginPath(); cx.arc(v.x, v.y, 18, 0, Math.PI * 2); cx.stroke();
+    }
+
+    // Menzil halkası
+    cx.strokeStyle = "rgba(255,255,255,.18)"; cx.lineWidth = 1;
+    cx.beginPath(); cx.arc(oyuncu.x, oyuncu.y, MENZIL, 0, Math.PI * 2); cx.stroke();
+
+    // Oyuncu
+    cx.fillStyle = "#f59e0b";
+    cx.beginPath(); cx.arc(oyuncu.x, oyuncu.y, 11, 0, Math.PI * 2); cx.fill();
+    cx.strokeStyle = "#1b1e25"; cx.lineWidth = 2; cx.stroke();
+
+    requestAnimationFrame(cizKare);
+  }
+
+  hudCiz();
+  requestAnimationFrame(cizKare);
 })();
 </script>
 </body>

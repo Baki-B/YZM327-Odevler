@@ -86,11 +86,12 @@ metinden ayrıştırma bilgisayar/benzetim tarafında kullanılır (esnek yol).
 
 20 yıl önce Metin2 / Knight Online gibi oyunlarda seviye atlamak için tuşa basan
 makrolar kullanılırdı. Aynı fikri basit, kontrollü bir oyunda deniyoruz:
-`oyun/` klasöründe A/S/D ile canavar dövüp XP/altın farmladığın bir
-"Canavar Farmı" oyunu var (sırayla gelen canavarlar, ejderha bosslar, kritik vuruş).
+`oyun/` klasöründe **glor.io / dynast.io tarzı** tepeden bakışlı bir haritada
+**W/A/S/D** ile gezip ağaçlardan odun, taşlardan taş farmladığın bir
+"Orman Farmı" oyunu var.
 
-`make oyun-test`, cihazın göndereceği a-s-d tuşlarının **aynısını** ekransız
-(headless) tarayıcıya bastırır ve skorun yükseldiğini doğrular — yani otomatik
+`make oyun-test`, cihazın göndereceği w-a-s-d tuşlarının **aynısını** ekransız
+(headless) tarayıcıya bastırır ve kaynakların farmlandığını doğrular — yani otomatik
 klavyenin oyunu gerçekten oynattığını kart olmadan kanıtlar (`node` + `playwright`
 gerekir). Ayrıntı ve ekran görüntüsü: [`oyun/BENIOKU.md`](oyun/BENIOKU.md).
 

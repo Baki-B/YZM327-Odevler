@@ -1,10 +1,11 @@
-# Canavar Farmı — makro klavyeyi deneme oyunu
+# Orman Farmı (.io) — makro klavyeyi deneme oyunu
 
 20 yıl önce Metin2 / Knight Online gibi oyunlarda seviye atlamak için tuşa basan
 makrolar kullanılırdı. Bu klasör, aynı fikri **basit ve kontrollü** bir oyunda
-denemek içindir: canavarlar sırayla gelir, vurup öldürdükçe XP ve altın farmlarsın.
-Tuşlar **A** (hızlı), **S** (darbe), **D** (ağır vuruş) — yani cihazın varsayılan
-`a,s,d` makrosuyla birebir. Her 5. canavar bir ejderha (boss), her 5. vuruş kritik.
+denemek içindir: **glor.io / dynast.io tarzı** tepeden bakışlı bir haritada
+**W/A/S/D** ile gezersin; ağaçlara vurunca odun, taşlara vurunca taş farmlanır.
+Tuşlar yön tuşlarıdır (yukarı/sol/aşağı/sağ) — yani makronun `w,a,s,d` ayarıyla
+birebir. Toplanan kaynak biter, bir süre sonra yeniden büyür (sürekli farm).
 
 ## Dosyalar
 
@@ -17,28 +18,29 @@ Tuşlar **A** (hızlı), **S** (darbe), **D** (ağır vuruş) — yani cihazın 
 
 ## Elle oyna
 
-Tarayıcıda `index.html`'i aç, A/S/D'ye bas. Her tuş gelen canavara vurur; canı
-biterse ölür, sıradaki canavar gelir, XP ve altın farmlanır, seviye atlanır.
+Tarayıcıda `index.html`'i aç, W/A/S/D ile haritada gez. Menzilindeki ağaç ve
+taşlara otomatik vurulur; canları bitince kaynak toplanır (odun/taş), XP artar,
+seviye atlanır. Kaynak bir süre sonra aynı yerde yeniden büyür.
 
 ## Otomatik test (donanım gerekmez)
 
-Cihazın yaptığının aynısını yapar: a-s-d tuşlarını tur tur basar ve oyunun
-tepkisini ölçer. Ekransız (headless) Chromium kullanır; `node` + `playwright`
-gerekir.
+Cihazın yaptığının aynısını yapar: w-a-s-d tuşlarını tur tur basar (haritada
+gezinir) ve oyunun tepkisini ölçer. Ekransız (headless) Chromium kullanır;
+`node` + `playwright` gerekir.
 
 ```bash
 node oyun/test_oyun.mjs       # ya da:  make oyun-test
 ```
 
-Beklenen sonuç: 40 tur × 3 tuş = **120 vuruş**, canavarlar ölür, XP/altın farmlanır,
+Beklenen sonuç: 40 tur × 4 tuş = **160 hamle**, hem odun hem taş farmlanır,
 **seviye atlanır** ve `ekran_goruntusu.png` güncellenir. Bu, "otomatik klavyeye basan
 cihaz oyunu oynatır mı?" sorusunun donanımsız kanıtıdır.
 
 ## Gerçek cihazla
 
 Kart gelince `arduino/tusmatik/` taslağındaki `ayar.url`'yi oyunun adresine,
-`ayar.tuslar`'ı `{'a','s','d'}`'ye ayarlayıp yükle. Takınca cihaz oyunu açıp
-dövmeye başlar.
+`ayar.tuslar`'ı `{'w','a','s','d'}`'ye ayarlayıp yükle. Takınca cihaz oyunu açıp
+haritada gezip farmlamaya başlar.
 
 ## Not
 
