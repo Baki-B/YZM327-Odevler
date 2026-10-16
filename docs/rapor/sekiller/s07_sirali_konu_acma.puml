@@ -1,0 +1,25 @@
+@startuml s07_sirali_konu_acma
+!include ../../uml/_stil.iuml
+hide footbox
+participant "Üye" as U
+participant "Web katmanı" as W
+participant "konular" as K
+participant "uygunluk" as Y
+participant "denetim\n(D1 → … → D7)" as D
+participant "Veritabanı" as V
+
+U -> W : POST /konu/yeni
+W -> K : konu_ac(sahip, form)
+K -> Y : sahip konum ve yaş\nkuralını sağlıyor mu?
+K -> D : denetle(başlık, açıklama, kategori)
+D -> D : her madde sırayla kontrol eder
+D --> K : rapor (engel / uyarı)
+alt engelleyen madde var (ör. kişisel veri)
+  K --> U : hata mesajı, form geri döner
+else engel yok
+  K -> V : konuyu kaydet (durum = TARTIŞMA,\nbitiş = şimdi + 24 saat)
+  K -> V : deftere KONU bloğu (kuyruğa)
+  W -> V : COMMIT
+  K --> U : konu sayfası (varsa uyarılar)
+end
+@enduml

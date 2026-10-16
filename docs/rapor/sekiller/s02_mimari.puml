@@ -1,0 +1,40 @@
+@startuml s02_mimari
+!include ../../uml/_stil.iuml
+skinparam componentStyle rectangle
+skinparam ranksep 35
+
+package "İstemciler" {
+  [Tarayıcı / PWA] as C1
+  [Android (Capacitor)\nExpo Go] as C2
+  [REST API istemcisi] as C3
+}
+package "Web katmanı (forum/web)" {
+  [İstek zinciri\nkimlik → askı → CSRF →\nzamanlayıcı → yazma kilidi] as W1
+  [Rotalar ve REST API] as W2
+  [Şablonlar (Jinja2)] as W3
+}
+package "İş kuralları (forum/)" {
+  [konular\nkonu_durumlari] as I1
+  [oylama\nteklif_turleri, sonuclar] as I2
+  [denetim (D1–D7)\nuygunluk, devir, uzmanlik] as I3
+  [defter\n(kayıt defteri)] as I4
+}
+package "Veri" {
+  database "SQLite\n(forum verisi)" as V1
+  database "Düğüm A · B · C\n(defter kopyaları)" as V2
+}
+
+C1 --> W1
+C2 --> W1
+C3 --> W1
+W1 --> W2
+W2 --> W3
+W2 --> I1
+W2 --> I2
+W2 --> I3
+I1 --> V1
+I2 --> V1
+I3 --> V1
+V1 ..> I4 : commit olayı\n(Observer)
+I4 --> V2
+@enduml

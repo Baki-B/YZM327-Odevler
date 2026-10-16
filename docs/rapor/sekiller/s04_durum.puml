@@ -1,0 +1,23 @@
+@startuml s04_durum
+!include ../../uml/_stil.iuml
+skinparam StateBorderColor #4A6642
+skinparam StateBackgroundColor #F1F5EF
+hide empty description
+
+[*] --> Tartisma : konu açıldı\n(denetimden geçti)
+state "Tartışma" as Tartisma
+state "Oylama (tur 1–5)" as Oylama
+state "Karara bağlandı" as Karar
+state "Sonuçsuz" as Sonucsuz
+state "Kaldırıldı" as Kaldirildi
+
+Tartisma --> Oylama : 24 saat doldu
+Oylama --> Oylama : tur bitti, birden\nfazla fikir kaldı
+Oylama --> Karar : %75 ezici üstünlük /\ntek fikir kaldı /\n5. turda en yüksek
+Oylama --> Sonucsuz : yeter sayı yok /\nson turda eşitlik
+Tartisma --> Kaldirildi : kaldırma\noylaması (3/4)
+Oylama --> Kaldirildi
+Karar --> [*]
+Sonucsuz --> [*]
+note right of Karar : Karara katılmayan\nitiraz konusu açabilir.
+@enduml

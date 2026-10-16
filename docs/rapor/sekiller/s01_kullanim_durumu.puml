@@ -1,0 +1,50 @@
+@startuml s01_kullanim_durumu
+!include ../../uml/_stil.iuml
+left to right direction
+skinparam nodesep 25
+skinparam ranksep 60
+
+rectangle "Ziyaretçi" as Z <<aktör>>
+rectangle "Üye" as U <<aktör>>
+rectangle "Uzman" as UZ <<aktör>>
+rectangle "Yönetici" as Y <<aktör>>
+rectangle "Zamanlayıcı" as T <<aktör>>
+U -up-|> Z
+UZ -up-|> U
+
+rectangle "Agora" {
+  usecase "Konuları oku, ara" as OKU
+  usecase "Kayıt ol / giriş yap" as KAYIT
+  usecase "Konu aç" as KONU
+  usecase "Alt konu ya da\nitiraz konusu aç" as ALT
+  usecase "Yönetmelik denetimi" as DEN
+  usecase "Mesaj ve fikir yaz" as MESAJ
+  usecase "Oy ver" as OY
+  usecase "Uzman oyu ver\n(10 sayılır, gerekçeli)" as UZOY
+  usecase "Makbuzla oyunu doğrula" as MAKBUZ
+  usecase "Oy devret" as DEVIR
+  usecase "Şikayet et / gizleme\noylaması aç" as SIKAYET
+  usecase "Yönetici girişi" as YGIRIS
+  usecase "Üyeleri ve şikayetleri yönet" as YONET
+  usecase "Turu sonuçlandır" as TUR
+}
+
+Z -- OKU
+Z -- KAYIT
+U -- KONU
+U -- MESAJ
+U -- OY
+U -- MAKBUZ
+U -- DEVIR
+U -- SIKAYET
+UZ -- UZOY
+Y -- YGIRIS
+Y -- YONET
+T -- TUR
+
+ALT .> KONU : <<extend>>
+KONU ..> DEN : <<include>>
+MESAJ ..> DEN : <<include>>
+UZOY .> OY : <<extend>>
+YONET ..> YGIRIS : <<include>>
+@enduml
