@@ -4,26 +4,28 @@ skinparam NodeBorderColor #4A6642
 skinparam NodeBackgroundColor #F6F4EF
 skinparam ArtifactBackgroundColor #F1F5EF
 skinparam ArtifactBorderColor #4A6642
+skinparam ranksep 40
+skinparam nodesep 20
 
 node "Sunucu sürümü" as SS {
-  node "Sunucu (python calistir.py)" {
+  node "İstemci" as I1 {
+    artifact "Tarayıcı / PWA" as T1
+    artifact "Android · Expo Go" as A1
+  }
+  node "Sunucu (python calistir.py)" as S1 {
     artifact "Flask uygulaması" as F1
     database "SQLite" as DB1
     database "Defter A · B · C" as DF1
   }
-  node "İstemci" as I1 {
-    artifact "Tarayıcı / PWA" as T1
-    artifact "Android (Capacitor) / Expo Go" as A1
-  }
 }
 
-node "Tarayıcı sürümü (GitHub Pages)" as TS {
-  node "GitHub Pages (yalnızca dosya sunar)" as GP {
-    artifact "index.html, sw.js, isci.js\nPyodide, forum paketi, Agora.apk" as DOS
+node "Tarayıcı sürümü" as TS {
+  node "GitHub Pages (dosya sunucusu)" as GP {
+    artifact "index.html, sw.js, isci.js,\nPyodide, forum paketi, APK" as DOS
   }
   node "Ziyaretçinin tarayıcısı" as ZT {
-    artifact "Kabuk sayfası + service worker" as K2
-    artifact "Web Worker: Pyodide + Flask" as P2
+    artifact "Kabuk sayfası +\nservice worker" as K2
+    artifact "Web Worker:\nPyodide + Flask" as P2
     database "IndexedDB\n(SQLite + defter)" as IDB
   }
 }
@@ -32,8 +34,8 @@ T1 --> F1 : HTTPS
 A1 --> F1 : HTTPS
 F1 --> DB1
 F1 --> DF1
-GP --> ZT : ilk açılışta ~15 MB
-K2 --> P2 : istekleri iletir
+DOS --> K2 : ilk açılışta\n~15 MB
+K2 --> P2 : istekleri\niletir
 P2 --> IDB
-SS -[hidden]down- TS
+A1 -[hidden]right- DOS
 @enduml

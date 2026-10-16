@@ -1,0 +1,19 @@
+@startuml s05b_sinif_konu_durumlari
+!include ../../uml/_stil.iuml
+skinparam nodesep 30
+skinparam ranksep 40
+
+package "State — konu durumları" {
+  abstract class KonuDurumu {
+    kod
+    sonrakiler
+    fikir_yazilabilir(konu)
+    gecis_dogrula(yeni)
+  }
+  KonuDurumu <|-- Tartisma
+  KonuDurumu <|-- Oylama
+  KonuDurumu <|-- KararaBaglandi
+  KonuDurumu <|-- Sonucsuz
+  KonuDurumu <|-- Kaldirildi
+}
+@enduml

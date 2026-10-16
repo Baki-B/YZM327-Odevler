@@ -9,18 +9,18 @@ participant "Veritabanı" as V
 participant "defter" as D
 
 U -> W : POST /oylama/12/oy
-W -> W : yazma kilidi (BEGIN IMMEDIATE)
+W -> W : yazma kilidini al
 W -> O : oy_ver(teklif, üye, seçim)
 O -> Y : oy_agirligi(üye)
-Y --> O : 0 gözlemci / 1 üye / 10 uzman
-alt ağırlık = 0
+Y --> O : 0, 1 ya da 10
+alt ağırlık = 0 (gözlemci)
   O --> U : "Bu konuda gözlemcisin"
 else oy hakkı var
-  O -> O : makbuz üret;\ntaahhüt = SHA-256(teklif | seçim | makbuz)
-  O -> V : oyu kaydet (yalnızca oylama açıksa)
+  O -> O : makbuz ve taahhüt üret
+  O -> V : oyu kaydet (oylama açıksa)
   W -> V : COMMIT
   V -> D : commit olayı
-  D -> D : taahhüdü üç düğüme yaz
+  D -> D : üç düğüme yaz
   O --> U : makbuz kodu
 end
 @enduml

@@ -1,6 +1,6 @@
 // Service worker: uygulama kabuğunu önbellekler, bağlantı yoksa çevrimdışı sayfası gösterir, anlık bildirimleri gösterir.
 // Sayfalar her zaman ağdan gelir (oylar ve kararlar bayat gösterilmemeli).
-var SURUM = "agora-v17";
+var SURUM = "agora-v18";
 var KABUK = ["/cevrimdisi", "/static/style.css", "/static/app.js", "/static/tema.js", "/static/ikon.svg", "/static/ikon-192.png"];
 
 self.addEventListener("install", function (e) {

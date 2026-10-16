@@ -1,7 +1,7 @@
 @startuml s03_sinif_alan_modeli
 !include ../../uml/_stil.iuml
 skinparam nodesep 45
-skinparam ranksep 55
+skinparam ranksep 38
 
 class Kullanici {
   takma_ad

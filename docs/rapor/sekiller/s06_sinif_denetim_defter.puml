@@ -1,7 +1,7 @@
 @startuml s06_sinif_denetim_defter
 !include ../../uml/_stil.iuml
 skinparam nodesep 30
-skinparam ranksep 45
+skinparam ranksep 32
 
 package "Chain of Responsibility — yönetmelik denetimi" {
   abstract class DenetimKurali {
@@ -31,7 +31,7 @@ package "Observer + Repository — kayıt defteri" {
     {abstract} bloklar()
     {abstract} ekle(blok)
   }
-  Baglanti ..> defter : commit olayını\nbildirir
+  Baglanti ..> defter : commit olayı
   defter --> "3" DugumDeposu
   DugumDeposu <|-- SqliteDugumDeposu
   DugumDeposu <|-- BellekDugumDeposu

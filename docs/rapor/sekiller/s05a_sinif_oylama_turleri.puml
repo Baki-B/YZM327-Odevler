@@ -1,21 +1,7 @@
-@startuml s05_sinif_konu_oylama
+@startuml s05a_sinif_oylama_turleri
 !include ../../uml/_stil.iuml
 skinparam nodesep 30
-skinparam ranksep 45
-
-package "State — konu durumları" {
-  abstract class KonuDurumu {
-    kod
-    sonrakiler
-    fikir_yazilabilir(konu)
-    gecis_dogrula(yeni)
-  }
-  KonuDurumu <|-- Tartisma
-  KonuDurumu <|-- Oylama
-  KonuDurumu <|-- KararaBaglandi
-  KonuDurumu <|-- Sonucsuz
-  KonuDurumu <|-- Kaldirildi
-}
+skinparam ranksep 40
 
 package "Strategy + Template Method — oylama türleri" {
   class oylama <<modül>> {
@@ -37,10 +23,4 @@ package "Strategy + Template Method — oylama türleri" {
   EvetHayirTuru <|-- Uzmanlik
   EvetHayirTuru <|-- Yonetmelik
 }
-note bottom of oylama
-  sonuclandir(): sayım → sonuç durumu → uygula.
-  Adım sırası sabit; türe özgü adımlar alt sınıftan gelir.
-end note
-Yonetmelik -[hidden]down- KonuDurumu
-Uzmanlik -[hidden]down- KonuDurumu
 @enduml
