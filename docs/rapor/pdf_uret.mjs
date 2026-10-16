@@ -21,7 +21,7 @@ import sys
 from pypdf import PdfReader, PdfWriter
 yol = sys.argv[1]
 w = PdfWriter(clone_from=PdfReader(yol))
-w.add_metadata({"/Author": "Abdülbaki Bayır (24290050)", "/Subject": "YZM327 1. Hafta Ödevi: Agora proje raporu"})
+w.add_metadata({"/Author": "Abdülbaki Bayır (24290050)", "/Subject": "YZM327 Yazılım Mühendisliğine Giriş: Agora proje raporu"})
 w.write(yol)
 `, cikti], { encoding: "utf8" });
 console.log(meta.status === 0 ? "Yazıldı: docs/rapor/Agora_Proje_Raporu.pdf (yazar bilgisiyle)"

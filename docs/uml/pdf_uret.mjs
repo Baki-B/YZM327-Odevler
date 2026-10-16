@@ -64,7 +64,7 @@ import sys
 from pypdf import PdfReader, PdfWriter
 w = PdfWriter(clone_from=PdfReader(sys.argv[1]))
 w.add_metadata({"/Title": "Agora — UML diyagramları", "/Author": "Abdülbaki Bayır (24290050)",
-                "/Subject": "YZM327: kullanım durumu, sınıf ve sıralı diyagramlar"})
+                "/Subject": "YZM327 Yazılım Mühendisliğine Giriş: kullanım durumu, sınıf ve sıralı diyagramlar"})
 w.write(sys.argv[1])
 `, cikti]);
 console.log("Yazıldı: docs/uml/Agora_UML_Diyagramlari.pdf");
