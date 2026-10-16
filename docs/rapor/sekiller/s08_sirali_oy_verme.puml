@@ -1,0 +1,26 @@
+@startuml s08_sirali_oy_verme
+!include ../../uml/_stil.iuml
+hide footbox
+participant "Üye" as U
+participant "Web katmanı" as W
+participant "oylama" as O
+participant "uygunluk" as Y
+participant "Veritabanı" as V
+participant "defter" as D
+
+U -> W : POST /oylama/12/oy
+W -> W : yazma kilidi (BEGIN IMMEDIATE)
+W -> O : oy_ver(teklif, üye, seçim)
+O -> Y : oy_agirligi(üye)
+Y --> O : 0 gözlemci / 1 üye / 10 uzman
+alt ağırlık = 0
+  O --> U : "Bu konuda gözlemcisin"
+else oy hakkı var
+  O -> O : makbuz üret;\ntaahhüt = SHA-256(teklif | seçim | makbuz)
+  O -> V : oyu kaydet (yalnızca oylama açıksa)
+  W -> V : COMMIT
+  V -> D : commit olayı
+  D -> D : taahhüdü üç düğüme yaz
+  O --> U : makbuz kodu
+end
+@enduml

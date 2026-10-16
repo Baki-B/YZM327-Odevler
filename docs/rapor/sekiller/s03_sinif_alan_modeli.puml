@@ -1,0 +1,68 @@
+@startuml s03_sinif_alan_modeli
+!include ../../uml/_stil.iuml
+skinparam nodesep 45
+skinparam ranksep 55
+
+class Kullanici {
+  takma_ad
+  ad_soyad «gizli»
+  dogum_tarihi «gizli»
+  yonetici_mi
+}
+class Konum {
+  ad
+  tur : il | ilçe
+}
+class Kategori {
+  ad
+}
+class Uzmanlik {
+  baslangic
+  bitis
+}
+class Konu {
+  baslik
+  aciklama
+  durum
+  tur : 0..5
+}
+class Mesaj {
+  tip
+  icerik
+  gizli
+}
+class Oylama {
+  tip
+  esik
+  bitis
+  durum
+}
+class Secenek {
+  metin
+}
+class Oy {
+  secim
+  agirlik : 1 | 10
+  taahhut
+}
+class Karar {
+  metin
+}
+
+Kullanici "*" --> "1" Konum : oturur
+Kullanici "1" -- "*" Uzmanlik
+Uzmanlik "*" --> "1" Kategori : alan
+Kullanici "1" -- "*" Konu : açar
+Konu "*" --> "1" Kategori
+Konu "*" --> "0..1" Konum : katılım kuralı
+Konu "0..1" -- "*" Konu : alt konu
+Konu "1" *-- "*" Mesaj
+Kullanici "1" -- "*" Mesaj : yazar
+Konu "1" -- "*" Oylama
+Oylama "1" *-- "1..*" Secenek
+Secenek "*" --> "0..1" Mesaj : fikir
+Oylama "1" -- "*" Oy
+Kullanici "1" -- "*" Oy : verir
+Konu "1" -- "0..1" Karar
+Karar "*" --> "1" Secenek : kazanan
+@enduml

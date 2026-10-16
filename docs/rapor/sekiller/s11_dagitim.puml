@@ -1,0 +1,39 @@
+@startuml s11_dagitim
+!include ../../uml/_stil.iuml
+skinparam NodeBorderColor #4A6642
+skinparam NodeBackgroundColor #F6F4EF
+skinparam ArtifactBackgroundColor #F1F5EF
+skinparam ArtifactBorderColor #4A6642
+
+node "Sunucu sürümü" as SS {
+  node "Sunucu (python calistir.py)" {
+    artifact "Flask uygulaması" as F1
+    database "SQLite" as DB1
+    database "Defter A · B · C" as DF1
+  }
+  node "İstemci" as I1 {
+    artifact "Tarayıcı / PWA" as T1
+    artifact "Android (Capacitor) / Expo Go" as A1
+  }
+}
+
+node "Tarayıcı sürümü (GitHub Pages)" as TS {
+  node "GitHub Pages (yalnızca dosya sunar)" as GP {
+    artifact "index.html, sw.js, isci.js\nPyodide, forum paketi, Agora.apk" as DOS
+  }
+  node "Ziyaretçinin tarayıcısı" as ZT {
+    artifact "Kabuk sayfası + service worker" as K2
+    artifact "Web Worker: Pyodide + Flask" as P2
+    database "IndexedDB\n(SQLite + defter)" as IDB
+  }
+}
+
+T1 --> F1 : HTTPS
+A1 --> F1 : HTTPS
+F1 --> DB1
+F1 --> DF1
+GP --> ZT : ilk açılışta ~15 MB
+K2 --> P2 : istekleri iletir
+P2 --> IDB
+SS -[hidden]down- TS
+@enduml

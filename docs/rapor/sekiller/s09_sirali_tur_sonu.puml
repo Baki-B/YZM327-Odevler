@@ -1,0 +1,25 @@
+@startuml s09_sirali_tur_sonu
+!include ../../uml/_stil.iuml
+hide footbox
+participant "Zamanlayıcı" as Z
+participant "oylama\n«şablon yöntem»" as O
+participant "FikirTuru «strateji»\n+ sonuclar" as T
+participant "konular" as K
+participant "yz (Bilge)" as YZ
+participant "Veritabanı" as V
+
+Z -> V : kayıt noktası (SAVEPOINT)
+Z -> O : sonuclandir(teklif)
+O -> V : oyları say
+O -> O : her fikrin oranı =\nmin(ağırlıklı pay, kişi payı)
+O -> T : sonuc_durumu(), uygula()
+alt bir fikir ≥ %75 ya da tek fikir kaldı
+  T -> K : konuyu karara bağla
+else birden fazla fikir kaldı
+  T -> K : eşik altındakileri ele, sonraki tur
+else yeter sayı yok
+  T -> K : konu sonuçsuz kapanır
+end
+T -> YZ : tur özeti (sayılar sonuçtan)
+Z -> V : RELEASE (hata olursa yalnızca bu oylama geri alınır)
+@enduml

@@ -1,0 +1,23 @@
+@startuml s10_sirali_sikayet
+!include ../../uml/_stil.iuml
+hide footbox
+participant "Üyeler" as U
+participant "Yönetici" as Y
+participant "sikayetler" as S
+participant "oylama" as O
+participant "konular" as K
+
+U -> S : şikayet et (mesaj, neden)
+S -> S : şikayetçi sayısı ≥ 3 mü?
+S --> Y : bildirim
+Y -> S : oylamaya al\n(yönetici girişiyle)
+S -> O : gizleme oylaması aç (eşik 3/4)
+note over Y, O : Yönetici mesajı kendisi silemez.
+... oylama süresi ...
+O -> O : sonuclandir()
+alt evet ≥ 3/4
+  O -> K : mesajı gizle (iz kalır)
+else
+  O -> K : mesaj olduğu gibi kalır
+end
+@enduml

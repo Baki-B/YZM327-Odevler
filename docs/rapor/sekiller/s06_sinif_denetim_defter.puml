@@ -1,0 +1,49 @@
+@startuml s06_sinif_denetim_defter
+!include ../../uml/_stil.iuml
+skinparam nodesep 30
+skinparam ranksep 45
+
+package "Chain of Responsibility — yönetmelik denetimi" {
+  abstract class DenetimKurali {
+    kod : D1..D7
+    sonraki
+    isle(istek)
+    {abstract} kontrol(istek)
+  }
+  DenetimKurali o--> DenetimKurali : sonraki
+  DenetimKurali <|-- "SayginDil (D1)"
+  DenetimKurali <|-- "KisiselVeri (D2)"
+  DenetimKurali <|-- "KategoriyeUygunluk (D3)"
+  DenetimKurali <|-- "… D4–D7"
+}
+
+package "Observer + Repository — kayıt defteri" {
+  class Baglanti {
+    commit()
+    kayit_noktasi()
+  }
+  class defter <<modül>> {
+    ekle(tur, veri)
+    _islem_kaydedildi() «abone»
+    onar(düğüm)
+  }
+  abstract class DugumDeposu {
+    {abstract} bloklar()
+    {abstract} ekle(blok)
+  }
+  Baglanti ..> defter : commit olayını\nbildirir
+  defter --> "3" DugumDeposu
+  DugumDeposu <|-- SqliteDugumDeposu
+  DugumDeposu <|-- BellekDugumDeposu
+}
+
+package "Adapter — anlık bildirim" {
+  abstract class AnlikKanal {
+    {abstract} gonder(abonelik, yük)
+  }
+  AnlikKanal <|-- WebPushKanali
+  AnlikKanal <|-- FcmKanali
+}
+"KisiselVeri (D2)" -[hidden]down- Baglanti
+"KategoriyeUygunluk (D3)" -[hidden]down- AnlikKanal
+@enduml

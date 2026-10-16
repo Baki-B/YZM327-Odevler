@@ -1,4 +1,4 @@
-// rapor.html → Agora_Proje_Raporu.pdf  (A4; kapak + en fazla 4 içerik sayfası)
+// rapor.html → Agora_Proje_Raporu.pdf  (A4). Şekillerin kaynakları: sekiller/*.puml (PlantUML → SVG)
 // Kullanım:  npm i playwright-core  &&  node docs/rapor/pdf_uret.mjs  [chrome-yolu]
 // Chrome yolu verilmezse Playwright'ın kendi Chromium'u kullanılır. Elle: rapor.html'i Chrome'da açıp "PDF olarak kaydet".
 // Yazı tipi: Inter ve Inter Display kurulu olmalı; yoksa tarayıcı başka bir yazı tipine düşer ve sayfa sayısı değişebilir.
