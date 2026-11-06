@@ -1,0 +1,54 @@
+@startuml k2_denetim_bildirim_konu_sayfasi
+!include ../../_stil.iuml
+skinparam nodesep 20
+skinparam ranksep 30
+hide empty members
+
+package "Chain of Responsibility" {
+  class denetim <<Client>>
+  abstract class DenetimKurali <<Handler>> {
+    sonraki
+    {abstract} kontrol(istek)
+  }
+  class "SayginDil (D1)" as D1
+  class "KisiselVeri (D2)" as D2
+  class "… Aciklik (D7)" as D7
+  denetim --> DenetimKurali : ilk halka
+  DenetimKurali o--> DenetimKurali
+  DenetimKurali <|-- D1
+  DenetimKurali <|-- D2
+  DenetimKurali <|-- D7
+}
+note right of DenetimKurali #E3EBDF
+  <b>O:</b> yeni madde = yeni halka
+  <b>I:</b> tek yöntem: kontrol()
+end note
+
+package "Adapter" {
+  abstract class AnlikKanal <<Target>> {
+    {abstract} gonder(…)
+  }
+  class WebPushKanali <<Adapter>>
+  class FcmKanali <<Adapter>>
+  AnlikKanal <|-- WebPushKanali
+  AnlikKanal <|-- FcmKanali
+}
+note right of AnlikKanal #E3EBDF
+  <b>L:</b> kapalı kanal abone almaz
+end note
+
+package "Facade" {
+  class konu_sayfalari <<Client>>
+  class gorunum <<Facade>> {
+    konu_sayfasi(…)
+  }
+  class "7 alt sistem\n(konular, oylama, kararlar, …)" as Alt
+  konu_sayfalari ..> gorunum : tek çağrı
+  gorunum ..> Alt
+}
+note right of gorunum #E3EBDF
+  <b>S:</b> rota yalnızca HTTP'yle ilgilenir
+end note
+D2 -[hidden]down- AnlikKanal
+FcmKanali -[hidden]down- konu_sayfalari
+@enduml

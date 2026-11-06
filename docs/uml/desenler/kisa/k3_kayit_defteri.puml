@@ -1,0 +1,39 @@
+@startuml k3_kayit_defteri
+!include ../../_stil.iuml
+skinparam nodesep 24
+skinparam ranksep 32
+hide empty members
+
+package "Observer + Memento" {
+  class Baglanti <<Subject · Originator>> {
+    commit()
+    kayit_noktasi()
+  }
+  interface "Commit abonesi" as Abone <<Observer>>
+  class KuyrukHatirasi <<Memento>>
+  Baglanti ..> KuyrukHatirasi : oluşturur, geri yükler
+  Baglanti o--> "*" Abone
+  KuyrukHatirasi -[hidden]right- Abone
+}
+note right of Abone #E3EBDF
+  <b>D:</b> veritabanı defteri tanımaz
+end note
+
+package "Repository" {
+  class defter <<modül>>
+  abstract class DugumDeposu <<Repository>> {
+    {abstract} bloklar()
+    {abstract} ekle(blok)
+  }
+  class SqliteDugumDeposu
+  class BellekDugumDeposu
+  defter --> "3" DugumDeposu
+  DugumDeposu <|-- SqliteDugumDeposu
+  DugumDeposu <|-- BellekDugumDeposu
+}
+note right of DugumDeposu #E3EBDF
+  <b>L:</b> iki depo aynı sonucu verir
+  <b>I:</b> küçük arayüz
+end note
+Abone <|.. defter : abone olur
+@enduml

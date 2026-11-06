@@ -11,6 +11,8 @@ etiketler sınıfın desendeki rolünü, yeşil notlar o yerde uygulanan SOLID i
 | [2. Denetim, bildirim ve konu sayfası](svg/2_denetim_bildirim_konu_sayfasi.svg) | Chain of Responsibility, Adapter, Facade | S, O, L, I |
 | [3. Kayıt defteri](svg/3_kayit_defteri.svg) | Observer, Memento, Repository | S, L, I, D |
 
+**Kısa sürüm** (yalnızca roller, ana yöntemler ve tek satırlık SOLID notları): [kisa/Agora_Desenler_ve_SOLID_Kisa.pdf](kisa/Agora_Desenler_ve_SOLID_Kisa.pdf).
+
 Her desenin önceki sorunu ve testi: [docs/tasarim.md](../../tasarim.md) 8. bölüm.
 
 Yeniden üretmek (bu klasörde): `java -jar plantuml.jar -charset UTF-8 -tsvg -o svg *.puml`, ardından

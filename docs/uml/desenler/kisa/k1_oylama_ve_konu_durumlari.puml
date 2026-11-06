@@ -1,0 +1,42 @@
+@startuml k1_oylama_ve_konu_durumlari
+!include ../../_stil.iuml
+skinparam nodesep 20
+skinparam ranksep 30
+hide empty members
+
+package "Template Method + Strategy" {
+  class oylama <<Template Method>> {
+    sonuclandir(teklif)
+  }
+  abstract class TeklifTuru <<Strategy>> {
+    {abstract} sonuc_durumu(s)
+    {abstract} uygula(…)
+  }
+  class FikirTuru
+  abstract class EvetHayirTuru
+  oylama ..> TeklifTuru : adımları sırayla çağırır
+  TeklifTuru <|-- FikirTuru
+  TeklifTuru <|-- EvetHayirTuru
+}
+note right of TeklifTuru #E3EBDF
+  <b>O:</b> yeni tür = yeni alt sınıf
+  <b>L:</b> her tür şablonda aynı kullanılır
+end note
+
+package "State" {
+  class konular <<Context>>
+  class KonuDurumu <<State>> {
+    gecis_dogrula(yeni)
+  }
+  konular ..> KonuDurumu : izin ve geçiş sorar
+  KonuDurumu <|-- Tartisma
+  KonuDurumu <|-- Oylama
+  KonuDurumu <|-- KararaBaglandi
+  KonuDurumu <|-- Sonucsuz
+  KonuDurumu <|-- Kaldirildi
+}
+note right of KonuDurumu #E3EBDF
+  <b>S:</b> durum kuralları tek yerde
+end note
+FikirTuru -[hidden]down- konular
+@enduml
