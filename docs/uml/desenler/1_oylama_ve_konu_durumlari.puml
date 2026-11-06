@@ -1,0 +1,104 @@
+@startuml 1_oylama_ve_konu_durumlari
+!include ../_stil.iuml
+skinparam nodesep 22
+skinparam ranksep 38
+skinparam NoteFontSize 12
+hide empty members
+
+package "Template Method + Strategy — oylamanın sonuçlandırılması" {
+  class oylama <<modül · Template Method>> {
+    sonuclandir(teklif) «şablon yöntem»
+    sayim(teklif)
+  }
+  class teklif_turleri <<modül · Registry>> {
+    TURLER
+    @kaydet
+    tur(kod)
+  }
+  abstract class TeklifTuru <<Strategy>> {
+    kod
+    {abstract} secenekler(db, t)
+    {abstract} degerlendir(t, tablo, …)
+    {abstract} sonuc_durumu(s)
+    {abstract} uygula(db, t, s, durum)
+    sonucu_tamamla(db, t, s) «kanca»
+    sonuc_bildirimi(db, t, s, durum) «kanca»
+  }
+  class FikirTuru
+  abstract class EvetHayirTuru
+  class MesajGizlemeTuru
+  class KonuKaldirmaTuru
+  class UzmanlikTuru
+  abstract class ForumGeneliTuru
+  class YonetmelikTuru
+  class KategoriTuru
+
+  oylama ..> teklif_turleri : tur(kod)
+  oylama ..> TeklifTuru : adımları sırayla çağırır
+  teklif_turleri o--> TeklifTuru
+  TeklifTuru <|-- FikirTuru
+  TeklifTuru <|-- EvetHayirTuru
+  EvetHayirTuru <|-- MesajGizlemeTuru
+  EvetHayirTuru <|-- KonuKaldirmaTuru
+  EvetHayirTuru <|-- UzmanlikTuru
+  EvetHayirTuru <|-- ForumGeneliTuru
+  ForumGeneliTuru <|-- YonetmelikTuru
+  ForumGeneliTuru <|-- KategoriTuru
+}
+
+note top of oylama #F4EFE3
+  sonuclandir(): sayım → sonuc_durumu
+  → sonucu_tamamla → sonuc_bildirimi → uygula
+  (adım sırası sabit, adımlar türden gelir)
+end note
+
+package "State — konunun yaşam döngüsü" {
+  class konular <<modül · Context>> {
+    durum_degistir(konu, yeni)
+    oylamayi_baslat(konu)
+    konuyu_kaldir(konu, not)
+  }
+  class KonuDurumu <<State>> {
+    kod
+    yazilabilir · okunabilir · zamanli
+    sonrakiler
+    fikir_yazilabilir(konu)
+    konu_duzenlenebilir()
+    gecis_dogrula(yeni)
+  }
+  class Tartisma
+  class Oylama
+  class KararaBaglandi
+  class Sonucsuz
+  class Kaldirildi
+  konular ..> KonuDurumu : izin ve geçiş sorar
+  KonuDurumu <|-- Tartisma
+  KonuDurumu <|-- Oylama
+  KonuDurumu <|-- KararaBaglandi
+  KonuDurumu <|-- Sonucsuz
+  KonuDurumu <|-- Kaldirildi
+}
+
+KonuKaldirmaTuru ..> konular : uygula(): konuyu kaldırır
+YonetmelikTuru -[hidden]down- konular
+
+note right of TeklifTuru #E3EBDF
+  <b>O — Açık/kapalı</b>
+  Yeni oylama türü = yeni alt sınıf + @kaydet.
+  oylama.sonuclandir() hiç değişmez.
+  ----
+  <b>L — Liskov</b>
+  Şablon yöntem her türü aynı biçimde
+  kullanır; hangi alt tür gelirse gelsin
+  sonuç kuralları doğru işler.
+end note
+
+note right of KonuDurumu #E3EBDF
+  <b>S — Tek sorumluluk</b>
+  "Bu durumda neye izin var?" sorusunun
+  cevabı tek yerde. Web katmanı ve
+  şablonlar yalnızca durum nesnesine sorar.
+  Geçişler de durumun tablosundan (sonrakiler)
+  denetlenir: tanımsız geçiş hata verir.
+end note
+@enduml

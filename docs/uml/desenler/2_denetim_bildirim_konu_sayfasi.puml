@@ -1,0 +1,122 @@
+@startuml 2_denetim_bildirim_konu_sayfasi
+!include ../_stil.iuml
+skinparam nodesep 18
+skinparam ranksep 32
+skinparam NoteFontSize 12
+hide empty members
+
+package "Chain of Responsibility — yönetmelik denetimi (D1–D7)" {
+  class denetim <<modül · Client>> {
+    ZINCIR = zincir_kur(D1, …, D7)
+    denetle(db, baslik, aciklama, …)
+  }
+  class DenetimIstegi {
+    baslik · aciklama
+    kategori_id · konum_id
+  }
+  abstract class DenetimKurali <<Handler>> {
+    kod
+    sonraki
+    isle(istek) «sırayı yürütür»
+    {abstract} kontrol(istek)
+  }
+  class "SayginDil\n(D1)" as D1
+  class "KisiselVeri\n(D2)" as D2
+  class "KategoriyeUygunluk\n(D3)" as D3
+  class "KonumTutarliligi\n(D4)" as D4
+  class "BenzerKonu\n(D5)" as D5
+  class "AltKonuIliskisi\n(D6)" as D6
+  class "Aciklik\n(D7)" as D7
+  denetim --> DenetimKurali : ilk halka
+  denetim ..> DenetimIstegi : oluşturur
+  DenetimKurali o--> DenetimKurali
+  DenetimKurali <|-- D1
+  DenetimKurali <|-- D2
+  DenetimKurali <|-- D3
+  DenetimKurali <|-- D4
+  DenetimKurali <|-- D5
+  DenetimKurali <|-- D6
+  DenetimKurali <|-- D7
+}
+
+note right of DenetimKurali #E3EBDF
+  <b>O — Açık/kapalı</b>
+  Yeni madde = yeni halka (alt sınıf);
+  zincir_kur'a eklenir, diğer maddeler
+  ve denetim modülü değişmez.
+  ----
+  <b>I — Arayüz ayrımı</b>
+  Bir maddenin yazması gereken
+  tek yöntem: kontrol(istek).
+end note
+
+package "Adapter — anlık bildirim kanalları" {
+  class anlik <<modül · Client>> {
+    KANALLAR
+    abone_ol(db, kullanici, tur, veri)
+    kuyruga_ekle(db, kullanici_id, metin, …)
+  }
+  abstract class AnlikKanal <<Target>> {
+    kod
+    {abstract} etkin(klasor)
+    {abstract} abonelik_coz(veri)
+    {abstract} gonder(klasor, abonelik, yuk)
+  }
+  class WebPushKanali <<Adapter>>
+  class FcmKanali <<Adapter>>
+  class pywebpush <<Adaptee · kütüphane>>
+  class "Firebase HTTP v1" as FCM <<Adaptee · dış servis>>
+  anlik o--> AnlikKanal : KANALLAR
+  AnlikKanal <|-- WebPushKanali
+  AnlikKanal <|-- FcmKanali
+  WebPushKanali ..> pywebpush : uyarlar
+  FcmKanali ..> FCM : uyarlar
+}
+
+note right of AnlikKanal #E3EBDF
+  <b>L — Liskov</b>
+  Her kanal üst türün sözleşmesine uyar:
+  kapalı (etkin olmayan) kanal abone kabul
+  etmez, ona gönderim de yapılmaz.
+  ----
+  <b>I — Arayüz ayrımı</b>
+  Üç yöntemlik küçük arayüz.
+end note
+
+package "Facade — konu sayfası" {
+  class konu_sayfalari <<web rotası · Client>> {
+    konu(konu_id)
+  }
+  class gorunum <<Facade>> {
+    konu_sayfasi(db, ben, konu_id)
+    fikir_durumu(fikir, konu, …)
+  }
+  class konular <<modül>>
+  class oylama <<modül>>
+  class kararlar <<modül>>
+  class uygunluk <<modül>>
+  class devir <<modül>>
+  class kullanicilar <<modül>>
+  class yz <<modül>>
+  konu_sayfalari ..> gorunum : tek çağrı
+  gorunum ..> konular
+  gorunum ..> oylama
+  gorunum ..> kararlar
+  gorunum ..> uygunluk
+  gorunum ..> devir
+  gorunum ..> kullanicilar
+  gorunum ..> yz
+}
+
+note right of gorunum #E3EBDF
+  <b>S — Tek sorumluluk</b>
+  Rota yalnızca HTTP ile ilgilenir;
+  sayfanın verisini gorunum toplar.
+  Fikir rozeti kuralı saf bir işlevde
+  (fikir_durumu), ayrıca test edilir.
+end note
+
+DenetimIstegi -[hidden]right- DenetimKurali
+D4 -[hidden]down- anlik
+FCM -[hidden]down- konu_sayfalari
+@enduml

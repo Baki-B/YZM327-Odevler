@@ -41,8 +41,6 @@
   figure { margin: 2.5mm 0 4.5mm; break-inside: avoid; text-align: center; }
   figure img { max-width: 100%; object-fit: contain; }
   figure.orta img { max-width: 72%; }
-  figure.yan-yana img { vertical-align: middle; }
-  figure.yan-yana img + img { margin-left: 24px; }
   figcaption { font-size: 8.6pt; color: var(--soluk); margin-top: 1.6mm; text-align: left; }
   .iyi { color: #3a5234; font-weight: 700; }
   .kotu { color: #8a2d1f; font-weight: 700; }
@@ -135,7 +133,7 @@ Agora'da nasıl karşılandığını gösteriyor.</p>
   <tr><td>Oy hakkı devredilebilmeli; azınlık korunmalı</td><td>Oy hakkı genel, kategori ya da konu kapsamında devredilebiliyor ve bir kişi en fazla 5 devir taşıyabiliyor. Azınlığı itiraz konusu, 3/4 eşikler, korunan temel haklar ve gizli oy koruyor.</td></tr>
   <tr><td>Hem uygulama hem web sitesi olmalı</td><td>Web sitesi, telefona kurulabilen web uygulaması (PWA), Android uygulaması (APK), Expo Go ve REST API.</td></tr>
   <tr><td>Dağıtık defter, bilirkişi ve yapay zeka kullanılmalı; kişiler bir graf üzerinde gösterilmeli</td><td>Üç kopyalı kayıt defteri ve oy makbuzu; uzmanlık oylaması; özet yazan yapay zeka üye; üye ağı (PageRank ile etki, Gini katsayısıyla eşitsizlik ölçümü).</td></tr>
-  <tr><td>Ders konuları: problem çerçeveleme, SOLID ve tasarım desenleri, UML</td><td>Problem çerçeveleme Bölüm 11'de, SOLID ve desenler Bölüm 10'da, UML diyagramları Şekil 1–11'de.</td></tr>
+  <tr><td>Ders konuları: problem çerçeveleme, SOLID ve tasarım desenleri, UML</td><td>Problem çerçeveleme Bölüm 11'de, SOLID ve desenler Bölüm 10'da, UML diyagramları Şekil 1–12'de.</td></tr>
 </table>
 
 <!-- ============================== 2 ============================== -->
@@ -396,13 +394,18 @@ Iterator, Command ve Factory gibi desenler Python'da fonksiyon, kapanış (closu
 Flask'ın kendisi de bazı desenleri hazır olarak kullanıyor: <code>before_request</code> zinciri bir Chain of Responsibility,
 <code>@route</code> kaydı ise bir Registry örneği.</p>
 
-<figure class="yan-yana"><img src="sekiller/s05a_sinif_oylama_turleri.svg" alt="Strategy ve Template Method sınıf diyagramı"><img
-src="sekiller/s05b_sinif_konu_durumlari.svg" alt="State sınıf diyagramı">
-<figcaption>Şekil 9. Solda oylama türleri (Strategy + Template Method), sağda konu durumları (State). <code>sonuclandir()</code>
-işlevi adımları hep aynı sırayla çağırıyor: sayım → sonuç durumu → uygulama. Türe özgü adımlar alt sınıflardan geliyor.</figcaption></figure>
-<figure><img src="sekiller/s06_sinif_denetim_defter.svg" alt="Chain of Responsibility, Observer, Repository, Adapter sınıf diyagramı">
-<figcaption>Şekil 10. Yönetmelik denetimi (Chain of Responsibility), kayıt defteri (Observer + Repository) ve anlık bildirim
-(Adapter).</figcaption></figure>
+<p>Şekil 9–11, bu desenleri ve SOLID ilkelerinin uygulandığı yerleri üç sınıf diyagramında gösteriyor. Sınıf adının
+üstündeki «Strategy», «Handler» gibi etiketler sınıfın desendeki rolünü, yeşil notlar o yerde uygulanan SOLID ilkesini, bej notlar
+ise desenin nasıl işlediğini belirtiyor.</p>
+<figure><img src="../uml/desenler/svg/1_oylama_ve_konu_durumlari.svg" alt="Strategy, Template Method ve State sınıf diyagramı">
+<figcaption>Şekil 9. Oylama türleri ve konu durumları: Strategy, Template Method ve State. Sonucun nasıl uygulanacağı oylama
+türüne göre değişiyor; sonuçlandırmanın adım sırası ise her türde aynı.</figcaption></figure>
+<figure><img src="../uml/desenler/svg/2_denetim_bildirim_konu_sayfasi.svg" alt="Chain of Responsibility, Adapter ve Facade sınıf diyagramı">
+<figcaption>Şekil 10. Yönetmelik denetimi (Chain of Responsibility), anlık bildirim kanalları (Adapter) ve konu sayfası
+(Facade).</figcaption></figure>
+<figure><img src="../uml/desenler/svg/3_kayit_defteri.svg" alt="Observer, Memento ve Repository sınıf diyagramı">
+<figcaption>Şekil 11. Kayıt defteri: Observer, Memento ve Repository. Veritabanı defteri tanımıyor; yalnızca "commit abonesi"
+sözleşmesini biliyor (bağımlılığın tersine çevrilmesi).</figcaption></figure>
 <!-- ============================== 11 ============================== -->
 <h2>11. Problem çerçeveleme ve ölçüm</h2>
 <p>"Bir forum yapın" isteğinin arkasında altı ayrı sorun vardı. Bunların üçü yapay zeka gerektirmiyor: söz hakkının eşit
@@ -510,7 +513,7 @@ ortanca süre. Ölçüm komutu: <code>python olcum/gecikme_olcumu.py</code>.</p>
 <!-- ============================== 14 ============================== -->
 <h2>14. Dağıtım ve mobil</h2>
 <p>Agora iki biçimde çalışabiliyor: bir sunucuda ya da doğrudan ziyaretçinin tarayıcısında. İki sürüm de aynı Python kodunu
-kullanıyor (Şekil 11).</p>
+kullanıyor (Şekil 12).</p>
 <ul>
   <li><strong>Sunucu sürümü:</strong> <code>python calistir.py</code> komutuyla (Windows'ta <code>baslat.bat</code> ile) başlatılıyor.
   Bütün kullanıcılar aynı veritabanını paylaşıyor.</li>
@@ -523,7 +526,7 @@ kullanıyor (Şekil 11).</p>
   GitHub Actions tarafından yeniden derleniyor.</li>
 </ul>
 <figure><img src="sekiller/s11_dagitim.svg" alt="Dağıtım diyagramı">
-<figcaption>Şekil 11. Dağıtım diyagramı. Solda sunucu sürümü, sağda GitHub Pages üzerinden açılan tarayıcı sürümü yer alıyor.</figcaption></figure>
+<figcaption>Şekil 12. Dağıtım diyagramı. Solda sunucu sürümü, sağda GitHub Pages üzerinden açılan tarayıcı sürümü yer alıyor.</figcaption></figure>
 
 <!-- ============================== 15 ============================== -->
 <h2>15. Mini laboratuvar (S02&#8209;50, S01&#8209;49)</h2>
@@ -532,12 +535,12 @@ kullanıyor (Şekil 11).</p>
   <thead><tr><th style="width:24%">Deney</th><th>Sonuç</th></tr></thead>
   <tr><td>Türkçe ve İngilizce token sayısı</td><td>10 Türkçe cümle, İngilizce çevirilerinden ortalama 1,69 kat (cl100k) ve 1,36 kat (o200k) daha fazla token tutuyor. Tek başına "Avrupalılaştıramadıklarımızdan" kelimesi 14 ve 12 token. Token sayısı arttıkça maliyet, gecikme ve bağlam penceresi kullanımı da aynı oranda artıyor.</td></tr>
   <tr><td>Sıcaklık</td><td>Güncel Claude modelleri sıcaklık parametresini kabul etmediği için deney, yerel bir kelime ikilisi (bigram) modelinde yapıldı. 10 denemede T = 0 / 0,7 / 1,5 için sırasıyla 1 / 9 / 10 farklı yanıt çıktı. Yani sıcaklık arttıkça yanıtlar çeşitleniyor.</td></tr>
-  <tr><td>Dikkat ısı haritası</td><td>Slayttaki NumPy dikkat kodu yeniden üretildi; sonuç Şekil 12'de.</td></tr>
+  <tr><td>Dikkat ısı haritası</td><td>Slayttaki NumPy dikkat kodu yeniden üretildi; sonuç Şekil 13'te.</td></tr>
   <tr><td>YZ'nin önerdiği import'lar</td><td>Önerilen 7 paketin ve 8 import satırının hepsi gerçekten var. Ancak kod çalıştırılınca iki gizli gereksinim ve bir anlam kayması ortaya çıktı.</td></tr>
   <tr><td>YZ'nin yazdığı testler</td><td>T.C. kimlik denetimi için yazılan 16 testin 16'sı da geçti. Ama mutasyon testinde koda bilerek sokulan 10 hatadan biri yakalanmadı, çünkü "10. hane hatalı" testi 11. haneyi de bozuyordu. Buradan çıkan ders: testlerin geçmesi, kodun doğru olduğunu kanıtlamıyor.</td></tr>
 </table>
 <figure class="orta"><img src="../../laboratuvar/dikkat_isi_haritasi.png" alt="Dikkat ağırlıkları ısı haritası">
-<figcaption>Şekil 12. Nedensel maskeli dikkat ağırlıkları. Köşegenin üstü 0, çünkü bir token kendinden sonra gelen tokenları
+<figcaption>Şekil 13. Nedensel maskeli dikkat ağırlıkları. Köşegenin üstü 0, çünkü bir token kendinden sonra gelen tokenları
 göremiyor. Her satırın toplamı 1.</figcaption></figure>
 
 <!-- ============================== 16 ============================== -->
@@ -560,19 +563,22 @@ görülmeden önce yazıldı.</p></div>
 
 <p class="kucuk"><strong>Kaynaklar:</strong> Ders sunumları (S01, S02, H2, TD); Chip Huyen, <em>Designing Machine Learning Systems</em>
 (2022) ve <em>AI Engineering</em> (2025); Gamma vd., <em>Design Patterns</em> (1994). Ayrıntılı belgeler: <code>docs/analiz.md</code>,
-<code>docs/tasarim.md</code>, <code>docs/rehber.md</code>. Bütün diyagramların kaynakları <code>docs/rapor/sekiller/</code> klasöründe.</p>
+<code>docs/tasarim.md</code>, <code>docs/rehber.md</code>. Diyagramların kaynakları <code>docs/rapor/sekiller/</code> ve <code>docs/uml/desenler/</code> klasörlerinde.</p>
 
 <script>
   // Diyagramlar aynı yazı boyutunda görünsün: her SVG doğal boyutunun %80'iyle çizilir. Bir şekilde yan yana birden çok
-  // diyagram varsa hepsi birlikte sayfa genişliğine (176 mm ≈ 665 px) sığacak kadar küçültülür.
-  const GENISLIK = 665, ARALIK = 24;
+  // diyagram varsa hepsi birlikte sayfa genişliğine (176 mm ≈ 665 px) sığacak kadar küçültülür. Uzun diyagramlar da
+  // açıklamasıyla birlikte tek sayfaya sığsın diye en fazla 225 mm (≈ 850 px) yüksekliğe indirilir.
+  const GENISLIK = 665, YUKSEKLIK = 850, ARALIK = 24;
   for (const sekil of document.querySelectorAll("figure")) {
     const resimler = [...sekil.querySelectorAll("img[src$='.svg']")];
     if (!resimler.length) continue;
     const ayarla = () => {
       if (!resimler.every(r => r.complete && r.naturalWidth)) return;
       const toplam = resimler.reduce((t, r) => t + r.naturalWidth, 0) + ARALIK * (resimler.length - 1);
-      const olcek = Math.min(0.8, (GENISLIK - ARALIK * (resimler.length - 1)) / (toplam - ARALIK * (resimler.length - 1)));
+      const enUzun = Math.max(...resimler.map(r => r.naturalHeight));
+      const olcek = Math.min(0.8, (GENISLIK - ARALIK * (resimler.length - 1)) / (toplam - ARALIK * (resimler.length - 1)),
+                             YUKSEKLIK / enUzun);
       for (const r of resimler) r.style.width = (r.naturalWidth * olcek) + "px";
     };
     resimler.forEach(r => r.addEventListener("load", ayarla));

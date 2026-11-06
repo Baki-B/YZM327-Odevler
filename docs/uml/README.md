@@ -10,6 +10,9 @@ Hepsi tek dosyada: **[Agora_UML_Diyagramlari.pdf](Agora_UML_Diyagramlari.pdf)**.
 | [Sıralı: oy verme](svg/3b_sirali_oy_verme.svg) | Oy hakkı kontrolü, kayıt, makbuz |
 | [Sıralı: tur sonu](svg/3c_sirali_tur_sonu.svg) | Oyların sayılması ve eleme |
 
+**Tasarım desenleri ve SOLID ilkeleri** (üç sınıf diyagramı): [desenler/](desenler/), tek dosyada
+[Agora_Desenler_ve_SOLID.pdf](desenler/Agora_Desenler_ve_SOLID.pdf).
+
 Ayrıntılı hâlleri (tasarım desenlerinin sınıf diyagramları, yedi sıralı diyagram): [ayrintili/](ayrintili/).
 
 Yeniden üretmek: `java -jar plantuml.jar -charset UTF-8 -tsvg -o svg [123]*.puml`, ardından `node docs/uml/pdf_uret.mjs`.

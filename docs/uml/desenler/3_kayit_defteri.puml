@@ -1,0 +1,89 @@
+@startuml 3_kayit_defteri
+!include ../_stil.iuml
+skinparam nodesep 26
+skinparam ranksep 40
+skinparam NoteFontSize 12
+hide empty members
+
+class gorevler <<modül · zamanlayıcı>> {
+  _yalitilmis(db, is_, …) «her oylama ayrı»
+}
+
+package "Observer + Memento — veritabanı bağlantısı (veritabani.py)" {
+  class Baglanti <<Subject · Originator>> {
+    defter_kuyrugu
+    commit_sonrasi
+    commit() «aboneleri çağırır»
+    rollback()
+    hatira() : KuyrukHatirasi
+    hatiraya_don(h)
+    kayit_noktasi(ad)
+  }
+  interface "Commit abonesi" as Abone <<Observer>> {
+    abone(db)
+  }
+  class KuyrukHatirasi <<Memento>> {
+    defter
+    commit_sonrasi
+    anlik
+  }
+  Baglanti o--> "*" Abone : _COMMIT_ABONELERI
+  Baglanti ..> KuyrukHatirasi : oluşturur ve\ngeri yükler
+  KuyrukHatirasi -[hidden]right- Abone
+}
+
+package "Repository — kayıt defteri düğümleri (defter.py)" {
+  class defter <<modül>> {
+    ekle(db, tur, veri) «kuyruğa»
+    _islem_kaydedildi(db) «@commit_aboneligi»
+    dugumlere_yaz(kaynak, kuyruk)
+    onar(kaynak, ad)
+  }
+  abstract class DugumDeposu <<Repository>> {
+    ad
+    {abstract} bloklar()
+    {abstract} ekle(yeni)
+    {abstract} yeniden_kur(zincir)
+    {abstract} veri_degistir(no, veri)
+    {abstract} surum()
+    son_blok() · blok(no) · sayfa(…) · bul(…)
+  }
+  class SqliteDugumDeposu <<üretim>>
+  class BellekDugumDeposu <<test>>
+  defter --> "3" DugumDeposu : düğüm A · B · C
+  DugumDeposu <|-- SqliteDugumDeposu
+  DugumDeposu <|-- BellekDugumDeposu
+}
+
+gorevler ..> Baglanti : kayit_noktasi("zamanlayici")
+Abone <|.. defter : abone olur
+
+note right of Baglanti #F4EFE3
+  kayit_noktasi(): hatıra al → SAVEPOINT;
+  hata olursa ROLLBACK TO + hatiraya_don(h).
+  Yalnızca o oylamanın değişiklikleri ve
+  kuyruğa eklediği yan etkiler geri alınır.
+end note
+
+note right of Abone #E3EBDF
+  <b>D — Bağımlılığın tersine çevrilmesi</b>
+  Veritabanı (alt katman) defteri (üst katman)
+  tanımaz; yalnızca "commit abonesi"
+  sözleşmesini bilir. Defter bu sözleşmeye
+  uyarak kendini kaydeder.
+end note
+
+note right of DugumDeposu #E3EBDF
+  <b>L — Liskov</b>
+  SQLite ve bellek depoları aynı sonucu ve
+  aynı hatayı (YinelenenBlok) verir; aynı
+  testler iki depoda da çalışır.
+  ----
+  <b>I — Arayüz ayrımı</b>
+  5 soyut yöntem; sorgular varsayılanlı.
+  ----
+  <b>S — Tek sorumluluk</b>
+  defter uzlaşmayı ve onarımı bilir,
+  disk erişimini depo yapar.
+end note
+@enduml
