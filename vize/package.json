@@ -1,0 +1,18 @@
+{
+  "name": "ios-exact-match",
+  "version": "0.1.0",
+  "description": "Akıllı tam desen eşleştirme: IoS atomları ve seçici bir molekül (sequence.pattern-match.exact)",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "bin": { "ios": "bin/ios.js" },
+  "scripts": {
+    "test": "node --test \"tests/unit/**/*.test.js\"",
+    "calibrate": "node --expose-gc tests/benchmarks/calibrate.js",
+    "bench": "node --expose-gc tests/benchmarks/validate.js",
+    "figures": "node tests/benchmarks/figures.js",
+    "mutation": "node scripts/mutasyon.js",
+    "report": "node scripts/rapor-pdf.js"
+  },
+  "license": "MIT"
+}
