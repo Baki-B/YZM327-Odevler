@@ -6,7 +6,7 @@ import { readFileSync, mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { oracle } from './helpers.js';
+import { oracle, assertSameMatches } from './helpers.js';
 import { parseFasta } from '../../src/fasta.js';
 
 const BIN = fileURLToPath(new URL('../../bin/ios.js', import.meta.url));
@@ -22,7 +22,7 @@ describe('bin/ios.js', () => {
     const r = ios(['run', 'ExactMatch', '--patterns', 'GATC,GGATCC', '--strategy', 'auto'], LAMBDA);
     assert.equal(r.code, 0, r.err);
     const lines = r.out.trimEnd().split('\n').map((l) => JSON.parse(l));
-    assert.deepEqual(lines, oracle({ patterns: ['GATC', 'GGATCC'] }, parseFasta(LAMBDA)));
+    assertSameMatches(lines, oracle({ patterns: ['GATC', 'GGATCC'] }, parseFasta(LAMBDA)));
     assert.match(r.err, /seçilen: \w+Search/);
   });
   test('run: --ignoreCase ve bir atomun adıyla çalıştırma', () => {

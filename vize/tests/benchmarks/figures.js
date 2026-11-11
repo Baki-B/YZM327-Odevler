@@ -6,7 +6,11 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
+import { existsSync } from 'node:fs';
+
 const RES = new URL('../../bench/results/', import.meta.url);
+// Şekil 2 ve 3, hiçbir karar için kullanılmamış taze doğrulama kümesinden çizilir (varsa).
+const VALIDATION = existsSync(new URL('validation-taze.json', RES)) ? 'validation-taze.json' : 'validation.json';
 const OUT = new URL('../../docs/rapor/', import.meta.url);
 mkdirSync(OUT, { recursive: true });
 
@@ -56,9 +60,9 @@ function figure1() {
   const cw = 46, ch = 26, gap = 2;
   const panelW = KS.length * (cw + gap);
   const panelH = MS.length * (ch + gap);
-  const left = 92, top = 64, colGap = 46, rowGap = 50;
+  const left = 128, top = 64, colGap = 46, rowGap = 50;
   const W = left + alphabets.length * panelW + (alphabets.length - 1) * colGap + 20;
-  const H = top + NS.length * panelH + (NS.length - 1) * rowGap + 92;
+  const H = top + NS.length * panelH + (NS.length - 1) * rowGap + 112;
   let b = '';
   const used = new Set();
   alphabets.forEach((a, ai) => {
@@ -71,7 +75,8 @@ function figure1() {
     NS.forEach((n, ni) => {
       const y0 = top + ni * (panelH + rowGap);
       if (ai === 0) {
-        b += `<text x="14" y="${y0 + panelH / 2}" ${FONT} font-size="12" font-weight="600" fill="${INK}">n = 10^${Math.round(Math.log10(n))}</text>`;
+        const sup = { 4: '⁴', 5: '⁵', 6: '⁶' }[Math.round(Math.log10(n))];
+        b += `<text x="14" y="${y0 + panelH / 2 + 4}" ${FONT} font-size="13" font-weight="600" fill="${INK}">n = 10${sup}</text>`;
       }
       MS.forEach((m, mi) => {
         if (ai === 0 || true) {
@@ -93,14 +98,15 @@ function figure1() {
   });
   // Lejant
   let lx = left;
-  const ly = H - 46;
+  let ly = H - 66;
   b += `<text x="14" y="${ly + 11}" ${FONT} font-size="11" fill="${INK2}">En hızlı atom:</text>`;
   for (const [n, a, c] of ATOMS) {
     if (!used.has(n)) continue;
     const label = `${a} = ${n.replace('Search', '')}`;
+    const w = 30 + label.length * 6.4;
+    if (lx + w > W - 10) { lx = left; ly += 22; } // sığmazsa alt satıra geç
     b += `<rect x="${lx}" y="${ly}" width="14" height="14" rx="3" fill="${c}"/><text x="${lx + 19}" y="${ly + 11}" ${FONT} font-size="11" fill="${INK}">${label}</text>`;
-    lx += 26 + label.length * 6.2;
-    if (lx > W - 150) { lx = left; }
+    lx += w;
   }
   b += `<text x="14" y="${H - 12}" ${FONT} font-size="10" fill="${MUTED}">Kaynak: bench/results/calibration.json (ısınma + 5 tekrarın medyanı). Hücre = o (alfabe, n, m, k) vakasında en kısa süren atom.</text>`;
   writeFileSync(new URL('sekil1_kazanan.svg', OUT), svg(W, H, b, 'Kalibrasyon ızgarasında en hızlı atom'));
@@ -108,38 +114,40 @@ function figure1() {
 
 // ------------------------------------------------------------- Şekil 2
 function figure2() {
-  const val = JSON.parse(readFileSync(new URL('validation.json', RES), 'utf8'));
+  const val = JSON.parse(readFileSync(new URL(VALIDATION, RES), 'utf8'));
   const rows = Object.entries(val.metrics.all).sort((a, b) => a[1].geomeanSlowdown - b[1].geomeanSlowdown);
-  const left = 230, right = 150, top = 40, bh = 20, gap = 8;
+  const left = 200, right = 110, top = 58, bh = 20, gap = 8;
   const W = 760;
-  const H = top + rows.length * (bh + gap) + 50;
+  const H = top + rows.length * (bh + gap) + 52;
   const max = Math.max(...rows.map(([, m]) => m.geomeanSlowdown));
-  const xMax = Math.ceil(max * 2) / 2;
-  const sx = (v) => left + ((v - 1) / (xMax - 1)) * (W - left - right);
+  const ticks = [1, 1.5, 2, 3, 5, 10, 20].filter((t, i, a) => t <= max * 1.05 || a[i - 1] < max);
+  const xMax = ticks[ticks.length - 1];
+  const plotR = W - right - 40;
+  const sx = (v) => left + (Math.log(v) / Math.log(xMax)) * (plotR - left);
   let b = '';
-  for (let t = 1; t <= xMax + 1e-9; t += 0.5) {
-    b += `<line x1="${sx(t)}" x2="${sx(t)}" y1="${top - 6}" y2="${H - 40}" stroke="${GRID}" stroke-width="1"/>`;
-    b += `<text x="${sx(t)}" y="${H - 24}" text-anchor="middle" ${FONT} font-size="11" fill="${INK2}">${t.toFixed(1)}×</text>`;
+  b += `<text x="14" y="20" ${FONT} font-size="12" fill="${INK2}">Yavaşlamanın geometrik ortalaması (1 = her vakada en hızlı atom), log ölçek; ${val.cases.length} görülmemiş vaka</text>`;
+  for (const t of ticks) {
+    b += `<line x1="${sx(t)}" x2="${sx(t)}" y1="${top - 6}" y2="${H - 44}" stroke="${GRID}" stroke-width="1"/>`;
+    b += `<text x="${sx(t)}" y="${H - 28}" text-anchor="middle" ${FONT} font-size="11" fill="${INK2}">${t}×</text>`;
   }
-  b += `<text x="${W - right + 12}" y="${top - 14}" ${FONT} font-size="11" font-weight="600" fill="${INK2}">en kötü</text>`;
+  b += `<text x="${W - right + 20}" y="${top - 14}" ${FONT} font-size="11" font-weight="600" fill="${INK2}">en kötü vaka</text>`;
   rows.forEach(([label, m], i) => {
     const y = top + i * (bh + gap);
     const mol = label.startsWith('ExactMatch');
     const fill = mol ? '#2a78d6' : label.startsWith('Allmer') ? '#eb6834' : '#b9b8b2';
-    const w = Math.max(2, sx(m.geomeanSlowdown) - left);
+    const w = Math.max(3, sx(m.geomeanSlowdown) - left);
     b += `<text x="${left - 8}" y="${y + bh / 2 + 4}" text-anchor="end" ${FONT} font-size="12" ${mol ? 'font-weight="700"' : ''} fill="${INK}">${esc(label.replace('Search', ''))}</text>`;
     b += `<rect x="${left}" y="${y}" width="${w}" height="${bh}" rx="4" fill="${fill}"><title>${esc(`${label}: yavaşlama geometrik ortalaması ${m.geomeanSlowdown.toFixed(3)}, en kötü ${m.worstSlowdown.toFixed(2)}×, en hızlıyı seçme %${(m.fastestRate * 100).toFixed(1)}`)}</title></rect>`;
-    b += `<text x="${left + w + 6}" y="${y + bh / 2 + 4}" ${FONT} font-size="11" fill="${INK}">${m.geomeanSlowdown.toFixed(2)}</text>`;
-    b += `<text x="${W - right + 12}" y="${y + bh / 2 + 4}" ${FONT} font-size="11" fill="${INK2}">${m.worstSlowdown.toFixed(1)}×</text>`;
+    b += `<text x="${left + w + 6}" y="${y + bh / 2 + 4}" ${FONT} font-size="11" ${mol ? 'font-weight="700"' : ''} fill="${INK}">${m.geomeanSlowdown.toFixed(2)}</text>`;
+    b += `<text x="${W - right + 20}" y="${y + bh / 2 + 4}" ${FONT} font-size="11" fill="${INK2}">${m.worstSlowdown.toFixed(1)}×</text>`;
   });
-  b += `<text x="${left}" y="${top - 14}" ${FONT} font-size="11" fill="${INK2}">Yavaşlama, geometrik ortalama (1 = her vakada en hızlı atom); ${val.cases.length} görülmemiş vaka</text>`;
-  b += `<text x="14" y="${H - 6}" ${FONT} font-size="10" fill="${MUTED}">Kaynak: bench/results/validation.json. Mavi: molekül; turuncu: Allmer 2016 kuralı; gri: hep aynı atomu kullanmak.</text>`;
+  b += `<text x="14" y="${H - 8}" ${FONT} font-size="10" fill="${MUTED}">Kaynak: bench/results/${VALIDATION}. Mavi: molekül; turuncu: Allmer 2016 kuralı; gri: hep aynı atomu kullanmak.</text>`;
   writeFileSync(new URL('sekil2_politikalar.svg', OUT), svg(W, H, b, 'Doğrulama: politikaların yavaşlaması'));
 }
 
 // ------------------------------------------------------------- Şekil 3
 function figure3() {
-  const val = JSON.parse(readFileSync(new URL('validation.json', RES), 'utf8'));
+  const val = JSON.parse(readFileSync(new URL(VALIDATION, RES), 'utf8'));
   const singles = Object.entries(val.metrics.all).filter(([l]) => l.startsWith('her zaman'));
   const bestSingle = singles.sort((a, b) => a[1].geomeanSlowdown - b[1].geomeanSlowdown)[0][0];
   const bestSingleName = bestSingle.replace('her zaman ', '');
@@ -163,7 +171,7 @@ function figure3() {
     b += `<text x="${sx(v)}" y="${H - bottom + 16}" text-anchor="middle" ${FONT} font-size="11" fill="${INK2}">${v}×</text>`;
   }
   b += `<line x1="${sx(1.1)}" x2="${sx(1.1)}" y1="${top}" y2="${H - bottom}" stroke="${MUTED}" stroke-dasharray="3 3"/>`;
-  b += `<text x="${sx(1.1) + 4}" y="${top + 12}" ${FONT} font-size="10" fill="${MUTED}">%10 sınırı</text>`;
+  b += `<text x="${sx(1.1) + 4}" y="${H - bottom - 6}" ${FONT} font-size="10" fill="${MUTED}">%10 sınırı</text>`;
   b += `<text x="${(left + W - right) / 2}" y="${H - 14}" text-anchor="middle" ${FONT} font-size="11" fill="${INK2}">yavaşlama (seçilen / en hızlı), log ölçek</text>`;
   b += `<text x="16" y="${(top + H - bottom) / 2}" ${FONT} font-size="11" fill="${INK2}" transform="rotate(-90 16 ${(top + H - bottom) / 2})" text-anchor="middle">vakaların payı (≤ x)</text>`;
   series.forEach(([label, color, pick], si) => {
@@ -180,6 +188,8 @@ function figure3() {
   });
   b += `<text x="${W - right + 14}" y="${top + 90}" ${FONT} font-size="10" fill="${MUTED}">Eğri ne kadar solda ve</text>`;
   b += `<text x="${W - right + 14}" y="${top + 103}" ${FONT} font-size="10" fill="${MUTED}">yukarıdaysa o kadar iyi.</text>`;
+  if (xmaxRaw > xMax) b += `<text x="${W - right + 14}" y="${top + 122}" ${FONT} font-size="10" fill="${MUTED}">${xMax}× üstü kırpıldı (en büyük ${xmaxRaw.toFixed(1)}×).</text>`;
+  b += `<text x="14" y="${H - 2}" ${FONT} font-size="10" fill="${MUTED}">Kaynak: bench/results/${VALIDATION}</text>`;
   writeFileSync(new URL('sekil3_dagilim.svg', OUT), svg(W, H, b, 'Doğrulama: yavaşlamanın birikimli dağılımı'));
 }
 

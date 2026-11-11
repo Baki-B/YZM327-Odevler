@@ -2,7 +2,7 @@
 // NaiveSearch ile eleman eleman aynı sonucu vermelidir.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { ATOMS, collect, oracle, loadFasta, firstDiff } from './helpers.js';
+import { ATOMS, collect, oracle, loadFasta, assertSameMatches } from './helpers.js';
 import { ExactMatch } from '../../src/molecules/ExactMatch.js';
 import { makeText, makePatterns, rng } from '../../bench/data.js';
 
@@ -14,11 +14,11 @@ function checkAll(params, entries) {
   const want = oracle(params, entries);
   for (const Atom of ATOMS) {
     const got = collect(Atom, params, entries);
-    assert.deepEqual(got, want, `${Atom.manifest.name}: ${firstDiff(got, want)}`);
+    assertSameMatches(got, want, Atom.manifest.name);
   }
   const em = new ExactMatch({ ...params, strategy: 'auto' });
   const got = [...em.run(entries)];
-  assert.deepEqual(got, want, `ExactMatch(auto→${em.record.selected}): ${firstDiff(got, want)}`);
+  assertSameMatches(got, want, `ExactMatch(auto→${em.record.selected})`);
   return want.length;
 }
 

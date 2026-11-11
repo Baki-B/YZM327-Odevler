@@ -2,7 +2,7 @@
 // ve algoritmalara özgü iç parçaların birim testleri.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { ATOMS, collect, oracle, firstDiff } from './helpers.js';
+import { ATOMS, collect, oracle, assertSameMatches } from './helpers.js';
 import { failureFunction } from '../../src/functions/kmp.js';
 import { goodSuffixShifts } from '../../src/functions/boyerMoore.js';
 import { chooseQ, prepareBm4DnaHmbs } from '../../src/functions/bm4dnaHmbs.js';
@@ -39,7 +39,7 @@ for (const Atom of ATOMS) {
           const entries = [{ header: '>t', seq }];
           const got = collect(Atom, params, entries);
           const want = oracle(params, entries);
-          assert.deepEqual(got, want, firstDiff(got, want) ?? '');
+          assertSameMatches(got, want, `ignoreCase=${ignoreCase}`);
         }
       });
     }

@@ -5,7 +5,7 @@ import { ExactMatch } from '../../src/molecules/ExactMatch.js';
 import { registry, Registry, createDefaultRegistry } from '../../src/registry.js';
 import { NaiveSearch } from '../../src/atomic/NaiveSearch.js';
 import { TASK } from '../../src/atomic/ExactSearchAtom.js';
-import { oracle, loadFasta } from './helpers.js';
+import { oracle, loadFasta, assertSameMatches } from './helpers.js';
 import { makeText, makePatterns } from '../../bench/data.js';
 import { readFileSync } from 'node:fs';
 
@@ -43,7 +43,7 @@ describe('ExactMatch molekülü', () => {
     assert.equal(r.selected, cheapest[0]);
     assert.equal(typeof r.why, 'string');
     assert.ok(r.why.includes(r.selected));
-    assert.deepEqual(out, oracle({ patterns: ['GATC', 'GGATCC'] }, lambda));
+    assertSameMatches(out, oracle({ patterns: ['GATC', 'GGATCC'] }, lambda));
   });
 
   test('zorla seçilen her strateji aynı sonucu verir', () => {
@@ -53,7 +53,7 @@ describe('ExactMatch molekülü', () => {
     const want = oracle({ patterns }, entries);
     for (const name of registry.names()) {
       const em = new ExactMatch({ patterns, strategy: name });
-      assert.deepEqual([...em.run(entries)], want, name);
+      assertSameMatches([...em.run(entries)], want, name);
       assert.equal(em.record.selected, name);
       assert.equal(em.record.requested, name);
       assert.ok(em.record.why.includes('adıyla'));
@@ -76,7 +76,7 @@ describe('ExactMatch molekülü', () => {
     const out = [...em.run(lambda)];
     assert.equal(em.record.selected, 'FakeSearch');
     assert.equal(em.record.estimates.FakeSearch.coefficients, 'defaults');
-    assert.deepEqual(out, oracle({ patterns: ['GATC'] }, lambda));
+    assertSameMatches(out, oracle({ patterns: ['GATC'] }, lambda));
     // adıyla da seçilebilir
     assert.equal(new ExactMatch({ patterns: ['A'], strategy: 'FakeSearch' }, { registry: reg }).strategy, 'FakeSearch');
     // varsayılan kayıt defteri etkilenmedi

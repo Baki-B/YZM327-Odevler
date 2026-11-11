@@ -34,3 +34,13 @@ export function firstDiff(a, b) {
   }
   return null;
 }
+
+/**
+ * Büyük listeler için eşitlik denetimi. Başarısızlıkta yalnızca ilk farkı yazar;
+ * assert.deepEqual'ın büyük dizilerde ürettiği dev fark metni hem çok yavaş hem
+ * bellek açısından pahalıdır (mutasyon denetiminde süreçleri bellek sınırına itiyordu).
+ */
+export function assertSameMatches(got, want, label = '') {
+  const d = firstDiff(got, want);
+  if (d !== null) throw new Error(`${label ? label + ': ' : ''}${d}`);
+}
