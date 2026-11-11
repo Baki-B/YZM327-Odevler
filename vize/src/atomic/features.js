@@ -4,9 +4,17 @@
 
 import { patternSigma } from '../functions/expect.js';
 
-/** Bütün atomlarda ortak: metni kimliklere çevirme ve çıktı üretme işi. */
+/**
+ * Bütün atomlarda ortak özellikler:
+ *   fixed       atom kurmanın sabit maliyeti (tablo ayırma vb.)
+ *   base        metni kimliklere çevirme işi (n)
+ *   perPattern  desen başına sabit iş (döngü kurma, tablo sıfırlama)
+ *   out         tahmini eşleşme sayısı: rastgele metinde bir desen n/σe^m kez geçer;
+ *               desenlerin yaklaşık yarısı metinden alındığı için + k/2
+ */
 export function common(shape) {
-  return { base: shape.n, out: shape.n * shape.k / Math.pow(Math.max(shape.sigmaEff, 1.0001), shape.mMin) };
+  const perPos = Math.pow(Math.max(shape.sigmaEff, 1.0001), -shape.mMin);
+  return { fixed: 1, base: shape.n, perPattern: shape.k, out: shape.k * (0.5 + shape.n * perPos) };
 }
 
 /** Bir desen başına tablo kurma işi (tablo boyu × desen sayısı). */

@@ -10,6 +10,13 @@ import { bitsFor } from './expect.js';
 
 const MAX_TABLE_BITS = 18;
 
+/** Tablo boyu (bit): olası blok sayısı küçükse birebir, değilse desenlerdeki blok sayısının ~8 katı. */
+export function tableBitsFor(sigma, B, k, mMin) {
+  const bits = bitsFor(sigma - 1);
+  const wanted = Math.min(MAX_TABLE_BITS, Math.max(8, Math.ceil(Math.log2(k * (mMin - B + 1) * 8))));
+  return bits * B <= wanted ? bits * B : wanted;
+}
+
 /** Blok uzunluğu B: tabloyu yeterince seyrek tutacak kadar uzun, mMin'den kısa. */
 export function chooseBlock(sigmaEff, k, mMin) {
   const s = Math.max(2, sigmaEff);
@@ -22,10 +29,12 @@ export function prepareWuManber(patterns, sigma, block) {
   for (const p of patterns) if (p.length < mMin) mMin = p.length;
   const B = Math.max(1, Math.min(block, mMin));
 
-  // Blok → tablo indisi. Alfabe küçükse birebir (çakışmasız), değilse karma (hash).
+  // Blok → tablo indisi. Olası blok sayısı küçükse birebir (çakışmasız), değilse karma (hash).
+  // Tablo boyu desenlerdeki blok sayısının ~8 katıyla sınırlanır: küçük girdide
+  // 2^18 elemanlık tabloyu sıfırlamak aramanın kendisinden uzun sürer.
   const bits = bitsFor(sigma - 1);
-  const exact = bits * B <= MAX_TABLE_BITS;
-  const tableBits = exact ? bits * B : MAX_TABLE_BITS;
+  const tableBits = tableBitsFor(sigma, B, patterns.length, mMin);
+  const exact = tableBits === bits * B;
   const size = 1 << tableBits;
   const mask = size - 1;
 

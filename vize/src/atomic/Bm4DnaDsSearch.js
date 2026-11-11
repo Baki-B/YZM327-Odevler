@@ -14,7 +14,7 @@ export class Bm4DnaDsSearch extends ExactSearchAtom {
       const steps = shape.k * shape.n / horspoolShift(shape.mMean, shape.sigmaEff);
       return { ...common(shape), scan: steps, verify: steps / Math.max(shape.sigmaEff, 1), prep: tablePrep(shape) };
     },
-    defaults: { base: 2e-9, out: 5e-8, scan: 3e-9, verify: 4e-9, prep: 5e-9 },
+    defaults: { fixed: 2e-6, perPattern: 1e-7, base: 2e-9, out: 5e-8, scan: 3e-9, verify: 4e-9, prep: 5e-9 },
   };
 
   prepare() {

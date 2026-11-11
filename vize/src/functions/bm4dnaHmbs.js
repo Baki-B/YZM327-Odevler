@@ -41,9 +41,14 @@ export function prepareBm4DnaHmbs(p, sigma) {
   return { p, q, bits, dflt, shift2, keys: Int32Array.from(entries.keys()), vals: Int32Array.from(entries.values()) };
 }
 
-/** Bütün desenlerin paylaştığı tablo: değer = kayma + 1, 0 = "bu q-gram desende yok". */
-export function createTable() {
-  return new Int32Array(1 << TABLE_BITS);
+/**
+ * Bütün desenlerin paylaştığı tablo: değer = kayma + 1, 0 = "bu q-gram desende yok".
+ * Boyu en büyük q-gram özetine göre ayrılır (en fazla 2^16).
+ */
+export function createTable(preps) {
+  let maxBits = 1;
+  for (const p of preps) if (p.q * p.bits > maxBits) maxBits = p.q * p.bits;
+  return new Int32Array(1 << maxBits);
 }
 
 export function searchBm4DnaHmbs(prep, u, text, n, hits, table) {

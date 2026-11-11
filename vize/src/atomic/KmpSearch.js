@@ -12,7 +12,7 @@ export class KmpSearch extends ExactSearchAtom {
     features(shape) {
       return { ...common(shape), scan: shape.k * shape.n, prep: shape.k * shape.mMean };
     },
-    defaults: { base: 2e-9, out: 5e-8, scan: 3e-9, prep: 5e-9 },
+    defaults: { fixed: 2e-6, perPattern: 1e-7, base: 2e-9, out: 5e-8, scan: 3e-9, prep: 5e-9 },
   };
 
   prepare() {

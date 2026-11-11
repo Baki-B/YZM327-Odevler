@@ -38,6 +38,41 @@ export function measure(fn, { reps = 3, warmup = 1, minBlockMs = 5, maxInner = 2
   return { ms: median(samples), samples, inner, reps };
 }
 
+/**
+ * Birden çok işi DÖNÜŞÜMLÜ ölçer: her tekrarda her iş bir kez çalışır.
+ * Makinedeki anlık bir yavaşlama böylece tek bir işi değil, o turdaki bütün
+ * işleri etkiler; medyan da bu tür sıçramaları dışarıda bırakır.
+ * @param {Record<string, Function>} jobs
+ * @returns {Record<string, { ms, samples, inner, reps }>}
+ */
+export function measureInterleaved(jobs, { reps = 5, warmup = 1, minBlockMs = 10, maxInner = 2000 } = {}) {
+  const names = Object.keys(jobs);
+  const inner = {};
+  for (const name of names) {
+    let first = 0;
+    for (let w = 0; w < warmup; w++) {
+      const t0 = now();
+      jobs[name]();
+      first = now() - t0;
+    }
+    inner[name] = first >= minBlockMs ? 1 : Math.min(maxInner, Math.ceil(minBlockMs / Math.max(first, 1e-3)));
+  }
+  const samples = Object.fromEntries(names.map((n) => [n, []]));
+  for (let r = 0; r < reps; r++) {
+    // Her turda sıra kaydırılır: hep aynı işin ilk ölçülmesi önlenir.
+    for (let j = 0; j < names.length; j++) {
+      const name = names[(j + r) % names.length];
+      globalThis.gc?.();
+      const t0 = now();
+      for (let i = 0; i < inner[name]; i++) jobs[name]();
+      samples[name].push((now() - t0) / inner[name]);
+    }
+  }
+  const out = {};
+  for (const name of names) out[name] = { ms: median(samples[name]), samples: samples[name], inner: inner[name], reps };
+  return out;
+}
+
 export function machineInfo() {
   const cpus = os.cpus();
   return {

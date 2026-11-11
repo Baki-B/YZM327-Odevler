@@ -1,6 +1,6 @@
 // Wu-Manber atomu: çok desen, blok kayması (Wu & Manber 1994).
 import { ExactSearchAtom, TASK } from './ExactSearchAtom.js';
-import { prepareWuManber, searchWuManber, chooseBlock } from '../functions/wuManber.js';
+import { prepareWuManber, searchWuManber, chooseBlock, tableBitsFor } from '../functions/wuManber.js';
 import { horspoolShift } from '../functions/expect.js';
 import { common, patternSigma } from './features.js';
 
@@ -17,9 +17,10 @@ export class WuManberSearch extends ExactSearchAtom {
       const shift = horspoolShift(shape.mMin - B + 1, Math.max(1, blocks / shape.k));
       const windows = shape.n / shift;
       const candidates = windows * Math.min(1, shape.k / blocks) * (1 + shape.k / blocks);
-      return { ...common(shape), scan: windows * B, verify: candidates, prep: shape.k * shape.mMin };
+      const table = Math.pow(2, tableBitsFor(patternSigma(shape) + 1, B, shape.k, shape.mMin)); // SHIFT ve HASH tabloları
+      return { ...common(shape), scan: windows * B, verify: candidates, prep: shape.k * shape.mMin, table };
     },
-    defaults: { base: 2e-9, out: 5e-8, scan: 4e-9, verify: 1e-8, prep: 5e-9 },
+    defaults: { fixed: 2e-6, perPattern: 1e-7, base: 2e-9, out: 5e-8, scan: 4e-9, verify: 1e-8, prep: 5e-9, table: 2e-9 },
   };
 
   prepare() {

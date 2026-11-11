@@ -13,14 +13,15 @@ export class Bm4DnaHmbsSearch extends ExactSearchAtom {
     features(shape) {
       const q = chooseQ(patternSigma(shape) + 1, Math.round(shape.mMean));
       const windows = shape.k * shape.n / qgramShift(shape.mMean, q, shape.sigmaEff);
-      return { ...common(shape), scan: windows * q, windows, prep: shape.k * shape.mMean };
+      const bits = Math.max(1, Math.ceil(Math.log2(patternSigma(shape) + 1)));
+      return { ...common(shape), scan: windows * q, windows, prep: shape.k * shape.mMean, table: Math.pow(2, bits * q) };
     },
-    defaults: { base: 2e-9, out: 5e-8, scan: 2e-9, windows: 3e-9, prep: 2e-8 },
+    defaults: { fixed: 2e-6, perPattern: 1e-7, base: 2e-9, out: 5e-8, scan: 2e-9, windows: 3e-9, prep: 2e-8, table: 2e-9 },
   };
 
   prepare() {
     this.prep = this.unique.map((p) => prepareBm4DnaHmbs(p, this.sigma));
-    this.table = createTable();
+    this.table = createTable(this.prep);
   }
 
   scanText(text, n, hits) {

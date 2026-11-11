@@ -17,7 +17,7 @@ export class AhoCorasickSearch extends ExactSearchAtom {
       const big = shape.n * Math.max(0, Math.log2(cells / 4096));
       return { ...common(shape), scan: shape.n, big, prep: cells };
     },
-    defaults: { base: 2e-9, out: 5e-8, scan: 3e-9, big: 3e-10, prep: 3e-9 },
+    defaults: { fixed: 2e-6, perPattern: 1e-7, base: 2e-9, out: 5e-8, scan: 3e-9, big: 3e-10, prep: 3e-9 },
     applicable(shape) {
       const cells = (shape.k * shape.mMean + 1) * (patternSigma(shape) + 1);
       return cells <= MAX_CELLS ? true : `otomat tablosu çok büyük (${Math.round(cells)} hücre)`;
