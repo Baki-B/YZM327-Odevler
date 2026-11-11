@@ -2,7 +2,7 @@
 import { ExactSearchAtom, TASK } from './ExactSearchAtom.js';
 import { prepareBm4DnaHmbs, searchBm4DnaHmbs, createTable, chooseQ } from '../functions/bm4dnaHmbs.js';
 import { qgramShift } from '../functions/expect.js';
-import { common, patternSigma } from './features.js';
+import { common, patternSigma, overLengths } from './features.js';
 
 export class Bm4DnaHmbsSearch extends ExactSearchAtom {
   static manifest = {
@@ -11,10 +11,12 @@ export class Bm4DnaHmbsSearch extends ExactSearchAtom {
   };
   static selection = {
     features(shape) {
-      const q = chooseQ(patternSigma(shape) + 1, Math.round(shape.mMean));
-      const windows = shape.k * shape.n / qgramShift(shape.mMean, q, shape.sigmaEff);
-      const bits = Math.max(1, Math.ceil(Math.log2(patternSigma(shape) + 1)));
-      return { ...common(shape), scan: windows * q, windows, prep: shape.k * shape.mMean, table: Math.pow(2, bits * q) };
+      const sp = patternSigma(shape) + 1;
+      const qOf = (m) => chooseQ(sp, Math.max(1, Math.round(m)));
+      const windows = overLengths(shape, (m) => shape.n / qgramShift(m, qOf(m), shape.sigmaEff));
+      const scan = overLengths(shape, (m) => (shape.n * qOf(m)) / qgramShift(m, qOf(m), shape.sigmaEff));
+      const bits = Math.max(1, Math.ceil(Math.log2(sp)));
+      return { ...common(shape), scan, windows, prep: shape.k * shape.mMean, table: Math.pow(2, bits * qOf(shape.mMax)) };
     },
     defaults: { fixed: 2e-6, perPattern: 1e-7, base: 2e-9, out: 5e-8, scan: 2e-9, windows: 3e-9, prep: 2e-8, table: 2e-9 },
   };

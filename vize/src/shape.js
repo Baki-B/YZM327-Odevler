@@ -9,6 +9,7 @@
 
 import { foldAsciiUnit } from './functions/alphabet.js';
 
+const COUNTS = new Uint32Array(0x10000);
 const SAMPLE_BLOCKS = 64;
 const BLOCK = 4096;
 
@@ -16,13 +17,17 @@ export function computeShape(entry, params) {
   const { patterns, ignoreCase = false } = params;
   const seq = entry.seq;
   const n = seq.length;
-  const counts = new Uint32Array(0x10000);
+  // Sayaç dizisi her çağrıda yeniden ayrılmaz: yalnızca dokunulan hücreler sonunda sıfırlanır.
+  // (İlk sürüm her kararda 256 KB ayırıp 65 536 hücreyi tarıyordu; küçük girdide bu,
+  // aramanın kendisi kadar sürüyordu.)
+  const counts = COUNTS;
+  const touched = [];
   let counted = 0;
   const countRange = (from, to) => {
     for (let i = from; i < to; i++) {
       let c = seq.charCodeAt(i);
       if (ignoreCase) c = foldAsciiUnit(c);
-      counts[c]++;
+      if (counts[c]++ === 0) touched.push(c);
     }
     counted += to - from;
   };
@@ -32,13 +37,12 @@ export function computeShape(entry, params) {
     const step = Math.floor((n - BLOCK) / (SAMPLE_BLOCKS - 1));
     for (let b = 0; b < SAMPLE_BLOCKS; b++) countRange(b * step, b * step + BLOCK);
   }
-  let sigma = 0;
+  const sigma = touched.length;
   let sumSq = 0;
-  for (let c = 0; c < counts.length; c++) {
-    if (counts[c] === 0) continue;
-    sigma++;
+  for (const c of touched) {
     const p = counts[c] / counted;
     sumSq += p * p;
+    counts[c] = 0;
   }
   let mMin = Infinity, mMax = 0, total = 0;
   for (const p of patterns) {

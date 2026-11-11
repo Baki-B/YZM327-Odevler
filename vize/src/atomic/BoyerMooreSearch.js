@@ -2,7 +2,7 @@
 import { ExactSearchAtom, TASK } from './ExactSearchAtom.js';
 import { prepareBoyerMoore, searchBoyerMoore } from '../functions/boyerMoore.js';
 import { horspoolShift } from '../functions/expect.js';
-import { common, tablePrep } from './features.js';
+import { common, tablePrep, overLengths } from './features.js';
 
 export class BoyerMooreSearch extends ExactSearchAtom {
   static manifest = {
@@ -11,7 +11,7 @@ export class BoyerMooreSearch extends ExactSearchAtom {
   };
   static selection = {
     features(shape) {
-      const steps = shape.k * shape.n / horspoolShift(shape.mMean, shape.sigmaEff);
+      const steps = overLengths(shape, (m) => shape.n / horspoolShift(m, shape.sigmaEff));
       return { ...common(shape), scan: steps, prep: tablePrep(shape) + shape.k * shape.mMean };
     },
     defaults: { fixed: 2e-6, perPattern: 1e-7, base: 2e-9, out: 5e-8, scan: 6e-9, prep: 5e-9 },

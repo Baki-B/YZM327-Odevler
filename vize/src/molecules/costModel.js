@@ -24,9 +24,11 @@ export function estimateCost(Atom, shape, calibrated) {
  * Yöntem: Lawson & Hanson (1974) etkin küme algoritması. Özellik sayısı küçük
  * (≤ 10) olduğu için normal denklemlerle (AᵀA) çözülür.
  */
-export function fitNonNegative(rows, targets) {
+export function fitNonNegative(rows, targets, offsets = null) {
   const F = rows[0].length;
   const N = rows.length;
+  // offsets: tahmine eklenecek bilinen (sabitlenmiş) kısım; hedef t − offset olur.
+  const b = targets.map((t, i) => (offsets ? 1 - offsets[i] / t : 1));
   // Satırları 1/t ile ağırlıklandır (göreli hata), sütunları birim boya getir.
   const A = rows.map((r, i) => r.map((x) => x / targets[i]));
   const scale = new Array(F).fill(0);
@@ -43,7 +45,7 @@ export function fitNonNegative(rows, targets) {
   }));
   const h = Array.from({ length: F }, (_, a) => {
     let s = 0;
-    for (let i = 0; i < N; i++) s += A[i][a];
+    for (let i = 0; i < N; i++) s += A[i][a] * b[i];
     return s;
   });
   const x = new Array(F).fill(0);

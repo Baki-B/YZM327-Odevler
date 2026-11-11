@@ -23,3 +23,16 @@ export function tablePrep(shape) {
 }
 
 export { patternSigma };
+
+/**
+ * Tek desenli algoritmalarda toplam iş Σ_i f(m_i)'dir; en kısa desen toplamı
+ * belirler. Şekilde yalnızca en kısa, ortalama ve en uzun uzunluk olduğu için
+ * toplam bu üç noktanın ortalamasıyla yaklaşık hesaplanır:
+ *   Σ_i f(m_i) ≈ k · (f(mMin) + f(mMean) + f(mMax)) / 3
+ * Bütün desenler aynı uzunluktaysa bu tam olarak k · f(m) olur.
+ * (İlk sürüm yalnızca f(mMean) kullanıyordu; karışık uzunluklu desenlerde
+ * kısa desenlerin maliyetini görmüyordu. Bkz. rapor bölüm 6–7.)
+ */
+export function overLengths(shape, f) {
+  return (shape.k * (f(shape.mMin) + f(shape.mMean) + f(shape.mMax))) / 3;
+}
