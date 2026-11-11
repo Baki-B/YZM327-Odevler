@@ -2,7 +2,7 @@
 
 Koda bilerek küçük hatalar yerleştirildi; her biri projenin geçici bir kopyasında tek başına uygulanıp bütün birim testleri çalıştırıldı. Bir mutasyon, en az bir test başarısız olursa ya da testler sonsuz döngü yüzünden bitmezse "yakalandı" sayılır.
 
-Değiştirilmemiş kopyada: 328 test geçti, 0 başarısız. Sonuç: **12 mutasyonun 12'i yakalandı.** Komut: `npm run mutation` (2026-11-11).
+Değiştirilmemiş kopyada: 328 test geçti, 0 başarısız. Sonuç: **12 mutasyonun 12 tanesi yakalandı.** Komut: `npm run mutation` (2026-11-11).
 
 | # | Dosya | Yerleştirilen hata | Değişiklik | Yakalandı mı | Nasıl |
 |---:|---|---|---|---|---|

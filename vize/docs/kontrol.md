@@ -31,7 +31,7 @@
 | 3. Seçim yöntemi gerekçeli | maliyet modeli | rapor bölüm 4 |
 | 3. Molekül testleri (record, en ucuz, zorla seçilen, sahte atom, uygulanamaz) | yapıldı | `molecule.test.js` |
 | 4.1 Kalibrasyon ≥ 3 alfabe × 3 n × 5 m × 4 k | 3 × 3 × 5 × 4 = 180 | `tests/benchmarks/calibrate.js`, `bench/results/calibration.json` |
-| 4.2 Doğrulama ≥ 100 görülmemiş vaka, ara değerler, yeni alfabe | 120 (A) + 120 (taze B) | `tests/benchmarks/validate.js`, `bench/results/validation*.json` |
+| 4.2 Doğrulama ≥ 100 görülmemiş vaka, ara değerler, yeni alfabe | 120 (A) + 120 (taze B) + 120 (tek desen C, k = 1) | `tests/benchmarks/validate.js`, `bench/results/validation*.json` |
 | 4.3 Karşılaştırma: her zaman X, Allmer kuralı | yapıldı | `bench/results/validation-taze.md` |
 | 4.4 Ölçütler (en hızlı oranı, %10, geo. ort., en kötü, toplam oran) | yapıldı | aynı dosya |
 | Ölçüm kuralları: ısınma, ≥ 3 tekrar medyan, makine bilgisi | ısınma + 5 tekrar, dönüşümlü | `bench/timing.js`; makine bilgisi sonuç dosyalarında |
@@ -60,5 +60,25 @@
 
 - Hocadan başlangıç paketini isteyin. Gelirse aynı adlı dosyaları değiştirip `npm test` çalıştırın.
 - Yapay zekâ politikasını öğrenip README ve rapor Ek F'yi güncelleyin.
-- Teslimden önce kendi bilgisayarınızda `npm run calibrate`, `npm run bench`, taze küme komutunu ve ardından `npm run figures`, `npm run report` çalıştırın. Rapordaki sayıları yeni `bench/results/*.md` dosyalarına göre güncelleyin.
+- Teslimden önce kendi bilgisayarınızda `npm run calibrate`, `npm run bench`, taze küme ve tek desen kümesi komutlarını ve ardından `npm run figures`, `npm run report` çalıştırın. Rapordaki sayıları yeni `bench/results/*.md` dosyalarına göre güncelleyin.
 - Ders kodu, öğretim elemanı ve grup bilgilerini rapor başlığına ekleyin.
+
+## Son denetim (11 Kasım 2026)
+
+Teslim öncesi bütün iş yeniden denetlendi. Sonuçlar:
+
+| Denetim | Sonuç |
+|---|---|
+| `npm test` | 328/328 geçti |
+| Bağımsız rastgele karşılaştırma (projenin test yardımcıları ve NaiveSearch kullanılmadan, ayrı bir kaba kuvvet aramasıyla): 4 tohum, 39 000 vaka, 16 alfabe (Unicode, vekil çift, NUL, Türkçe harfler dahil), çok kayıt, ignoreCase, metinden uzun / tekrar eden desen, iç içe tüketilen üreteçler | ~795 000 karşılaştırma, **0 fark** |
+| Büyük ve kötü huylu girdiler (2·10⁶ eşleşme, en kötü durum desenleri, k = 20 000, m = 5 000, 3·10⁶ karakter × 5 000 desen, 3 000 farklı CJK karakteri) | bütün atomlar NaiveSearch ile aynı |
+| Komut satırı: `run`, `explain`, `scan` (4 hazır küme, `--json`, `--fail`), `list`, hata kodları; lambda'da sonuç Python ile ayrıca sayıldı (GATC 116 + GGATCC 5 = 121) | doğru |
+| Doğrulama tabloları ham JSON'dan ayrı bir betikle yeniden hesaplandı | birebir aynı |
+| Taze küme B'nin yalnızca bir kez ölçüldüğü (ölçüm günlükleri ve dosya tarihleri) | doğrulandı |
+| Mutasyon denetimi yeniden çalıştırıldı | `docs/mutasyon.md` |
+| Rapor: ana metin ≤ 6 sayfa | 6 + 2 ek sayfa |
+
+Denetimde bulunan iki yeni zayıflık rapora eklendi (bölüm 6–7):
+
+1. **Tek desende seçim zayıf.** B'de k en az 2'ydi. k = 1 için ek küme C ölçüldü: molekül %51,7 en hızlı, geo. ort. 1,073, en kötü 2,10×. Yine bütün politikalardan iyi (en iyi tek atom 1,224), ama fark küçük. En kötü vakaların hepsi ikili alfabede.
+2. **Karar süresi tek desende ağır.** Molekül karar için metni bir kez sayıyor; tek desen araması metnin yalnızca bir kısmına baktığı için bu sayım aramayla aynı mertebede. Karar süresi dahil edilince B'de geo. ort. 1,187 olur, "her zaman Wu-Manber"in 1,139'undan kötü. Toplam süre oranında molekül yine iyi (1,169'a karşı 1,218). Çözüm önerisi (daha küçük örneklem) raporda; model doğrulamadan sonra değiştirilmedi.

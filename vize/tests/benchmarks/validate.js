@@ -6,6 +6,8 @@
 // Karşılaştırılan politikalar: molekül (auto), "her zaman X" (her atom için), Allmer 2016 kuralı.
 // Çıktılar: bench/results/validation.json (ham), bench/results/validation.md (tablolar).
 // Kullanım: npm run bench   (ya da --quick ile 24 vakalık kısa deneme)
+//   --seed <tohum> --name <dosya adı>   başka bir küme (taze küme B: --seed 31415926 --name validation-taze)
+//   --k 1                               tek desenli ek küme (C: --seed 27182818 --name validation-tek --k 1)
 
 import { registry } from '../../src/registry.js';
 import { ExactMatch } from '../../src/molecules/ExactMatch.js';
@@ -22,6 +24,9 @@ const argValue = (flag, dflt) => {
 // --seed: doğrulama kümesinin tohumu; --name: sonuç dosyalarının adı (bench/results/<name>.json/.md)
 const SEED = Number(argValue('--seed', 20261111));
 const NAME = argValue('--name', QUICK ? 'validation-quick' : 'validation');
+// --k: desen sayısını sabitler (ör. --k 1: tek desenli ek küme). Verilmezse k, 2–120 arasından çekilir.
+const FIXED_K = argValue('--k', null) === null ? null : Number(argValue('--k', null));
+if (FIXED_K !== null && !(Number.isInteger(FIXED_K) && FIXED_K >= 1)) throw new Error('--k pozitif bir tamsayı olmalı');
 const ALPHABETS = ['dna', 'protein', 'code', 'log', 'binary', 'text'];
 const UNSEEN = new Set(['log', 'binary', 'text']);
 const GRID_N = [1e4, 1e5, 1e6];
@@ -42,10 +47,11 @@ function makeCases() {
   for (let i = 0; i < CASES; i++) {
     const alphabet = ALPHABETS[i % ALPHABETS.length];
     const n = logUniformInt(r, 12000, 900000, (x) => GRID_N.some((g) => Math.abs(x / g - 1) < 0.1));
-    const k = logUniformInt(r, 2, 120, (x) => GRID_K.has(x));
+    const kDrawn = logUniformInt(r, 2, 120, (x) => GRID_K.has(x)); // --k verilse de çekilir: rastgele sıra değişmesin
+    const k = FIXED_K ?? kDrawn;
     const m = logUniformInt(r, 3, 100, (x) => GRID_M.has(x));
     const mixed = r() < 0.3;
-    const lengths = mixed
+    const lengths = mixed && k > 1
       ? [m, Math.max(3, Math.round(m / 2.5)), Math.min(150, Math.round(m * 2.3))].map((x) => (GRID_M.has(x) ? x + 1 : x))
       : [m];
     // Varsayılan küme (A) ilk sürümdeki tohumlarla birebir aynı kalır; başka tohumda veri tohumları da kayar.
@@ -149,7 +155,7 @@ const worst = [...results].sort((a, b) => b.times[b.selected].ms / b.bestMs - a.
 
 saveJson(`${NAME}.json`, {
   description: 'Doğrulama kümesi: kalibrasyonda görülmemiş vakalar; süreler ms (ısınma + 5 tekrarın medyanı)',
-  machine, seed: SEED, metrics: { all, bestAtLeast1ms: big, seenAlphabets: seen, unseenAlphabets: unseen },
+  machine, seed: SEED, fixedK: FIXED_K, metrics: { all, bestAtLeast1ms: big, seenAlphabets: seen, unseenAlphabets: unseen },
   moleculeOverhead: { median: overhead[overhead.length >> 1], p90: overhead[Math.floor(overhead.length * 0.9)] },
   cases: results,
 });
@@ -159,6 +165,11 @@ md += `Makine: ${machine.cpu}, ${machine.cores} çekirdek, ${machine.memoryGB} G
 md += `Çöp toplayıcı ölçümlerden önce çağrıldı: ${machine.gcExposed ? 'evet' : 'hayır'}.\n\n`;
 md += `${results.length} vaka (tohum ${SEED}); her vakada her atom dönüşümlü ölçüldü: ısınma + 5 tekrarın medyanı; tek ölçüm 10 ms'den kısaysa blok içinde tekrarlanıp ortalaması alındı. `;
 md += `"Yavaşlama" = politikanın seçtiği atomun süresi / o vakadaki en hızlı atomun süresi.\n\n`;
+if (FIXED_K !== null) {
+  md += `**Bu kümede desen sayısı k = ${FIXED_K} olarak sabitlendi.** `;
+  if (GRID_K.has(FIXED_K)) md += `k = ${FIXED_K} kalibrasyon ızgarasının da bir değeridir; bu yüzden küme k bakımından "ızgara arası" değildir. `;
+  md += `n ve m ızgara noktalarının arasından seçildi; metin ve desen tohumları kalibrasyondakilerden farklıdır.\n\n`;
+}
 md += `## Bütün vakalar\n\n${markdownTable(all)}\n`;
 md += `## Yalnızca en hızlı atomun 1 ms ve üstü sürdüğü vakalar\n\nÇok kısa sürelerde ölçüm gürültüsü farkları büyütür; bu alt küme daha güvenilirdir.\n\n${markdownTable(big)}\n`;
 md += `## Kalibrasyonda görülen / görülmeyen alfabeler (molekül ve Allmer kuralı)\n\n`;

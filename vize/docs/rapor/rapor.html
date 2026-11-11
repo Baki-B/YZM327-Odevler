@@ -163,7 +163,16 @@
   <li><b>v2, ikili alfabe (kalibrasyonda görülmemiş):</b> Vaka 52: n = 206 551, k = 3, m = 3. bm4DNAHMbs 17,6 ms tutarken Aho-Corasick 8,0 ms; yavaşlama 2,2×. Neden: <i>out</i> katsayısı atom başına serbestti ve 45 kat değişiyordu (bm4DNAHMbs için 1,6·10⁻⁸, KMP için 7,2·10⁻⁷). İkili alfabede eşleşme sayısı kalibrasyondakinden çok büyük olduğu için, çıktı maliyeti düşük sayılan atom yapay olarak ucuz göründü. v3'te bu katsayı ortak tutuldu.</li>
   <li><b>v3, kalan hatalar (B):</b> En kötü vaka 81: log, n = 289 868, k = 10, m = 3. Wu-Manber 5,41 ms, Aho-Corasick 3,98 ms; 1,36×. İkinci kötü vaka 104: kaynak kod, k = 24, m = 9/5/21, 1,31×. Her ikisinde de en kısa desen çok kısa, Wu-Manber'in blok kayması küçük. Log ve kodda tekrarlı parçalar (zaman damgası, girinti) aday kova doğrulamasını, tekdüze rastgele metin varsayımının öngördüğünden sık yapıyor. Wu-Manber ile Aho-Corasick sınırı mMin ≤ 5'te en belirsiz bölge.</li>
 </ul>
-<p><b>Molekülün kendi yükü:</b> Karar için şekli hesaplamak ve tahmin yapmak, uçtan uca sürede seçilen atoma göre medyanda %14 ek getirdi (%90'lık dilimde %68; bu dilim küçük girdilerden oluşur). İlk sürümde bu yük %25'ti; şekil sayacının her çağrıda 256 KB ayırıp taraması kaldırılarak düşürüldü.</p>
+<p><b>Tek desenli ek küme C.</b> B'de k en az 2 olduğu için tek desen ayrıca denendi: 120 vaka, k = 1, tohum 27182818, n ve m ızgara arasından (k = 1 ızgarada da var; bu yüzden C k bakımından "ızgara arası" değildir). Model değiştirilmeden bir kez ölçüldü. Tek desende atomlar birbirine çok yakın ve seçim belirgin biçimde zayıflıyor; molekül yine bütün politikalardan iyi, ama fark küçük. Zayıf nokta ikili alfabe: geo. ort. 1,194 (diğer alfabelerde 1,025–1,065), en kötü 5 vakanın 5'i ikili.</p>
+<table class="avoid">
+  <tr><th>Politika (küme C, k = 1, 120 vaka)</th><th class="n">En hızlıyı seçme</th><th class="n">%10 içinde</th><th class="n">Geo. ort.</th><th class="n">En kötü</th><th class="n">Toplam / en iyi</th></tr>
+  <tr class="hl"><td>ExactMatch (auto)</td><td class="n">%51,7</td><td class="n">%79,2</td><td class="n">1,073</td><td class="n">2,10×</td><td class="n">1,095</td></tr>
+  <tr><td>her zaman Wu-Manber</td><td class="n">%30,8</td><td class="n">%47,5</td><td class="n">1,224</td><td class="n">3,27×</td><td class="n">1,276</td></tr>
+  <tr><td>her zaman Horspool</td><td class="n">%32,5</td><td class="n">%61,7</td><td class="n">1,272</td><td class="n">4,61×</td><td class="n">1,259</td></tr>
+  <tr><td>Allmer 2016 kuralı</td><td class="n">%26,7</td><td class="n">%53,3</td><td class="n">1,276</td><td class="n">3,89×</td><td class="n">1,239</td></tr>
+  <tr><td>her zaman bm4DNADS</td><td class="n">%29,2</td><td class="n">%59,2</td><td class="n">1,297</td><td class="n">4,79×</td><td class="n">1,287</td></tr>
+</table>
+<p><b>Molekülün kendi yükü.</b> Yukarıdaki tablolar ödevin tanımıyla <i>seçilen atomun</i> süresini karşılaştırır. Karar için şekli hesaplamak ve tahmin yapmak, uçtan uca sürede seçilen atoma göre B'de medyanda %14 ek getirdi (%90'lık dilimde %68; bu dilimdeki vakalarda seçilen atom çoğunlukla 1,3 ms'den kısa sürüyor). Bu yük dahil edilince molekülün B'deki yavaşlama geo. ortalaması 1,187 olur ve "her zaman Wu-Manber"in 1,139'undan <b>kötüdür</b>; toplam süre oranında ise molekül yine iyidir (1,169'a karşı 1,218). C'de yük medyanda %59; uçtan uca geo. ort. 1,686, "her zaman Horspool" 1,272. Nedeni: şekil sayımı metni (262 144 karaktere kadar) bir kez tam okur; tek desen araması ise metnin yalnızca bir kısmına bakar. Örnek: 200 000 karakterlik proteinde sayım 0,76 ms, seçilen Horspool'un kendisi 0,51 ms.</p>
 
 <h2>7. Sınırlar</h2>
 <ul>
@@ -172,6 +181,7 @@
   <li><b>Kalibrasyon ızgarasında desenlerin hepsi aynı uzunlukta.</b> Karışık uzunluk davranışı yalnızca formülle (üç nokta yaklaşımı) aktarılıyor, ölçülerek öğrenilmiyor.</li>
   <li><b>Ölçümler tek bir paylaşımlı bulut makinesinde yapıldı.</b> Katsayılar makineye özgü; teslimden önce <code>npm run calibrate</code> ve <code>npm run bench</code> yeniden çalıştırılmalı. 0,1 ms'nin altındaki farklar yorumlanmadı. En hızlı atomun ≥ 1 ms sürdüğü 62 vakalık alt kümede sonuç benzer: %80,6 en hızlı, geo. ort. 1,024, en kötü 1,36×.</li>
   <li><b>Hiç kazanmayan atomlar:</b> Bu uygulamada Boyer-Moore, Shift-Or, KMP ve bm4DNAHMbs doğrulamada hiçbir vakada en hızlı olmadı. Shift-Or ve KMP desen başına ayrı geçer. bm4DNAHMbs'nin q-gram özeti JavaScript'te her pencere için q okuma gerektiriyor; uzun DNA deseninde aynı işi Wu-Manber'in blok tablosu daha ucuza yapıyor. Allmer kuralının kötü sonucu (geo. ort. 3,14) bu uygulamaya özgüdür; C'deki özgün uygulama için genelleme yapılamaz.</li>
+  <li><b>Karar maliyeti küçük girdide ve tek desende ağır.</b> Örnekleme sınırını düşürmek (ör. 64 parça × 256 karakter) bu yükü küçültür: ölçtüğümüz 47 metinde σe hatası medyanda %0,03, en kötü %6; farklı karakter sayısı σ ise en fazla %23 eksik sayıldı. Bu değişiklik doğrulamadan sonra bulunduğu için uygulanmadı; uygulanırsa katsayılar yeniden uydurulmalı ve yeni bir taze kümede ölçülmelidir.</li>
   <li><b>Bellek</b> modelde yok. Aho-Corasick için yalnızca bir üst sınır var (3·10⁷ hücre).</li>
 </ul>
 
@@ -227,7 +237,7 @@ node bin/ios.js scan --preset secrets --fail src/                               
   <tr><td>Görülmeyen alfabeler (log, ikili, metin)</td><td>ExactMatch</td><td class="n">60</td><td class="n">%83,3</td><td class="n">%90,0</td><td class="n">1,019</td><td class="n">1,36×</td></tr>
   <tr><td>Görülmeyen alfabeler</td><td>Allmer 2016</td><td class="n">60</td><td class="n">%3,3</td><td class="n">%5,0</td><td class="n">3,051</td><td class="n">59,49×</td></tr>
 </table>
-<p class="small">Ham ölçümler: <code>bench/results/calibration.json</code>, <code>validation.json</code> (A, v3), <code>validation-v1.json</code>, <code>validation-v2.json</code>, <code>validation-taze.json</code> (B). Tablolar aynı adlı <code>.md</code> dosyalarında. Makine: Intel Xeon 2,30 GHz, 4 çekirdek, 16 GB, Linux 6.18, Node v22.23.4; ölçümlerde <code>--expose-gc</code> açık.</p>
+<p class="small">Ham ölçümler: <code>bench/results/calibration.json</code>, <code>validation.json</code> (A, v3), <code>validation-v1.json</code>, <code>validation-v2.json</code>, <code>validation-taze.json</code> (B), <code>validation-tek.json</code> (C, k = 1). Tablolar aynı adlı <code>.md</code> dosyalarında. Makine: Intel Xeon 2,30 GHz, 4 çekirdek, 16 GB, Linux 6.18, Node v22.23.4; ölçümlerde <code>--expose-gc</code> açık.</p>
 
 <h2>Ek E. Kaynaklar</h2>
 <ol class="small">

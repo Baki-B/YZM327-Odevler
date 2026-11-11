@@ -72,5 +72,9 @@ node bin/ios.js scan --preset banned-api ../forum
    σe = 1/Σp², yani iki rastgele harfin aynı çıkma olasılığının tersi. Kaynak kodda 128 farklı karakter var, ama boşluk ve sık harfler yüzünden "etkin" alfabe 18. Beklenen kayma σe'ye bağlı.
 9. **Karar neden yalnızca ilk kayda göre?**
    Sözleşme böyle istiyor; akış boyunca tek atom kullanılıyor. Sınırını raporda ve bir testte gösterdik: ilk kayıt kısa, sonrakiler uzunsa seçim kötü olabilir.
-10. **Yeni bir atomu nasıl eklersiniz?**
+10. **Molekülün kendi karar süresi ne kadar? Hep Wu-Manber kullansak daha mı iyi?**
+    Tablolar ödevin tanımıyla seçilen atomun süresini karşılaştırıyor. Karar süresini de katarsak B'de geo. ort. 1,187, hep Wu-Manber 1,139: dürüst cevap, ortalama vakada hep Wu-Manber biraz daha iyi. Toplam sürede molekül iyi (1,169'a karşı 1,218), çünkü Wu-Manber'in kötü olduğu büyük vakalardan kaçınıyor. Yükün kaynağı şekil sayımı; daha küçük örneklemle düşürülebilir (rapor bölüm 7).
+11. **Tek desende ne oluyor?**
+    Ayrı bir k = 1 kümesi ölçtük: %51,7 en hızlı, geo. ort. 1,073. Tek desende atomlar birbirine çok yakın; en kötü vakalar ikili alfabede.
+12. **Yeni bir atomu nasıl eklersiniz?**
     `src/atomic/` altına `ExactSearchAtom`'dan türeyen bir sınıf yazılır (manifest, selection, prepare, scanText) ve `registry.js`'teki listeye eklenir. Ardından `npm run calibrate` çalıştırılır. `molecule.test.js`, test içinde eklenen sahte bir atomun molekül değişmeden seçildiğini gösteriyor.
