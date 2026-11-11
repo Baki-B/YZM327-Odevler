@@ -1,13 +1,16 @@
 # Akıllı Tam Desen Eşleştirme (IoS: `sequence.pattern-match.exact`)
 
-Vize projesi. Bir metin (genom, protein, kaynak kod, log) içinde bir ya da daha çok desenin geçtiği bütün yerleri bulan **yedi yeni atom** ve girdinin şekline bakıp bunlardan en hızlısını seçen **ExactMatch molekülü** içerir. Seçim, ölçümle kalibre edilmiş bir maliyet modeliyle yapılır. Modelin işe yaradığı, kalibrasyonda görülmemiş 120 vakada gösterildi.
+Vize projesi. Bir metin (genom, protein, kaynak kod, log) içinde bir ya da daha çok desenin geçtiği bütün yerleri bulan **yedi yeni atom** ve girdinin şekline bakıp bunlardan en hızlısını seçen **ExactMatch molekülü** içerir. Seçim, ölçümle kalibre edilmiş bir maliyet modeliyle yapılır.
+
+**Sonuç (kalibrasyonda görülmemiş 120 vakalık taze küme):** Molekül vakaların %85,8'inde en hızlı atomu seçti, %92,5'inde en hızlının %10 yakınında kaldı. Yavaşlamanın geometrik ortalaması 1,016, en kötü vaka 1,36×. En iyi tek atom (hep Wu-Manber) 1,139 ve 2,30×, Allmer 2016 kuralı 3,143 ve 59,5× aldı.
 
 Hocanın "yazılım mühendisliğine uygulayın" isteği için aynı molekül kaynak kod ve log dosyalarında da çalışır: `ios scan --preset todo src/`.
 
 | Belge | İçinde |
 |---|---|
 | [docs/rapor/Rapor.pdf](docs/rapor/Rapor.pdf) | Rapor (IoS bileşen yayını biçiminde, 8 bölüm + ekler) |
-| [bench/results/validation.md](bench/results/validation.md) | Doğrulama tablosu (120 görülmemiş vaka) |
+| [bench/results/validation-taze.md](bench/results/validation-taze.md) | **Doğrulama tablosu** (taze küme B: hiçbir karar için kullanılmamış 120 vaka) |
+| [bench/results/validation.md](bench/results/validation.md) | İlk doğrulama kümesi A, son model (v1 ve v2 sonuçları `validation-v1.md`, `validation-v2.md`) |
 | [bench/results/calibration-fit.md](bench/results/calibration-fit.md) | Kalibrasyon katsayıları ve uydurma kalitesi |
 | [docs/sapmalar.md](docs/sapmalar.md) | Allmer 2016'dan ve klasik tariflerden sapmalar, gerekçeleriyle |
 | [docs/mutasyon.md](docs/mutasyon.md) | Mutasyon denetimi: testler bilerek konan hataları yakalıyor mu? |
@@ -29,9 +32,9 @@ node --version
 |---|---|---|
 | `npm test` | 328 birim testi: sözleşme, özel durumlar, oracle karşılaştırması (gerçek + sentetik + 360 rastgele vaka), molekül, komut satırı, yasaklı işlev taraması | ~3 sn |
 | `npm run calibrate` | Kalibrasyon ızgarasını ölçer (180 vaka × 8 atom), katsayıları `src/molecules/coefficients.json` dosyasına yazar | ~3 dk |
-| `npm run bench` | Doğrulama: 120 görülmemiş vaka, politikaların karşılaştırması → `bench/results/validation.md` | ~10 dk |
+| `npm run bench` | Doğrulama: 120 görülmemiş vaka, politikaların karşılaştırması → `bench/results/validation.md`. Taze küme için: `node --expose-gc tests/benchmarks/validate.js --seed 31415926 --name validation-taze` | ~2,5 dk |
 | `npm run figures` | Rapor şekillerini ölçüm dosyalarından üretir (`docs/rapor/*.svg`) | 1 sn |
-| `npm run mutation` | Mutasyon denetimi → `docs/mutasyon.md` | ~1 dk |
+| `npm run mutation` | Mutasyon denetimi (12 bilerek konmuş hata) → `docs/mutasyon.md` | ~3 dk |
 | `npm run report` | `docs/rapor/rapor.html` → `docs/rapor/Rapor.pdf` (Playwright + Chromium gerekir; yalnızca bu komut için) | 5 sn |
 
 Ölçüm yaparken makinede başka ağır iş çalışmamalı. Sonuçlar makineye bağlıdır: teslimden önce `npm run calibrate` ve ardından `npm run bench` kendi bilgisayarınızda yeniden çalıştırılmalıdır.

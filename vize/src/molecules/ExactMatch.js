@@ -94,7 +94,8 @@ function describe(ranked, estimates, shape) {
   s += `${best.name} en düşük tahmini süreye sahip (${fmt(best.seconds)})`;
   if (ranked.length > 1) {
     const second = ranked[1];
-    const pct = Math.round((second.seconds / best.seconds - 1) * 100);
+    const diff = (second.seconds / best.seconds - 1) * 100;
+    const pct = diff < 10 ? diff.toFixed(1) : Math.round(diff);
     s += `; ikinci ${second.name} ${fmt(second.seconds)} (%${pct} daha yavaş)`;
   }
   const out = Object.entries(estimates).filter(([, e]) => !e.applicable);
