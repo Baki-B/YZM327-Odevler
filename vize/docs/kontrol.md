@@ -73,7 +73,7 @@
 ## Kullanıcının yapması gerekenler
 
 - Köşeli parantezli alanları doldurun: ders kodu ve adı, öğretim elemanı, üye adları, numaralar, katkılar (README, `docs/rapor/rapor.html`, `scripts/site-uret.js` içindeki ekip sayfası ve slaytlar; sonra `node scripts/site-uret.js` ve `npm run report`).
-- GitHub Pages: `.github/workflows/sayfalar.yml` vize projesini yayınlar; dal `main`'e birleşince <https://baki-b.github.io/YZM327-Odevler/> güncellenir (README "GitHub Pages'te yayınlama").
+- GitHub Pages: README "GitHub Pages'te yayınlama" bölümündeki A ya da B yolu.
 - Teslim yapısı: README "Teslim yapısı" bölümündeki `git subtree split` önerisini uygulayıp uygulamamaya karar verin.
 
 ## Son denetim (11 Kasım 2026)
