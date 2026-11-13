@@ -13,7 +13,7 @@ import { registry as defaultRegistry } from '../registry.js';
 import { computeShape } from '../shape.js';
 import { TASK, validateParams, validateEntry } from '../atomic/ExactSearchAtom.js';
 import { estimateCost } from './costModel.js';
-import calibrated from './coefficients.json' with { type: 'json' };
+import calibrated from './coefficients.js';
 
 export class ExactMatch {
   static manifest = {

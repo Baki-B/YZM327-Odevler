@@ -1,0 +1,89 @@
+// Kalibre edilmiş katsayılar (ES modülü). Bu dosya `npm run calibrate` ile
+// coefficients.json ile birlikte üretilir; elle düzenlemeyin.
+// Neden ayrı bir .js? `import ... with { type: 'json' }` sözdizimini her tarayıcı
+// desteklemiyor; arayüz (web/) aynı molekülü doğrudan içe aktarabilsin diye katsayılar
+// düz bir ES modülü olarak da yazılır. İki dosyanın aynı olduğunu bir test denetler.
+export default {
+ "source": "bench/results/calibration.json",
+ "method": "NNLS, göreli hata",
+ "model": "v4",
+ "machine": {
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "node": "v22.23.4",
+  "date": "2026-11-13T07:39:15.201Z"
+ },
+ "sharedOut": 3.3120940468158954e-7,
+ "atoms": {
+  "BoyerMooreSearch": {
+   "fixed": 0.000015267659291916814,
+   "base": 6.3654818067906664e-9,
+   "perPattern": 0.00001792451856769701,
+   "scan": 1.0098491234492027e-8,
+   "prep": 0,
+   "out": 3.3120940468158954e-7
+  },
+  "HorspoolSearch": {
+   "fixed": 0.000012145138138831796,
+   "base": 4.794197308284017e-9,
+   "perPattern": 0.000007808226048662789,
+   "scan": 6.1857822232153855e-9,
+   "verify": 2.623863305286e-8,
+   "prep": 0,
+   "out": 3.3120940468158954e-7
+  },
+  "ShiftOrSearch": {
+   "fixed": 0.00005959408181470637,
+   "base": 9.20314397739849e-9,
+   "perPattern": 0.000005734965283161925,
+   "scan": 3.4241979995965327e-9,
+   "prep": 1.676793291903812e-7,
+   "out": 3.3120940468158954e-7
+  },
+  "KmpSearch": {
+   "fixed": 0,
+   "base": 6.84657020321773e-9,
+   "perPattern": 0.000013433590756007782,
+   "scan": 6.130130511052466e-9,
+   "prep": 0,
+   "out": 3.3120940468158954e-7
+  },
+  "AhoCorasickSearch": {
+   "fixed": 0.00013722037799302343,
+   "base": 1.5158133176896986e-8,
+   "perPattern": 0,
+   "scan": 0,
+   "big": 5.530903042788386e-10,
+   "prep": 4.238142157893353e-9,
+   "out": 3.3120940468158954e-7
+  },
+  "WuManberSearch": {
+   "fixed": 0.000035371684102331706,
+   "base": 4.75607733582436e-9,
+   "perPattern": 0.0000023058997515732146,
+   "scan": 7.541132142965086e-9,
+   "verify": 1.8639667235726918e-7,
+   "prep": 1.9893220749894672e-8,
+   "table": 0,
+   "out": 3.3120940468158954e-7
+  },
+  "Bm4DnaDsSearch": {
+   "fixed": 0.000014901138742840501,
+   "base": 4.779816891827594e-9,
+   "perPattern": 0.000009440358986701315,
+   "scan": 6.455105844205434e-9,
+   "verify": 2.152536871570586e-8,
+   "prep": 0,
+   "out": 3.3120940468158954e-7
+  },
+  "Bm4DnaHmbsSearch": {
+   "fixed": 0.00003463108999639229,
+   "base": 6.6209110627379254e-9,
+   "perPattern": 0.000033204981869536396,
+   "scan": 5.936812356728773e-10,
+   "windows": 9.736988586579403e-9,
+   "prep": 0,
+   "table": 3.3556068544527275e-10,
+   "out": 3.3120940468158954e-7
+  }
+ }
+};

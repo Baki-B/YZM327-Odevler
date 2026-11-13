@@ -4,11 +4,14 @@ Makine: Intel(R) Xeon(R) Processor @ 2.30GHz, 4 çekirdek, 16 GB, Node v22.23.4,
 
 120 vaka (tohum 20261111); her vakada her atom dönüşümlü ölçüldü: ısınma + 5 tekrarın medyanı; tek ölçüm 10 ms'den kısaysa blok içinde tekrarlanıp ortalaması alındı. "Yavaşlama" = politikanın seçtiği atomun süresi / o vakadaki en hızlı atomun süresi.
 
+"ExactMatch (uçtan uca, karar dahil)" satırı molekülün kendi uçtan uca süresini kullanır: molekülü kurmak, ilk kaydın şeklini hesaplamak, her atomun maliyetini tahmin etmek ve seçilen atomla aramak. Diğer satırlar ödevin tanımıyla yalnızca seçilen atomun süresidir.
+
 ## Bütün vakalar
 
 | Politika | Vaka | En hızlıyı seçme | %10 içinde | Yavaşlama (geo. ort.) | En kötü yavaşlama | Toplam süre / en iyi |
 |---|---:|---:|---:|---:|---:|---:|
 | ExactMatch (auto) | 120 | 81.7 % | 88.3 % | 1.038 | 1.83× | 1.007 |
+| ExactMatch (uçtan uca, karar dahil) | 120 | 17.5 % | 35.0 % | 1.255 | 3.27× | 1.190 |
 | Allmer 2016 kuralı | 120 | 8.3 % | 11.7 % | 2.764 | 35.15× | 3.294 |
 | her zaman BoyerMooreSearch | 120 | 0.0 % | 0.8 % | 3.328 | 32.54× | 3.372 |
 | her zaman HorspoolSearch | 120 | 5.0 % | 14.2 % | 2.883 | 42.09× | 3.969 |
@@ -26,6 +29,7 @@ Makine: Intel(R) Xeon(R) Processor @ 2.30GHz, 4 çekirdek, 16 GB, Node v22.23.4,
 | Politika | Vaka | En hızlıyı seçme | %10 içinde | Yavaşlama (geo. ort.) | En kötü yavaşlama | Toplam süre / en iyi |
 |---|---:|---:|---:|---:|---:|---:|
 | ExactMatch (auto) | 56 | 92.9 % | 96.4 % | 1.007 | 1.24× | 1.004 |
+| ExactMatch (uçtan uca, karar dahil) | 56 | 17.9 % | 46.4 % | 1.132 | 1.80× | 1.185 |
 | Allmer 2016 kuralı | 56 | 3.6 % | 5.4 % | 3.126 | 35.15× | 3.214 |
 | her zaman BoyerMooreSearch | 56 | 0.0 % | 1.8 % | 3.636 | 28.86× | 3.295 |
 | her zaman HorspoolSearch | 56 | 0.0 % | 3.6 % | 3.474 | 42.09× | 3.899 |
@@ -41,8 +45,10 @@ Makine: Intel(R) Xeon(R) Processor @ 2.30GHz, 4 çekirdek, 16 GB, Node v22.23.4,
 | Alt küme | Politika | Vaka | En hızlıyı seçme | %10 içinde | Yavaşlama (geo. ort.) | En kötü |
 |---|---|---:|---:|---:|---:|---:|
 | görülen (DNA, protein, kod) | ExactMatch (auto) | 60 | 85.0 % | 90.0 % | 1.031 | 1.83× |
+| görülen (DNA, protein, kod) | ExactMatch (uçtan uca, karar dahil) | 60 | 16.7 % | 35.0 % | 1.306 | 2.86× |
 | görülen (DNA, protein, kod) | Allmer 2016 kuralı | 60 | 6.7 % | 10.0 % | 2.675 | 34.28× |
 | görülmeyen (log, ikili, metin) | ExactMatch (auto) | 60 | 78.3 % | 86.7 % | 1.044 | 1.71× |
+| görülmeyen (log, ikili, metin) | ExactMatch (uçtan uca, karar dahil) | 60 | 18.3 % | 35.0 % | 1.206 | 3.27× |
 | görülmeyen (log, ikili, metin) | Allmer 2016 kuralı | 60 | 10.0 % | 13.3 % | 2.856 | 35.15× |
 
 ## Molekülün kendi yükü

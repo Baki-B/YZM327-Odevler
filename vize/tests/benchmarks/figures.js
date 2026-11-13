@@ -9,8 +9,9 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { existsSync } from 'node:fs';
 
 const RES = new URL('../../bench/results/', import.meta.url);
-// Şekil 2 ve 3, hiçbir karar için kullanılmamış taze doğrulama kümesinden çizilir (varsa).
-const VALIDATION = existsSync(new URL('validation-taze.json', RES)) ? 'validation-taze.json' : 'validation.json';
+// Şekil 2 ve 3, son modelin (v4) hiçbir karar için kullanılmamış taze kümesi D'den çizilir;
+// D yoksa v3'ün taze kümesi B'den, o da yoksa A'dan.
+const VALIDATION = ['validation-d.json', 'validation-taze.json', 'validation.json'].find((f) => existsSync(new URL(f, RES)));
 const OUT = new URL('../../docs/rapor/', import.meta.url);
 mkdirSync(OUT, { recursive: true });
 
@@ -134,14 +135,15 @@ function figure2() {
   rows.forEach(([label, m], i) => {
     const y = top + i * (bh + gap);
     const mol = label.startsWith('ExactMatch');
-    const fill = mol ? '#2a78d6' : label.startsWith('Allmer') ? '#eb6834' : '#b9b8b2';
+    const e2e = label.includes('uçtan uca');
+    const fill = e2e ? '#8fbaf0' : mol ? '#2a78d6' : label.startsWith('Allmer') ? '#eb6834' : '#b9b8b2';
     const w = Math.max(3, sx(m.geomeanSlowdown) - left);
     b += `<text x="${left - 8}" y="${y + bh / 2 + 4}" text-anchor="end" ${FONT} font-size="12" ${mol ? 'font-weight="700"' : ''} fill="${INK}">${esc(label.replace('Search', ''))}</text>`;
     b += `<rect x="${left}" y="${y}" width="${w}" height="${bh}" rx="4" fill="${fill}"><title>${esc(`${label}: yavaşlama geometrik ortalaması ${m.geomeanSlowdown.toFixed(3)}, en kötü ${m.worstSlowdown.toFixed(2)}×, en hızlıyı seçme %${(m.fastestRate * 100).toFixed(1)}`)}</title></rect>`;
     b += `<text x="${left + w + 6}" y="${y + bh / 2 + 4}" ${FONT} font-size="11" ${mol ? 'font-weight="700"' : ''} fill="${INK}">${m.geomeanSlowdown.toFixed(2)}</text>`;
     b += `<text x="${W - right + 20}" y="${y + bh / 2 + 4}" ${FONT} font-size="11" fill="${INK2}">${m.worstSlowdown.toFixed(1)}×</text>`;
   });
-  b += `<text x="14" y="${H - 8}" ${FONT} font-size="10" fill="${MUTED}">Kaynak: bench/results/${VALIDATION}. Mavi: molekül; turuncu: Allmer 2016 kuralı; gri: hep aynı atomu kullanmak.</text>`;
+  b += `<text x="14" y="${H - 8}" ${FONT} font-size="10" fill="${MUTED}">Kaynak: bench/results/${VALIDATION}. Koyu mavi: molekülün seçtiği atom; açık mavi: molekül uçtan uca (karar dahil); turuncu: Allmer 2016 kuralı; gri: hep aynı atom.</text>`;
   writeFileSync(new URL('sekil2_politikalar.svg', OUT), svg(W, H, b, 'Doğrulama: politikaların yavaşlaması'));
 }
 
@@ -153,20 +155,24 @@ function figure3() {
   const bestSingleName = bestSingle.replace('her zaman ', '');
   const series = [
     ['ExactMatch (auto)', '#2a78d6', (c) => c.selected],
+    ...(val.cases[0]?.moleculeMs ? [['ExactMatch uçtan uca', '#8fbaf0', null, (c) => c.moleculeMs / c.bestMs]] : []),
     ['Allmer 2016 kuralı', '#eb6834', (c) => (c.shape.mMean < 50 ? 'Bm4DnaDsSearch' : 'Bm4DnaHmbsSearch')],
     [`her zaman ${bestSingleName.replace('Search', '')}`, '#1baf7a', () => bestSingleName],
   ];
   const W = 760, H = 380, left = 64, right = 190, top = 24, bottom = 54;
-  const xmaxRaw = Math.max(...series.flatMap(([, , pick]) => val.cases.map((c) => c.times[pick(c)].ms / c.bestMs)));
+  const ratio = ([, , pick, direct]) => (c) => (direct ? direct(c) : c.times[pick(c)].ms / c.bestMs);
+  const xmaxRaw = Math.max(...series.flatMap((s) => val.cases.map(ratio(s))));
+  const xMin = Math.min(1, ...series.flatMap((s) => val.cases.map(ratio(s))));
   const xMax = Math.min(16, Math.pow(2, Math.ceil(Math.log2(Math.max(2, xmaxRaw)))));
-  const sx = (v) => left + (Math.log2(Math.min(v, xMax)) / Math.log2(xMax)) * (W - left - right);
+  const lo = xMin < 1 ? 0.5 : 1; // uçtan uca oran ölçüm gürültüsüyle 1'in altına düşebilir
+  const sx = (v) => left + ((Math.log2(Math.max(lo, Math.min(v, xMax))) - Math.log2(lo)) / (Math.log2(xMax) - Math.log2(lo))) * (W - left - right);
   const sy = (p) => top + (1 - p) * (H - top - bottom);
   let b = '';
   for (let p = 0; p <= 1.0001; p += 0.25) {
     b += `<line x1="${left}" x2="${W - right}" y1="${sy(p)}" y2="${sy(p)}" stroke="${GRID}"/>`;
     b += `<text x="${left - 8}" y="${sy(p) + 4}" text-anchor="end" ${FONT} font-size="11" fill="${INK2}">%${Math.round(p * 100)}</text>`;
   }
-  for (let v = 1; v <= xMax; v *= 2) {
+  for (let v = lo; v <= xMax; v *= 2) {
     b += `<line x1="${sx(v)}" x2="${sx(v)}" y1="${top}" y2="${H - bottom}" stroke="${GRID}"/>`;
     b += `<text x="${sx(v)}" y="${H - bottom + 16}" text-anchor="middle" ${FONT} font-size="11" fill="${INK2}">${v}×</text>`;
   }
@@ -174,21 +180,24 @@ function figure3() {
   b += `<text x="${sx(1.1) + 4}" y="${H - bottom - 6}" ${FONT} font-size="10" fill="${MUTED}">%10 sınırı</text>`;
   b += `<text x="${(left + W - right) / 2}" y="${H - 14}" text-anchor="middle" ${FONT} font-size="11" fill="${INK2}">yavaşlama (seçilen / en hızlı), log ölçek</text>`;
   b += `<text x="16" y="${(top + H - bottom) / 2}" ${FONT} font-size="11" fill="${INK2}" transform="rotate(-90 16 ${(top + H - bottom) / 2})" text-anchor="middle">vakaların payı (≤ x)</text>`;
-  series.forEach(([label, color, pick], si) => {
-    const xs = val.cases.map((c) => c.times[pick(c)].ms / c.bestMs).sort((a, b) => a - b);
-    let d = `M ${sx(1)} ${sy(0)}`;
+  series.forEach((ser, si) => {
+    const [label, color] = ser;
+    const xs = val.cases.map(ratio(ser)).sort((a, b) => a - b);
+    let d = `M ${sx(xs[0])} ${sy(0)}`;
     xs.forEach((x, i) => {
       d += ` L ${sx(x)} ${sy(i / xs.length)} L ${sx(x)} ${sy((i + 1) / xs.length)}`;
     });
     d += ` L ${sx(xMax)} ${sy(1)}`;
-    b += `<path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"><title>${esc(label)}</title></path>`;
+    b += `<path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"${label.includes('uçtan') ? ' stroke-dasharray="6 3"' : ''}><title>${esc(label)}</title></path>`;
     const ly = top + 14 + si * 22;
     b += `<line x1="${W - right + 14}" x2="${W - right + 34}" y1="${ly}" y2="${ly}" stroke="${color}" stroke-width="3"/>`;
     b += `<text x="${W - right + 40}" y="${ly + 4}" ${FONT} font-size="11" fill="${INK}">${esc(label)}</text>`;
   });
-  b += `<text x="${W - right + 14}" y="${top + 90}" ${FONT} font-size="10" fill="${MUTED}">Eğri ne kadar solda ve</text>`;
-  b += `<text x="${W - right + 14}" y="${top + 103}" ${FONT} font-size="10" fill="${MUTED}">yukarıdaysa o kadar iyi.</text>`;
-  if (xmaxRaw > xMax) b += `<text x="${W - right + 14}" y="${top + 122}" ${FONT} font-size="10" fill="${MUTED}">${xMax}× üstü kırpıldı (en büyük ${xmaxRaw.toFixed(1)}×).</text>`;
+  const ny = top + 14 + series.length * 22;
+  b += `<text x="${W - right + 14}" y="${ny}" ${FONT} font-size="10" fill="${MUTED}">Eğri ne kadar solda ve</text>`;
+  b += `<text x="${W - right + 14}" y="${ny + 13}" ${FONT} font-size="10" fill="${MUTED}">yukarıdaysa o kadar iyi.</text>`;
+  if (lo < 1) b += `<text x="${W - right + 14}" y="${ny + 32}" ${FONT} font-size="10" fill="${MUTED}">1×'in solu: ölçüm gürültüsü.</text>`;
+  if (xmaxRaw > xMax) b += `<text x="${W - right + 14}" y="${ny + 48}" ${FONT} font-size="10" fill="${MUTED}">${xMax}× üstü kırpıldı (en büyük ${xmaxRaw.toFixed(1)}×).</text>`;
   b += `<text x="14" y="${H - 2}" ${FONT} font-size="10" fill="${MUTED}">Kaynak: bench/results/${VALIDATION}</text>`;
   writeFileSync(new URL('sekil3_dagilim.svg', OUT), svg(W, H, b, 'Doğrulama: yavaşlamanın birikimli dağılımı'));
 }

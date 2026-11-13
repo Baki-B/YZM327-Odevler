@@ -6,6 +6,7 @@
 // Çıktılar:
 //   bench/results/calibration.json   ham ölçümler + makine bilgisi
 //   src/molecules/coefficients.json  her atomun katsayıları (NNLS, göreli hata)
+//   src/molecules/coefficients.js    aynı katsayılar, ES modülü olarak (tarayıcı için)
 //   bench/results/calibration-fit.md uydurma kalitesi
 // Kullanım: npm run calibrate   (ya da: node --expose-gc tests/benchmarks/calibrate.js --quick)
 
@@ -26,6 +27,8 @@ const NS = QUICK ? [1e4, 1e5] : [1e4, 1e5, 1e6];
 const MS = [4, 8, 16, 32, 64];
 const KS = [1, 4, 16, 64];
 const REPS = 5;
+// Model sürümü: v4 = şekil örneklemesi 64 × 256 karakter (karar yükü düzeltmesi).
+const MODEL_VERSION = 'v4';
 
 const seedOf = (...xs) => xs.reduce((h, x) => (Math.imul(h ^ Math.round(x), 0x9e3779b1) >>> 0), 17);
 
@@ -144,10 +147,20 @@ if (REFIT) {
 }
 const { atoms, quality, sharedOut, freeOuts } = fit(cases);
 if (!QUICK) {
-  writeFileSync(new URL('../../src/molecules/coefficients.json', import.meta.url), JSON.stringify({
-    source: 'bench/results/calibration.json', method: 'NNLS, göreli hata', machine: { cpu: machine.cpu, node: machine.node, date: machine.date },
+  const coefficients = {
+    source: 'bench/results/calibration.json', method: 'NNLS, göreli hata', model: MODEL_VERSION,
+    machine: { cpu: machine.cpu, node: machine.node, date: machine.date },
     sharedOut, atoms,
-  }, null, 1) + '\n');
+  };
+  const json = JSON.stringify(coefficients, null, 1);
+  writeFileSync(new URL('../../src/molecules/coefficients.json', import.meta.url), json + '\n');
+  writeFileSync(new URL('../../src/molecules/coefficients.js', import.meta.url),
+    '// Kalibre edilmiş katsayılar (ES modülü). Bu dosya `npm run calibrate` ile\n' +
+    '// coefficients.json ile birlikte üretilir; elle düzenlemeyin.\n' +
+    "// Neden ayrı bir .js? `import ... with { type: 'json' }` sözdizimini her tarayıcı\n" +
+    '// desteklemiyor; arayüz (web/) aynı molekülü doğrudan içe aktarabilsin diye katsayılar\n' +
+    '// düz bir ES modülü olarak da yazılır. İki dosyanın aynı olduğunu bir test denetler.\n' +
+    'export default ' + json + ';\n');
 }
 let md = `# Kalibrasyon uydurma kalitesi\n\nMakine: ${machine.cpu}, ${machine.cores} çekirdek, Node ${machine.node}, ${machine.date}\n\n`;
 md += '| Atom | Vaka | Medyan göreli hata | %90 göreli hata | Katsayılar |\n|---|---:|---:|---:|---|\n';

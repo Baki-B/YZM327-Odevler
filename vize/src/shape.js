@@ -4,14 +4,21 @@
 //   sigmaEff etkin alfabe büyüklüğü 1/Σp² (harfler eşit sıklıkta değilse σ'dan küçüktür)
 //   k        desen sayısı
 //   mMin, mMax, mMean  desen uzunlukları
-// Çok uzun metinde σ, metne eşit aralıklarla yayılmış 64 parçadan (toplam 256 K
-// karakter) sayılır; bu deterministiktir ve 10^6 karakterde ~1 ms yerine ~0,3 ms sürer.
+// 16 384 karakterden uzun metinde σ ve σe, metne eşit aralıklarla yayılmış 64 parçadan
+// (her biri 256 karakter, toplam 16 K karakter) sayılır; bu deterministiktir.
+// (v3'e kadar parçalar 4096 karakterdi ve 262 144 karaktere kadar metin tam sayılıyordu.
+// Teslim öncesi denetimde bu sayımın küçük ve tek desenli girdide aramanın kendisi kadar
+// sürdüğü görüldü: 200 000 karakterlik proteinde ~0,9 ms. v4'te sayım en fazla 16 384
+// karakterdir. Bkz. rapor bölüm 6–7, KARARLAR.md.)
 
 import { foldAsciiUnit } from './functions/alphabet.js';
 
 const COUNTS = new Uint32Array(0x10000);
+const TOUCHED = new Uint16Array(0x10000);
 const SAMPLE_BLOCKS = 64;
-const BLOCK = 4096;
+const BLOCK = 256;
+/** Tam sayılan en uzun metin; daha uzununda örneklenir. */
+export const SAMPLE_LIMIT = SAMPLE_BLOCKS * BLOCK;
 
 export function computeShape(entry, params) {
   const { patterns, ignoreCase = false } = params;
@@ -21,25 +28,33 @@ export function computeShape(entry, params) {
   // (İlk sürüm her kararda 256 KB ayırıp 65 536 hücreyi tarıyordu; küçük girdide bu,
   // aramanın kendisi kadar sürüyordu.)
   const counts = COUNTS;
-  const touched = [];
+  const touched = TOUCHED;
+  let distinct = 0;
   let counted = 0;
   const countRange = (from, to) => {
-    for (let i = from; i < to; i++) {
-      let c = seq.charCodeAt(i);
-      if (ignoreCase) c = foldAsciiUnit(c);
-      if (counts[c]++ === 0) touched.push(c);
+    if (ignoreCase) {
+      for (let i = from; i < to; i++) {
+        const c = foldAsciiUnit(seq.charCodeAt(i));
+        if (counts[c]++ === 0) touched[distinct++] = c;
+      }
+    } else {
+      for (let i = from; i < to; i++) {
+        const c = seq.charCodeAt(i);
+        if (counts[c]++ === 0) touched[distinct++] = c;
+      }
     }
     counted += to - from;
   };
-  const sampled = n > SAMPLE_BLOCKS * BLOCK;
+  const sampled = n > SAMPLE_LIMIT;
   if (!sampled) countRange(0, n);
   else {
     const step = Math.floor((n - BLOCK) / (SAMPLE_BLOCKS - 1));
     for (let b = 0; b < SAMPLE_BLOCKS; b++) countRange(b * step, b * step + BLOCK);
   }
-  const sigma = touched.length;
+  const sigma = distinct;
   let sumSq = 0;
-  for (const c of touched) {
+  for (let j = 0; j < distinct; j++) {
+    const c = touched[j];
     const p = counts[c] / counted;
     sumSq += p * p;
     counts[c] = 0;

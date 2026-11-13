@@ -8,14 +8,23 @@
 // Kullanım: npm run bench   (ya da --quick ile 24 vakalık kısa deneme)
 //   --seed <tohum> --name <dosya adı>   başka bir küme (taze küme B: --seed 31415926 --name validation-taze)
 //   --k 1                               tek desenli ek küme (C: --seed 27182818 --name validation-tek --k 1)
+//   --retable                           ölçüm yapmadan, kayıtlı <name>.json'dan tabloları (.md) yeniden kurar
+// v4 kümeleri (karar yükü düzeltmesinden sonra, birer kez ölçüldü):
+//   D: --seed 16180339 --name validation-d        E: --seed 14142135 --name validation-e --k 1
 
 import { registry } from '../../src/registry.js';
 import { ExactMatch } from '../../src/molecules/ExactMatch.js';
 import { makeText, makePatterns, rng } from '../../bench/data.js';
 import { machineInfo, now } from '../../bench/timing.js';
-import { measureCase, saveJson, saveText, progress } from './common.js';
+import { readFileSync } from 'node:fs';
+import calibrated from '../../src/molecules/coefficients.js';
+import { measureCase, saveJson, saveText, progress, RESULTS } from './common.js';
 
 const QUICK = process.argv.includes('--quick');
+const RETABLE = process.argv.includes('--retable');
+// Ölçülen modelin sürümü (katsayı dosyasında yazılı; v3'e kadar alan yoktu).
+const MODEL_VERSION = calibrated.model ?? 'v3';
+const coefficientsInfo = () => ({ model: calibrated.model ?? null, source: calibrated.source, machine: calibrated.machine });
 const CASES = QUICK ? 24 : 120;
 const argValue = (flag, dflt) => {
   const i = process.argv.indexOf(flag);
@@ -78,23 +87,28 @@ function metrics(slowdowns, chosenMs, bestMs) {
   };
 }
 
+const E2E = 'ExactMatch (uçtan uca, karar dahil)';
+
 function evaluate(results, filter = () => true) {
   const rows = results.filter(filter);
   const atomNames = registry.candidates().map((A) => A.manifest.name);
+  // Her politika bir vakada "harcanan süreyi" (ms) verir.
   const policies = {
-    'ExactMatch (auto)': (c) => c.selected,
-    'Allmer 2016 kuralı': (c) => allmerRule(c.shape),
-    ...Object.fromEntries(atomNames.map((n) => [`her zaman ${n}`, () => n])),
+    'ExactMatch (auto)': (c) => c.times[c.selected].ms,
+    // Molekülün kendisi: kurulum + karar (şekil, tahminler) + seçilen atomun işi, aynı turlarda ölçüldü.
+    [E2E]: (c) => c.moleculeMs,
+    'Allmer 2016 kuralı': (c) => c.times[allmerRule(c.shape)].ms,
+    ...Object.fromEntries(atomNames.map((n) => [`her zaman ${n}`, (c) => c.times[n].ms])),
   };
   const table = {};
-  for (const [label, pick] of Object.entries(policies)) {
+  for (const [label, spent] of Object.entries(policies)) {
     const slow = [];
     const chosen = [];
     const best = [];
     for (const c of rows) {
-      const name = pick(c);
-      slow.push(c.times[name].ms / c.bestMs);
-      chosen.push(c.times[name].ms);
+      const ms = spent(c);
+      slow.push(ms / c.bestMs);
+      chosen.push(ms);
       best.push(c.bestMs);
     }
     table[label] = metrics(slow, chosen, best);
@@ -115,36 +129,54 @@ function markdownTable(table) {
 }
 
 // ------------------------------------------------------------------ çalıştır
-const machine = machineInfo();
-const cases = makeCases();
-const results = [];
-const t0 = now();
-for (const c of cases) {
-  progress(c.id + 1, cases.length, `${c.alphabet} n=${c.n} k=${c.k} m=${c.lengths.join('/')}`);
-  const seq = makeText(c.alphabet, c.n, c.textSeed);
-  const entries = [{ header: `>val_${c.id}`, seq }];
-  const patterns = makePatterns(seq, c.k, c.lengths, c.patternSeed);
-  const params = { patterns, ignoreCase: false };
-  // Molekülün kararı (ölçümden bağımsız, bir kez)
-  const em = new ExactMatch({ ...params, strategy: 'auto' });
-  em.decide(entries[0]);
-  const record = em.record;
-  // Molekülün kendisi de aynı turlarda ölçülür (karar verme süresi dahil)
-  const moleculeJob = () => {
-    const m = new ExactMatch({ ...params, strategy: 'auto' });
-    let x = 0;
-    for (const _ of m.run(entries)) x++;
-    moleculeJob.hits = x;
-  };
-  const r = measureCase(params, entries, { reps: 5 }, { ExactMatch: moleculeJob });
-  const bestName = Object.entries(r.times).reduce((a, b) => (b[1].ms < a[1].ms ? b : a))[0];
-  results.push({
-    ...c, mMin: r.shape.mMin, mMax: r.shape.mMax, shape: r.shape, hits: r.hits, times: r.times,
-    selected: record.selected, estimates: record.estimates, why: record.why,
-    moleculeMs: r.extra.ExactMatch.ms, best: bestName, bestMs: r.times[bestName].ms,
-  });
+let machine;
+let results;
+let SEED_USED = SEED;
+let FIXED_K_USED = FIXED_K;
+let model;
+if (RETABLE) {
+  // Ölçüm yok: kayıtlı ham sonuçlardan yalnızca tablolar yeniden kurulur.
+  const old = JSON.parse(readFileSync(new URL(`${NAME}.json`, RESULTS), 'utf8'));
+  machine = old.machine;
+  results = old.cases;
+  SEED_USED = old.seed;
+  FIXED_K_USED = old.fixedK ?? null;
+  model = old.model ?? null;
+  process.stderr.write(`${NAME}.json: ${results.length} kayıtlı vakadan tablolar yeniden kuruluyor (ölçüm yok)\n`);
+} else {
+  machine = machineInfo();
+  model = { version: MODEL_VERSION, coefficients: coefficientsInfo() };
+  const cases = makeCases();
+  results = [];
+  const t0 = now();
+  for (const c of cases) {
+    progress(c.id + 1, cases.length, `${c.alphabet} n=${c.n} k=${c.k} m=${c.lengths.join('/')}`);
+    const seq = makeText(c.alphabet, c.n, c.textSeed);
+    const entries = [{ header: `>val_${c.id}`, seq }];
+    const patterns = makePatterns(seq, c.k, c.lengths, c.patternSeed);
+    const params = { patterns, ignoreCase: false };
+    // Molekülün kararı (ölçümden bağımsız, bir kez)
+    const em = new ExactMatch({ ...params, strategy: 'auto' });
+    em.decide(entries[0]);
+    const record = em.record;
+    // Molekülün kendisi de aynı turlarda ölçülür (karar verme süresi dahil)
+    const moleculeJob = () => {
+      const m = new ExactMatch({ ...params, strategy: 'auto' });
+      let x = 0;
+      for (const _ of m.run(entries)) x++;
+      moleculeJob.hits = x;
+    };
+    const r = measureCase(params, entries, { reps: 5 }, { ExactMatch: moleculeJob });
+    if (moleculeJob.hits !== r.hits) throw new Error(`ExactMatch: ${moleculeJob.hits} eşleşme, beklenen ${r.hits}`);
+    const bestName = Object.entries(r.times).reduce((a, b) => (b[1].ms < a[1].ms ? b : a))[0];
+    results.push({
+      ...c, mMin: r.shape.mMin, mMax: r.shape.mMax, shape: r.shape, hits: r.hits, times: r.times,
+      selected: record.selected, estimates: record.estimates, why: record.why,
+      moleculeMs: r.extra.ExactMatch.ms, best: bestName, bestMs: r.times[bestName].ms,
+    });
+  }
+  process.stderr.write(`\ndoğrulama bitti: ${((now() - t0) / 1000).toFixed(1)} s\n`);
 }
-process.stderr.write(`\ndoğrulama bitti: ${((now() - t0) / 1000).toFixed(1)} s\n`);
 
 const all = evaluate(results);
 const big = evaluate(results, (c) => c.bestMs >= 1);
@@ -153,21 +185,25 @@ const seen = evaluate(results, (c) => !c.unseenAlphabet);
 const overhead = results.map((c) => c.moleculeMs / c.times[c.selected].ms).sort((a, b) => a - b);
 const worst = [...results].sort((a, b) => b.times[b.selected].ms / b.bestMs - a.times[a.selected].ms / a.bestMs).slice(0, 5);
 
-saveJson(`${NAME}.json`, {
-  description: 'Doğrulama kümesi: kalibrasyonda görülmemiş vakalar; süreler ms (ısınma + 5 tekrarın medyanı)',
-  machine, seed: SEED, fixedK: FIXED_K, metrics: { all, bestAtLeast1ms: big, seenAlphabets: seen, unseenAlphabets: unseen },
-  moleculeOverhead: { median: overhead[overhead.length >> 1], p90: overhead[Math.floor(overhead.length * 0.9)] },
-  cases: results,
-});
+if (!RETABLE) {
+  saveJson(`${NAME}.json`, {
+    description: 'Doğrulama kümesi: kalibrasyonda görülmemiş vakalar; süreler ms (ısınma + 5 tekrarın medyanı)',
+    machine, seed: SEED, fixedK: FIXED_K, model, metrics: { all, bestAtLeast1ms: big, seenAlphabets: seen, unseenAlphabets: unseen },
+    moleculeOverhead: { median: overhead[overhead.length >> 1], p90: overhead[Math.floor(overhead.length * 0.9)] },
+    cases: results,
+  });
+}
 
 let md = `# Doğrulama sonuçları\n\n`;
 md += `Makine: ${machine.cpu}, ${machine.cores} çekirdek, ${machine.memoryGB} GB, Node ${machine.node}, ${machine.platform}, ${machine.date}. `;
 md += `Çöp toplayıcı ölçümlerden önce çağrıldı: ${machine.gcExposed ? 'evet' : 'hayır'}.\n\n`;
-md += `${results.length} vaka (tohum ${SEED}); her vakada her atom dönüşümlü ölçüldü: ısınma + 5 tekrarın medyanı; tek ölçüm 10 ms'den kısaysa blok içinde tekrarlanıp ortalaması alındı. `;
+if (model) md += `Model: ${model.version} (katsayılar: ${model.coefficients.machine?.date ?? '?'} kalibrasyonu, ${model.coefficients.machine?.cpu ?? '?'}).\n\n`;
+md += `${results.length} vaka (tohum ${SEED_USED}); her vakada her atom dönüşümlü ölçüldü: ısınma + 5 tekrarın medyanı; tek ölçüm 10 ms'den kısaysa blok içinde tekrarlanıp ortalaması alındı. `;
 md += `"Yavaşlama" = politikanın seçtiği atomun süresi / o vakadaki en hızlı atomun süresi.\n\n`;
-if (FIXED_K !== null) {
-  md += `**Bu kümede desen sayısı k = ${FIXED_K} olarak sabitlendi.** `;
-  if (GRID_K.has(FIXED_K)) md += `k = ${FIXED_K} kalibrasyon ızgarasının da bir değeridir; bu yüzden küme k bakımından "ızgara arası" değildir. `;
+md += `"${E2E}" satırı molekülün kendi uçtan uca süresini kullanır: molekülü kurmak, ilk kaydın şeklini hesaplamak, her atomun maliyetini tahmin etmek ve seçilen atomla aramak. Diğer satırlar ödevin tanımıyla yalnızca seçilen atomun süresidir.\n\n`;
+if (FIXED_K_USED !== null) {
+  md += `**Bu kümede desen sayısı k = ${FIXED_K_USED} olarak sabitlendi.** `;
+  if (GRID_K.has(FIXED_K_USED)) md += `k = ${FIXED_K_USED} kalibrasyon ızgarasının da bir değeridir; bu yüzden küme k bakımından "ızgara arası" değildir. `;
   md += `n ve m ızgara noktalarının arasından seçildi; metin ve desen tohumları kalibrasyondakilerden farklıdır.\n\n`;
 }
 md += `## Bütün vakalar\n\n${markdownTable(all)}\n`;
@@ -175,7 +211,7 @@ md += `## Yalnızca en hızlı atomun 1 ms ve üstü sürdüğü vakalar\n\nÇok
 md += `## Kalibrasyonda görülen / görülmeyen alfabeler (molekül ve Allmer kuralı)\n\n`;
 md += '| Alt küme | Politika | Vaka | En hızlıyı seçme | %10 içinde | Yavaşlama (geo. ort.) | En kötü |\n|---|---|---:|---:|---:|---:|---:|\n';
 for (const [label, t] of [['görülen (DNA, protein, kod)', seen], ['görülmeyen (log, ikili, metin)', unseen]]) {
-  for (const p of ['ExactMatch (auto)', 'Allmer 2016 kuralı']) {
+  for (const p of ['ExactMatch (auto)', E2E, 'Allmer 2016 kuralı']) {
     const m = t[p];
     md += `| ${label} | ${p} | ${m.cases} | ${pct(m.fastestRate)} | ${pct(m.within10Rate)} | ${fx(m.geomeanSlowdown)} | ${m.worstSlowdown.toFixed(2)}× |\n`;
   }

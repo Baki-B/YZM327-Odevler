@@ -4,6 +4,8 @@ Makine: Intel(R) Xeon(R) Processor @ 2.30GHz, 4 çekirdek, 16 GB, Node v22.23.4,
 
 120 vaka (tohum 27182818); her vakada her atom dönüşümlü ölçüldü: ısınma + 5 tekrarın medyanı; tek ölçüm 10 ms'den kısaysa blok içinde tekrarlanıp ortalaması alındı. "Yavaşlama" = politikanın seçtiği atomun süresi / o vakadaki en hızlı atomun süresi.
 
+"ExactMatch (uçtan uca, karar dahil)" satırı molekülün kendi uçtan uca süresini kullanır: molekülü kurmak, ilk kaydın şeklini hesaplamak, her atomun maliyetini tahmin etmek ve seçilen atomla aramak. Diğer satırlar ödevin tanımıyla yalnızca seçilen atomun süresidir.
+
 **Bu kümede desen sayısı k = 1 olarak sabitlendi.** k = 1 kalibrasyon ızgarasının da bir değeridir; bu yüzden küme k bakımından "ızgara arası" değildir. n ve m ızgara noktalarının arasından seçildi; metin ve desen tohumları kalibrasyondakilerden farklıdır.
 
 ## Bütün vakalar
@@ -11,6 +13,7 @@ Makine: Intel(R) Xeon(R) Processor @ 2.30GHz, 4 çekirdek, 16 GB, Node v22.23.4,
 | Politika | Vaka | En hızlıyı seçme | %10 içinde | Yavaşlama (geo. ort.) | En kötü yavaşlama | Toplam süre / en iyi |
 |---|---:|---:|---:|---:|---:|---:|
 | ExactMatch (auto) | 120 | 51.7 % | 79.2 % | 1.073 | 2.10× | 1.095 |
+| ExactMatch (uçtan uca, karar dahil) | 120 | 0.8 % | 0.8 % | 1.686 | 3.73× | 1.527 |
 | Allmer 2016 kuralı | 120 | 26.7 % | 53.3 % | 1.276 | 3.89× | 1.239 |
 | her zaman BoyerMooreSearch | 120 | 1.7 % | 5.8 % | 1.413 | 2.53× | 1.427 |
 | her zaman HorspoolSearch | 120 | 32.5 % | 61.7 % | 1.272 | 4.61× | 1.259 |
@@ -28,6 +31,7 @@ Makine: Intel(R) Xeon(R) Processor @ 2.30GHz, 4 çekirdek, 16 GB, Node v22.23.4,
 | Politika | Vaka | En hızlıyı seçme | %10 içinde | Yavaşlama (geo. ort.) | En kötü yavaşlama | Toplam süre / en iyi |
 |---|---:|---:|---:|---:|---:|---:|
 | ExactMatch (auto) | 40 | 42.5 % | 77.5 % | 1.078 | 1.59× | 1.088 |
+| ExactMatch (uçtan uca, karar dahil) | 40 | 2.5 % | 2.5 % | 1.481 | 2.28× | 1.447 |
 | Allmer 2016 kuralı | 40 | 25.0 % | 60.0 % | 1.152 | 2.61× | 1.180 |
 | her zaman BoyerMooreSearch | 40 | 0.0 % | 0.0 % | 1.413 | 2.53× | 1.409 |
 | her zaman HorspoolSearch | 40 | 42.5 % | 67.5 % | 1.183 | 2.69× | 1.210 |
@@ -43,8 +47,10 @@ Makine: Intel(R) Xeon(R) Processor @ 2.30GHz, 4 çekirdek, 16 GB, Node v22.23.4,
 | Alt küme | Politika | Vaka | En hızlıyı seçme | %10 içinde | Yavaşlama (geo. ort.) | En kötü |
 |---|---|---:|---:|---:|---:|---:|
 | görülen (DNA, protein, kod) | ExactMatch (auto) | 60 | 51.7 % | 86.7 % | 1.047 | 1.38× |
+| görülen (DNA, protein, kod) | ExactMatch (uçtan uca, karar dahil) | 60 | 1.7 % | 1.7 % | 1.675 | 3.73× |
 | görülen (DNA, protein, kod) | Allmer 2016 kuralı | 60 | 33.3 % | 63.3 % | 1.132 | 2.04× |
 | görülmeyen (log, ikili, metin) | ExactMatch (auto) | 60 | 51.7 % | 71.7 % | 1.100 | 2.10× |
+| görülmeyen (log, ikili, metin) | ExactMatch (uçtan uca, karar dahil) | 60 | 0.0 % | 0.0 % | 1.697 | 2.73× |
 | görülmeyen (log, ikili, metin) | Allmer 2016 kuralı | 60 | 20.0 % | 43.3 % | 1.438 | 3.89× |
 
 ## Molekülün kendi yükü

@@ -2,13 +2,15 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseFasta, formatFasta } from '../../src/fasta.js';
-import { computeShape } from '../../src/shape.js';
+import { computeShape, SAMPLE_LIMIT } from '../../src/shape.js';
 import { estimateCost, fitNonNegative } from '../../src/molecules/costModel.js';
 import { HorspoolSearch } from '../../src/atomic/HorspoolSearch.js';
 import { sourceToEntry, lineStarts, toLineColumn } from '../../src/adapters/sourceToEntry.js';
 import { CodeScan } from '../../src/workflows/CodeScan.js';
 import { PRESETS } from '../../src/workflows/presets.js';
 import { rng, makeText } from '../../bench/data.js';
+import { readFileSync } from 'node:fs';
+import coefficientsModule from '../../src/molecules/coefficients.js';
 
 describe('FASTA', () => {
   test('başlık, çok satırlı dizi, boş satır, \\r\\n', () => {
@@ -43,6 +45,30 @@ describe('veri şekli', () => {
     assert.equal(a.sigma, 4);
     assert.ok(Math.abs(a.sigmaEff - 4) < 0.05);
   });
+  test('örnekleme sınırı: en fazla 64 × 256 karakter sayılır', () => {
+    assert.equal(SAMPLE_LIMIT, 16384);
+    const t = makeText('protein', SAMPLE_LIMIT + 1, 9);
+    assert.equal(computeShape({ header: '>x', seq: t.slice(0, SAMPLE_LIMIT) }, { patterns: ['A'] }).sampled, false);
+    assert.equal(computeShape({ header: '>x', seq: t }, { patterns: ['A'] }).sampled, true);
+    // Örneklem dışındaki karakterler sayıma girmez: 64 parçanın hiçbirine düşmeyen bir konuma
+    // yeni bir harf konursa σ değişmez (parçalar 0, step, 2·step, … konumlarından başlar).
+    const n = 200000;
+    const base = makeText('dna', n, 3);
+    const step = Math.floor((n - 256) / 63);
+    const pos = 256 + 10; // ilk parçanın hemen sonrası, ikinci parçanın (step) öncesi
+    assert.ok(pos < step);
+    const changed = base.slice(0, pos) + 'Z' + base.slice(pos + 1);
+    assert.equal(computeShape({ header: '>x', seq: changed }, { patterns: ['A'] }).sigma, 4);
+  });
+  test('örneklenen σe tam sayıma yakın (protein, 10^6)', () => {
+    const t = makeText('protein', 1_000_000, 11);
+    const s = computeShape({ header: '>x', seq: t }, { patterns: ['A'] });
+    const counts = new Map();
+    for (const ch of t) counts.set(ch, (counts.get(ch) ?? 0) + 1);
+    let sumSq = 0;
+    for (const c of counts.values()) sumSq += (c / t.length) ** 2;
+    assert.ok(Math.abs(s.sigmaEff / (1 / sumSq) - 1) < 0.05, `${s.sigmaEff} / ${1 / sumSq}`);
+  });
   test('boş metin', () => {
     const s = computeShape({ header: '>x', seq: '' }, { patterns: ['AB'] });
     assert.equal(s.n, 0);
@@ -51,6 +77,10 @@ describe('veri şekli', () => {
 });
 
 describe('maliyet modeli', () => {
+  test('coefficients.js ile coefficients.json aynı katsayıları taşır', () => {
+    const json = JSON.parse(readFileSync(new URL('../../src/molecules/coefficients.json', import.meta.url), 'utf8'));
+    assert.deepEqual(coefficientsModule, json);
+  });
   test('tahmin = Σ katsayı × özellik', () => {
     const shape = { n: 1000, sigma: 4, sigmaEff: 4, k: 1, mMin: 8, mMax: 8, mMean: 8 };
     const est = estimateCost(HorspoolSearch, shape);
