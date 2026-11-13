@@ -12,7 +12,11 @@
     "bench": "node --expose-gc tests/benchmarks/validate.js",
     "figures": "node tests/benchmarks/figures.js",
     "mutation": "node scripts/mutasyon.js",
-    "report": "node scripts/rapor-pdf.js"
+    "report": "node scripts/rapor-pdf.js",
+    "web": "node scripts/sunucu.js",
+    "paketler": "node scripts/paketler.js",
+    "karar-yuku": "node --expose-gc scripts/karar-yuku.js",
+    "ornekler": "node scripts/ornekler.js"
   },
   "license": "MIT"
 }

@@ -1,0 +1,4 @@
+SAHTE ÖRNEK: aşağıdaki blok gerçek bir özel anahtar değildir; tarayıcı yalnızca başlık satırını arar.
+-----BEGIN OPENSSH PRIVATE KEY-----
+BU-BIR-ORNEKTIR-GERCEK-ANAHTAR-DEGILDIR
+-----END OPENSSH PRIVATE KEY-----

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kod Bilimi Atölyesi</title>
+<meta name="description" content="Kaynak kod, log ve dizilerde tam desen arayan IoS atomlarını ve ExactMatch molekülünü tarayıcıda bağlayıp çalıştıran iş akışı düzenleyicisi.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233a1238'/%3E%3Cpath d='M9 11h6M9 16h10M9 21h6' stroke='%23f2c14e' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='23' cy='21' r='3' fill='%2336c2b4'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="app.css">
+<script>
+  // Tema: kayıtlı tercih yoksa sistem ayarı. (localStorage erişilemezse sessizce geç.)
+  try { const t = localStorage.getItem('kba-tema'); if (t) document.documentElement.dataset.theme = t; } catch {}
+</script>
+</head>
+<body>
+<a class="skip" href="#tuval">Tuvale geç</a>
+<div class="app" id="app">
+  <aside class="side" id="side" aria-label="Kenar çubuğu">
+    <div class="ws-head">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="currentColor" opacity=".18"/><path d="M9 11h6M9 16h10M9 21h6" stroke="#f2c14e" stroke-width="3" stroke-linecap="round"/><circle cx="23" cy="21" r="3" fill="#36c2b4"/></svg>
+      <div class="ws-name"><strong>Kod Bilimi Atölyesi</strong><span>sequence.pattern-match.exact</span></div>
+      <button class="icon-btn" id="tema" aria-label="Açık/koyu tema" title="Açık/koyu tema">◐</button>
+      <button class="icon-btn only-mobile" id="side-kapat" aria-label="Kenar çubuğunu kapat">✕</button>
+    </div>
+    <div class="side-scroll">
+      <label class="search"><span class="sr">Bileşen ara</span><input id="ara" type="search" placeholder="Bileşen ara…" autocomplete="off"></label>
+      <nav aria-labelledby="paket-baslik" class="side-section">
+        <h2 id="paket-baslik">Hazır paketler</h2>
+        <ul id="paketler" class="channels"></ul>
+      </nav>
+      <nav aria-labelledby="bilesen-baslik" class="side-section">
+        <h2 id="bilesen-baslik">Bileşenler <small>sürükleyin ya da Enter</small></h2>
+        <div id="palet"></div>
+        <p class="empty" id="ara-bos" hidden>Eşleşen bileşen yok.</p>
+      </nav>
+    </div>
+    <div class="side-foot">
+      <a href="../site/index.html">Proje sitesi</a> · <a href="../docs/sunum/index.html">Sunum</a> · <a href="../docs/rapor/Rapor.pdf">Rapor</a>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim" hidden></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn only-mobile" id="side-ac" aria-label="Bileşenleri ve paketleri aç" aria-controls="side" aria-expanded="false">☰</button>
+      <div class="titles">
+        <label><span class="sr">İş akışı adı</span><input id="wf-ad" class="wf-ad" value="Yeni iş akışı" autocomplete="off"></label>
+        <label><span class="sr">Hedef</span><input id="wf-hedef" class="wf-hedef" placeholder="Hedef: bu iş akışı ne bulmalı?" autocomplete="off"></label>
+      </div>
+      <div class="actions">
+        <button id="calistir" class="primary"><span aria-hidden="true">▶</span> Tarayıcıda çalıştır</button>
+        <span id="durum" class="badge" data-state="idle" role="status" aria-live="polite">çalışmadı</span>
+        <button id="acikla" class="sec">Açıkla</button>
+        <button id="disa" class="sec" title="İş akışını JSON olarak indir">Dışa aktar</button>
+        <button id="ice" class="sec" title="JSON iş akışı yükle">İçe aktar</button>
+        <input id="ice-dosya" type="file" accept=".json,application/json" hidden>
+        <button id="paylas" class="sec" title="Paylaşılabilir bağlantıyı kopyala">Bağlantı</button>
+      </div>
+    </header>
+
+    <div class="work">
+      <section class="canvas-wrap" aria-label="Tuval">
+        <div class="canvas-tools" role="toolbar" aria-label="Tuval araçları">
+          <button class="icon-btn" id="uzaklas" aria-label="Uzaklaştır">−</button>
+          <span id="olcek" class="zoom">100%</span>
+          <button class="icon-btn" id="yaklas" aria-label="Yakınlaştır">+</button>
+          <button id="sigdir">Sığdır</button>
+          <button id="temizle">Temizle</button>
+        </div>
+        <div class="scroller" id="tuval" tabindex="-1">
+          <div class="sizer">
+            <div class="board" id="board">
+              <svg class="wires" id="kablolar" aria-hidden="true"></svg>
+              <div id="dugumler"></div>
+            </div>
+          </div>
+        </div>
+        <p class="hint" id="baglanti-ipucu" hidden></p>
+      </section>
+      <aside class="props" id="props" aria-label="Özellikler paneli" tabindex="-1"></aside>
+    </div>
+
+    <section class="results" id="sonuclar" aria-label="Sonuçlar">
+      <div class="tabs" role="tablist" aria-label="Sonuç sekmeleri">
+        <button role="tab" id="sekme-bulgular" aria-controls="panel-bulgular" aria-selected="true">Bulgular</button>
+        <button role="tab" id="sekme-ozet" aria-controls="panel-ozet" aria-selected="false">Özet</button>
+        <button role="tab" id="sekme-aciklama" aria-controls="panel-aciklama" aria-selected="false">Açıklama</button>
+        <button role="tab" id="sekme-yaris" aria-controls="panel-yaris" aria-selected="false">Atom yarışı</button>
+        <button class="icon-btn collapse" id="sonuc-katla" aria-label="Sonuç panelini daralt" aria-expanded="true">▾</button>
+      </div>
+      <div class="tabpanel" role="tabpanel" id="panel-bulgular" aria-labelledby="sekme-bulgular"><p class="empty">Henüz çalıştırılmadı. Soldan bir hazır paket seçin ya da kutuları bağlayıp "Tarayıcıda çalıştır"a basın.</p></div>
+      <div class="tabpanel" role="tabpanel" id="panel-ozet" aria-labelledby="sekme-ozet" hidden><p class="empty">Özet, çalıştırmadan sonra burada görünür.</p></div>
+      <div class="tabpanel" role="tabpanel" id="panel-aciklama" aria-labelledby="sekme-aciklama" hidden><p class="empty">"Açıkla" düğmesi iş akışını düz Türkçe cümlelerle anlatır.</p></div>
+      <div class="tabpanel" role="tabpanel" id="panel-yaris" aria-labelledby="sekme-yaris" hidden><p class="empty">Bir ExactMatch kutusunu seçip özellikler panelindeki "Atomları yarıştır" düğmesine basın (önce iş akışını çalıştırın).</p></div>
+    </section>
+
+    <footer class="foot">
+      <span>IoS atom/molekül sözleşmesine uygun bileşenler</span>
+      <span class="dot">·</span>
+      <span>Algoritmalar tarayıcıda, <code>src/</code> modüllerinin kendisiyle çalışır; veriniz bilgisayarınızdan çıkmaz.</span>
+    </footer>
+  </div>
+</div>
+<div id="toast" class="toast" role="alert" hidden></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
