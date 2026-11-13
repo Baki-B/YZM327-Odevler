@@ -1,5 +1,7 @@
 # Akıllı Tam Desen Eşleştirme ve Kod Bilimi Atölyesi (IoS: `sequence.pattern-match.exact`)
 
+> **Taşındı:** Bu proje <https://github.com/Baki-B/YZM327-Odev-3> deposuna (kök düzeniyle, bu klasörün geçmişiyle) taşındı ve orada sürdürülüyor; site: <https://baki-b.github.io/YZM327-Odev-3/>. Bu klasör arşivdir.
+
 Vize projesi (grup çalışması). Bir metinde (genom, protein, kaynak kod, log) bir ya da daha çok desenin geçtiği bütün yerleri bulan **yedi yeni atom** (+ Boyer-Moore), girdinin şekline bakıp en hızlısını seçen **ExactMatch molekülü** ve bunları yazılım mühendisliğinde kullanan tarayıcı tabanlı bir iş akışı düzenleyicisi: **Kod Bilimi Atölyesi**. Seçim, ölçümle kalibre edilmiş bir maliyet modeliyle yapılır.
 
 **Sonuç (model v4, kalibrasyonda ve hiçbir kararda kullanılmamış taze kümeler, birer kez ölçüldü):**
