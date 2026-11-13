@@ -27,7 +27,7 @@ export const TYPES = {
 /** Örnek veriler. url'ler vize/ klasörüne göre göreli; "bundle" bir dosya listesi (JSON) demektir. */
 export const SAMPLES = {
   agora: { title: 'Agora kodu (forum/)', kind: 'bundle', url: 'web/data/agora.json', note: 'Bu deponun Agora projesindeki forum/ klasörü (Python, JS, HTML)' },
-  log: { title: 'Örnek uygulama logu', kind: 'file', url: 'web/data/ornek.log', path: 'ornek.log', note: 'bench/data.js log üreticisi (doğrulamadaki "log" alfabesi) + 3 örnek Traceback bloğu' },
+  log: { title: 'Örnek uygulama logu', kind: 'file', url: 'web/data/ornek-log.txt', path: 'ornek-log.txt', note: 'bench/data.js log üreticisi (doğrulamadaki "log" alfabesi) + 3 örnek Traceback bloğu' },
   gizli: { title: 'Sahte gizli bilgi örneği', kind: 'bundle', url: 'web/data/gizli.json', note: 'Açıkça SAHTE değerler; gerçek anahtar içermez' },
   lambda: { title: 'Lambda faj genomu', kind: 'file', url: 'tests/data/lambda_NC_001416.fa', path: 'lambda_NC_001416.fa', note: 'NC_001416.1, 48 502 baz' },
   ecoli: { title: 'E. coli K-12 proteinleri', kind: 'file', url: 'tests/data/ecoli_k12_126_proteins.fasta', path: 'ecoli_k12_126_proteins.fasta', note: '126 UniProt kaydı' },

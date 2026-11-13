@@ -132,7 +132,7 @@ export const PACKAGES = [
   {
     id: 'log', channel: 'log-incelemesi', build: logIncelemesi,
     summary: 'Örnek uygulama logunda ERROR, Exception, Traceback ve timeout geçen yerleri toplar; iki desen kümesi tek moleküle bağlanır.',
-    cli: ['node bin/ios.js scan --preset errors --patterns timeout web/data/ornek.log'],
+    cli: ['node bin/ios.js scan --preset errors --patterns timeout web/data/ornek-log.txt'],
     expected: { bulgu: 117 },
   },
   {

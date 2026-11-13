@@ -1,9 +1,10 @@
 // Atölyenin örnek verilerini depodaki gerçek dosyalardan üretir (web/data/).
+// (Log örneği .txt uzantılıdır: depo kökündeki .gitignore *.log dosyalarını dışarıda bırakır.)
 //   web/data/agora.json   ../forum klasöründeki metin dosyaları [{ path, text }]
 //                         (ios scan'in dosya gezme kurallarıyla: gizli/derleme klasörleri,
 //                         ikili dosyalar ve 5 MB'tan büyükler atlanır)
 //   web/data/gizli.json   web/data/gizli/ içindeki SAHTE örnek dosyalar
-//   web/data/ornek.log    bench/data.js log üreticisi (doğrulamadaki "log" alfabesi, tohum 20261113)
+//   web/data/ornek-log.txt bench/data.js log üreticisi (doğrulamadaki "log" alfabesi, tohum 20261113)
 //                         + 3 örnek Traceback / Exception bloğu (elle yazıldı, açıkça örnek)
 // Kullanım (vize/ klasöründen): node scripts/ornekler.js
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
@@ -49,7 +50,7 @@ lines.forEach((l, i) => {
   const j = at.indexOf(i);
   if (j >= 0) out += TRACES[j];
 });
-writeFileSync(join(VIZE, 'web/data/ornek.log'), out);
+writeFileSync(join(VIZE, 'web/data/ornek-log.txt'), out);
 
 console.log(`agora.json: ${agora.length} dosya, ${agora.reduce((s, f) => s + f.text.length, 0)} karakter`);
-console.log(`gizli.json: ${gizli.length} dosya; ornek.log: ${out.length} karakter, ${out.split('\n').length - 1} satır`);
+console.log(`gizli.json: ${gizli.length} dosya; ornek-log.txt: ${out.length} karakter, ${out.split('\n').length - 1} satır`);
