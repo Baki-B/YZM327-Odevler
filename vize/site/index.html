@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kod Bilimi Atölyesi · Akıllı tam desen eşleştirme</title>
+<meta name="description" content="Akıllı tam desen eşleştirme: IoS atomları, seçici molekül ve yazılım mühendisliği için Kod Bilimi Atölyesi.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header class="top"><div class="in"><a class="brand" href="index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#fff" opacity=".16"/><path d="M9 11h6M9 16h10M9 21h6" stroke="#f2c14e" stroke-width="3" stroke-linecap="round"/><circle cx="23" cy="21" r="3" fill="#36c2b4"/></svg><span>Kod Bilimi Atölyesi</span></a><nav aria-label="Site"><a href="index.html" aria-current="page">Ana sayfa</a><a href="../web/index.html">Atölye</a><a href="bilesenler.html">Bileşenler</a><a href="sonuclar.html">Sonuçlar</a><a href="rapor.html">Rapor</a><a href="ekip.html">Ekip</a></nav></div></header>
+<main>
+
+<h1>Kaynak kodda, logda ve genomda: doğru aramayı kendisi seçen bir molekül</h1>
+<p class="lead">Bir metinde bir ya da çok desenin geçtiği bütün yerleri bulan sekiz atom ve girdinin şekline bakıp aralarından en hızlısını seçen bir molekül. Internet of Science (IoS) fikrini biyolojiden yazılım mühendisliğine taşıdık: aynı bileşenler kaynak kodda teknik borç, gizli bilgi ve riskli API arar, logda hata satırlarını toplar.</p>
+<div class="cta"><a class="btn primary" href="../web/index.html">Atölyeyi aç</a><a class="btn" href="../docs/rapor/Rapor.pdf">Rapor (PDF)</a><a class="btn" href="../docs/sunum/index.html">Sunum</a><a class="btn" href="sonuclar.html">Sonuçlar</a></div>
+<figure><img src="../docs/ekran/atolye-masaustu.png" alt="Kod Bilimi Atölyesi: solda bileşenler ve hazır paketler, ortada bağlanmış kutular, sağda molekülün karar kaydı" width="2560" height="1600"><figcaption>Kod Bilimi Atölyesi: aynı 880 KB dosyada tek desen ve 16 desen. Sağda molekülün karar kaydı: veri şekli, her atomun tahmini süresi, seçilen atom.</figcaption></figure>
+<h2>Problem</h2>
+<p>Desen aramanın onlarca algoritması var ve hiçbiri her durumda en hızlı değil: kısa desende iyi olan uzun desende, tek desende iyi olan çok desende geri kalır. Kaynak kodda doğru seçim DNA'dakinden farklıdır, çünkü kodda 100'den fazla farklı karakter olsa da boşluk ve sık harfler yüzünden "etkin" alfabe küçüktür.</p>
+<h2>Ne yaptık</h2>
+<div class="grid">
+<a class="card" href="bilesenler.html"><h3>8 atom + 1 molekül</h3><p>Horspool, Shift-Or, bm4DNADS, bm4DNAHMbs, KMP, Aho-Corasick, Wu-Manber ve Boyer-Moore; ExactMatch molekülü kalibre edilmiş maliyet modeliyle seçer.</p></a>
+<a class="card" href="../web/index.html"><h3>Kod Bilimi Atölyesi</h3><p>Tarayıcıda çalışan iş akışı düzenleyicisi: kutuları sürükle, türlü uçları bağla, çalıştır. 6 hazır paket: teknik borç, gizli bilgi, riskli API, log, büyük dosya, biyoloji köprüsü.</p></a>
+<a class="card" href="sonuclar.html"><h3>Ölçülmüş kanıt</h3><p>180 vakalık kalibrasyon; hiçbir karar için kullanılmamış taze kümelerde doğrulama; atölye ile komut satırı aynı sonucu verir.</p></a>
+</div>
+<h2>Ana sonuç (model v4, taze kümeler)</h2>
+<div class="result">
+<p><b>Çok desen (D, 120 vaka).</b> En hızlı atomu seçme oranı %76,7; seçilen atomla yavaşlamanın geometrik ortalaması 1,051, en kötü 2,00×. Karar süresi dahil uçtan uca: 0,990, en kötü 3,26×. En iyi tek atom (hep WuManber) 1,131 ve 2,78×; Allmer 2016 kuralı 2,543 ve 18,71×.</p>
+<p><b>Tek desen (E, 120 vaka).</b> Seçilen atomla geo. ort. 1,081, en kötü 2,06×; Allmer kuralı 1,192, en iyi tek atom (hep Horspool) 1,198. Uçtan uca 1,300: tek desende karar yükü hâlâ görünür ve molekül uçtan uca bu iki politikanın gerisinde kalıyor.</p>
+</div>
+<div class="kpis"><div class="kpi"><b>%76,7</b><span>D: en hızlıyı seçme</span></div><div class="kpi"><b>1,051</b><span>D: yavaşlama (seçilen atom)</span></div><div class="kpi"><b>0,990</b><span>D: yavaşlama (uçtan uca)</span></div><div class="kpi"><b>0,648 → 0,063 ms</b><span>şekil hesabı, medyan (v3 → v4)</span></div></div>
+<p class="small">Uçtan uca oran D'de 1'in altına düştü: molekül, seçtiği atomun tek başına süresinden medyanda kısa ölçüldü (oran 0,951). Bu fiziksel olarak mümkün değil; ölçüm düzeneğinin sapmasıdır. Karar süresi ayrıca doğrudan ölçüldü: karar süresi / seçilen atomun süresi medyanda %4,1 (D) ve %11,4 (E). Ayrıntı: <a href="sonuclar.html">Sonuçlar</a>.</p>
+</main>
+<footer class="foot"><div class="in"><span>IoS atom/molekül sözleşmesine uygun bileşenler · <code>sequence.pattern-match.exact</code></span><span>Sayılar <code>bench/results/</code> dosyalarından üretildi (<code>node scripts/site-uret.js</code>).</span></div></footer>
+</body>
+</html>

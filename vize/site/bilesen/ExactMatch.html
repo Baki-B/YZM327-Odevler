@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ExactMatch · Kod Bilimi Atölyesi</title>
+<meta name="description" content="Exact match (auto-selecting molecule)">
+<link rel="stylesheet" href="../site.css">
+</head>
+<body>
+<header class="top"><div class="in"><a class="brand" href="../index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#fff" opacity=".16"/><path d="M9 11h6M9 16h10M9 21h6" stroke="#f2c14e" stroke-width="3" stroke-linecap="round"/><circle cx="23" cy="21" r="3" fill="#36c2b4"/></svg><span>Kod Bilimi Atölyesi</span></a><nav aria-label="Site"><a href="../index.html">Ana sayfa</a><a href="../../web/index.html">Atölye</a><a href="../bilesenler.html">Bileşenler</a><a href="../sonuclar.html">Sonuçlar</a><a href="../rapor.html">Rapor</a><a href="../ekip.html">Ekip</a></nav></div></header>
+<main>
+
+<p class="small"><a href="../bilesenler.html">← Bileşenler</a></p>
+<h1>Exact match (auto-selecting molecule)</h1>
+<p><span class="badge">ExactMatch</span><span class="badge">kind: molecule</span><span class="badge">task: sequence.pattern-match.exact</span><span class="badge">model v4</span></p>
+<h2>1. Ne yapar ve neden</h2>
+<p>Hiçbir arama algoritması her durumda en hızlı değil. Molekül ilk kaydın şekline (n, σ, σe, k, mMin, mMax, mMean) bakar, kayıt defterindeki her atomun süresini kalibre edilmiş bir maliyet modeliyle tahmin eder ve en ucuzunu seçer. Bütün akış aynı atomla işlenir.</p>
+<h2>2. Yöntem</h2>
+<p>Tahmini süre = Σ katsayı × özellik. Özellikleri her atom kendisi verir (<code>selection.features</code>); katsayılar 180 vakalık kalibrasyon ızgarasında negatif olmayan en küçük kareler (göreli hata) ile bulunur. Yeni atom eklemek molekülü değiştirmez (<code>src/registry.js</code>).</p>
+<p>v4 değişikliği: 16 384 karakterden uzun metinde σ ve σe, eşit aralıklı 64 parça × 256 karakterden sayılır (v3'te 64 × 4096, 262 144 karaktere kadar tam sayım). Şekil hesabı D kümesinde medyanda 0,648 ms'den 0,063 ms'ye indi.</p>
+<h2>3. Girdi, çıktı, parametreler</h2>
+<p>Atomlarla aynı; ek olarak <code>strategy</code>: <code>"auto"</code> ya da bir atomun adı (bilinmeyen ad geçerli seçenekleri listeleyen bir hata verir). <code>record = { requested, selected, shape, estimates, why }</code>.</p>
+<h2>4–6. Doğrulama (v4)</h2>
+<div class="table-wrap"><table><thead><tr><th>Politika</th><th class="n">En hızlıyı seçme</th><th class="n">%10 içinde</th><th class="n">Yavaşlama (geo. ort.)</th><th class="n">En kötü</th><th class="n">Toplam / en iyi</th></tr></thead><tbody>
+<tr class="e2e"><td>ExactMatch (uçtan uca, karar dahil)</td><td class="n">%58,3</td><td class="n">%70,0</td><td class="n">0,990</td><td class="n">3,26×</td><td class="n">1,064</td></tr>
+<tr class="hl"><td>ExactMatch (auto)</td><td class="n">%76,7</td><td class="n">%84,2</td><td class="n">1,051</td><td class="n">2,00×</td><td class="n">1,033</td></tr>
+<tr><td>her zaman WuManber</td><td class="n">%58,3</td><td class="n">%67,5</td><td class="n">1,131</td><td class="n">2,78×</td><td class="n">1,198</td></tr>
+<tr><td>her zaman AhoCorasick</td><td class="n">%33,3</td><td class="n">%36,7</td><td class="n">1,632</td><td class="n">5,02×</td><td class="n">1,291</td></tr>
+<tr><td>Allmer 2016 kuralı</td><td class="n">%2,5</td><td class="n">%5,8</td><td class="n">2,543</td><td class="n">18,71×</td><td class="n">2,658</td></tr>
+<tr><td>her zaman Horspool</td><td class="n">%4,2</td><td class="n">%9,2</td><td class="n">2,793</td><td class="n">33,44×</td><td class="n">3,086</td></tr>
+<tr><td>her zaman Bm4DnaDs</td><td class="n">%4,2</td><td class="n">%7,5</td><td class="n">2,820</td><td class="n">30,80×</td><td class="n">2,931</td></tr>
+<tr><td>her zaman Bm4DnaHmbs</td><td class="n">%0,0</td><td class="n">%0,8</td><td class="n">3,227</td><td class="n">23,14×</td><td class="n">3,255</td></tr>
+<tr><td>her zaman BoyerMoore</td><td class="n">%0,0</td><td class="n">%0,8</td><td class="n">3,255</td><td class="n">17,52×</td><td class="n">3,081</td></tr>
+<tr><td>her zaman ShiftOr</td><td class="n">%0,0</td><td class="n">%1,7</td><td class="n">6,196</td><td class="n">24,44×</td><td class="n">5,640</td></tr>
+<tr><td>her zaman Kmp</td><td class="n">%0,0</td><td class="n">%0,0</td><td class="n">9,196</td><td class="n">58,30×</td><td class="n">9,062</td></tr>
+</tbody></table></div>
+<p class="small">D: 120 vaka, tohum 16180339. Tam tablolar <a href="../sonuclar.html">Sonuçlar</a> sayfasında.</p>
+<h2>7. Sınırlar</h2>
+<p>Karar ilk kayda göre verilir; özellikler tekdüze rastgele metin varsayar; tek desende ve ikili alfabede seçim zayıf (E: geo. ort. 1,081, en kötü 2,06×).</p>
+<h2>8. Nasıl kullanılır</h2>
+<pre>node bin/ios.js explain --patterns GATC,GGATCC &lt; tests/data/lambda_NC_001416.fa</pre>
+</main>
+<footer class="foot"><div class="in"><span>IoS atom/molekül sözleşmesine uygun bileşenler · <code>sequence.pattern-match.exact</code></span><span>Sayılar <code>bench/results/</code> dosyalarından üretildi (<code>node scripts/site-uret.js</code>).</span></div></footer>
+</body>
+</html>

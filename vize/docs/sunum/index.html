@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kod Bilimi Atölyesi · Sunum</title>
+<style>
+  :root { --ink: #1d1c1f; --ink2: #55535a; --line: #e4e1e6; --soft: #f6f5f8; --accent: #127c86; --accent-soft: #e2f3f4; --head: #3b1239; --warn-soft: #fff5dd; --warn: #8a5a00; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #26092a; font-family: "Inter", "Segoe UI", system-ui, Arial, sans-serif; color: var(--ink); }
+  .deck { height: 100%; display: grid; place-items: center; }
+  section { display: none; width: min(100vw, calc(100vh * 16 / 9)); aspect-ratio: 16 / 9; background: #fff; padding: 3.6% 5.5%; position: relative; overflow: hidden; font-size: min(2.2vw, 3.9vh); line-height: 1.4; }
+  section.on { display: block; }
+  section::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 1.1%; background: var(--head); }
+  h1 { font-size: 2.5em; margin: 18% 0 .3em; letter-spacing: -.02em; color: var(--head); }
+  h2 { font-size: 1.55em; margin: 0 0 .6em; color: var(--head); letter-spacing: -.01em; }
+  h3 { font-size: 1em; margin: .2em 0; color: var(--accent); }
+  .big { font-size: 1.15em; max-width: 85%; }
+  .muted { color: var(--ink2); font-size: .8em; }
+  ul, ol { margin: .2em 0; padding-left: 1.2em; } li { margin: .25em 0; }
+  code { font-family: "JetBrains Mono", Consolas, monospace; font-size: .85em; background: var(--soft); padding: 0 .2em; border-radius: 3px; }
+  .two { display: grid; grid-template-columns: 1.25fr 1fr; gap: 4%; align-items: start; }
+  .two ol, .two ul { font-size: .9em; }
+  .two img { width: 100%; border: 1px solid var(--line); border-radius: 8px; }
+  .table-wrap { margin: .3em 0 .5em; }
+  table { border-collapse: collapse; width: 100%; font-size: .78em; }
+  th, td { text-align: left; padding: .28em .5em; border-bottom: 1px solid var(--line); }
+  th { color: var(--ink2); font-weight: 600; } td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.hl td { background: var(--accent-soft); font-weight: 700; } tr.e2e td { background: var(--soft); }
+  .ph { background: var(--warn-soft); color: var(--warn); padding: 0 .2em; border-radius: 3px; }
+  .num { position: absolute; right: 2.5%; bottom: 3%; font-size: .6em; color: var(--ink2); }
+  .help { position: fixed; left: 10px; bottom: 8px; color: #d9c6d8; font-size: 12px; }
+  @media print {
+    @page { size: 297mm 167mm; margin: 0; }
+    html, body { background: #fff; height: auto; } .deck { display: block; } .help { display: none; }
+    section { display: block !important; width: 297mm; height: 167mm; aspect-ratio: auto; font-size: 15pt; page-break-after: always; break-after: page; }
+  }
+</style>
+</head>
+<body>
+<div class="deck">
+<section aria-label="Slayt 1" class="on"><h1>Kod Bilimi Atölyesi</h1><p class="big">Akıllı tam desen eşleştirme: IoS atomları, seçici bir molekül ve yazılım mühendisliği için tarayıcıda bir iş akışı düzenleyicisi</p><p class="muted"><span class="ph">[ders kodu ve adı]</span> · <span class="ph">[öğretim elemanı]</span><br>Baki <span class="ph">[soyad]</span> · <span class="ph">[Üye 2 ad soyad]</span></p><span class="num">1 / 10</span></section>
+<section aria-label="Slayt 2"><h2>Problem</h2><ul><li>Bir metinde bir ya da çok desenin geçtiği <b>bütün</b> yerleri bulmak: genomda kesim bölgesi, kodda <code>TODO</code>, logda <code>ERROR</code>.</li><li>Onlarca algoritma var, <b>hiçbiri her durumda en hızlı değil</b>: kısa desende iyi olan uzun desende, tek desende iyi olan çok desende geri kalır.</li><li>Soru: girdiye bakıp doğru algoritmayı <b>kendisi</b> seçen bir bileşen yazılabilir mi, ve seçimi doğru mu?</li></ul><span class="num">2 / 10</span></section>
+<section aria-label="Slayt 3"><h2>IoS fikri → yazılım mühendisliği</h2><div class="two"><div><h3>IoS (biyoloji)</h3><ul><li><b>Atom</b>: tek dönüşüm, sözleşmesi sabit</li><li><b>Molekül</b>: aynı görevi yapan atomlardan seçer</li><li><b>İş akışı</b>: bileşenleri bağlar</li></ul></div><div><h3>Bizim aktarımımız</h3><ul><li>Kaynak dosya → <code>FASTA.Entry</code> uyarlayıcısı: atomlara dokunmadan kod ve log</li><li>Hazır desen kümeleri: todo, secrets, banned-api, errors</li><li><b>Atölye</b>: türlü uçlarla iş akışı, CI kapısı ("bulgu varsa başarısız")</li></ul></div></div><p class="muted">Kodda 100'den fazla farklı karakter var ama etkin alfabe küçük (σe = 1/Σp²): kazanan atom DNA'dakinden farklı.</p><span class="num">3 / 10</span></section>
+<section aria-label="Slayt 4"><h2>Atomlar</h2><div class="table-wrap"><table><thead><tr><th>Atom</th><th>Fikir</th><th>Grup</th></tr></thead><tbody>
+<tr><td>BoyerMoore</td><td>Kötü karakter ve iyi sonek kurallarından büyük olanı kadar kayar.</td><td>hazır örnek</td></tr>
+<tr><td>Horspool</td><td>Pencerenin son karakterine bakar</td><td>A</td></tr>
+<tr><td>ShiftOr</td><td>Bit paralel</td><td>A</td></tr>
+<tr><td>Kmp</td><td>Başarısızlık işleviyle metinde hiç geri dönmeden ilerler.</td><td>B</td></tr>
+<tr><td>AhoCorasick</td><td>Bütün desenlerden tam bir otomat kurar</td><td>C</td></tr>
+<tr><td>WuManber</td><td>Çok desenli Horspool</td><td>C</td></tr>
+<tr><td>Bm4DnaDs</td><td>Horspool + metnin sonuna desen kopyası (sentinel) + üç kez açılmış atlama döngüsü</td><td>A</td></tr>
+<tr><td>Bm4DnaHmbs</td><td>Son q karakterin bit kaydırmalı özetiyle (q-gram) kayar</td><td>A</td></tr>
+</tbody></table></div><p class="muted">Hepsi aynı girdi/çıktı; NaiveSearch ile eleman eleman aynı sonuç (360 rastgele vaka, gerçek veri).</p><span class="num">4 / 10</span></section>
+<section aria-label="Slayt 5"><h2>Molekül ve maliyet modeli</h2><ul><li>İlk kaydın şekli: n, σ, σe, k, mMin, mMax, mMean</li><li>Her atom kendi özelliklerini verir (ör. Horspool: <i>pencere sayısı</i> = Σ n / E[kayma])</li><li>Tahmin = Σ katsayı × özellik; katsayılar 180 vakalık ızgarada <b>negatif olmayan en küçük kareler</b> ile</li><li>En ucuz atom seçilir; <code>record</code> = şekil, tahminler, seçim, neden</li><li><b>v4:</b> şekil 64 × 256 karakterlik örneklemden → şekil hesabı medyanda 0,648 ms'den 0,063 ms'ye (D)</li></ul><span class="num">5 / 10</span></section>
+<section aria-label="Slayt 6"><h2>CANLI: atölye</h2><div class="two"><img src="../ekran/atolye-masaustu.png" alt="Atölye ekran görüntüsü"><ol><li><code>npm run web</code> → <code>/web/</code></li><li>Sol panel: <b># tek-desen-büyük-dosya</b></li><li><b>Tarayıcıda çalıştır</b> → rozet: bulgu sayısı ve süre</li><li>ExactMatch kutusu → karar kaydı: tek desende Horspool ailesi (bm4DNADS), 16 desende Aho-Corasick</li><li><b>Açıkla</b> → iş akışı düz Türkçe</li><li>Yedek: <b># gizli-bilgi-sızıntısı</b> (kapı kaldı)</li></ol></div><span class="num">6 / 10</span></section>
+<section aria-label="Slayt 7"><h2>Doğrulama (taze D, v4, 120 vaka)</h2><div class="table-wrap"><table><thead><tr><th>Politika</th><th class="n">En hızlı</th><th class="n">%10 içinde</th><th class="n">Geo. ort.</th><th class="n">En kötü</th><th class="n">Toplam / en iyi</th></tr></thead><tbody>
+<tr class="hl"><td>ExactMatch (auto)</td><td class="n">%76,7</td><td class="n">%84,2</td><td class="n">1,051</td><td class="n">2,00×</td><td class="n">1,033</td></tr>
+<tr class="e2e"><td>ExactMatch (uçtan uca, karar dahil)</td><td class="n">%58,3</td><td class="n">%70,0</td><td class="n">0,990</td><td class="n">3,26×</td><td class="n">1,064</td></tr>
+<tr><td>hep WuManber</td><td class="n">%58,3</td><td class="n">%67,5</td><td class="n">1,131</td><td class="n">2,78×</td><td class="n">1,198</td></tr>
+<tr><td>hep AhoCorasick</td><td class="n">%33,3</td><td class="n">%36,7</td><td class="n">1,632</td><td class="n">5,02×</td><td class="n">1,291</td></tr>
+<tr><td>Allmer 2016 kuralı</td><td class="n">%2,5</td><td class="n">%5,8</td><td class="n">2,543</td><td class="n">18,71×</td><td class="n">2,658</td></tr>
+</tbody></table></div><p class="muted">Tek desen (E): seçilen 1,081, uçtan uca 1,300; Allmer 1,192, hep Horspool 1,198.</p><span class="num">7 / 10</span></section>
+<section aria-label="Slayt 8"><h2>Bir yanlış seçim: D, vaka 119</h2><p>İngilizce benzeri metin (kalibrasyonda yok), n = 531 186, k = 24, m = 92/37/150</p><div class="table-wrap"><table><thead><tr><th>Atom</th><th class="n">Tahmin (ms)</th><th class="n">Ölçülen (ms)</th></tr></thead><tbody>
+<tr><td>Bm4DnaHmbs (seçilen)</td><td class="n">7,23</td><td class="n">12,57</td></tr>
+<tr><td>WuManber (en hızlı)</td><td class="n">11,17</td><td class="n">6,28</td></tr>
+</tbody></table></div><ul><li>Yavaşlama 2,00×: iki tahmin <b>ters yönde</b> yanıldı (1,74× az, 1,78× fazla).</li><li>Model metni tekdüze rastgele sayar. Olası neden: kelimelerden oluşan metinde sık q-gramlar desende de geçer, q-gram kayması öngörülenden kısa kalır; Wu-Manber'in blok tablosu ise bu metinde öngörülenden seyrek doğrulama yapar. (Doğrulamadan sonra model değiştirilmedi.)</li></ul><span class="num">8 / 10</span></section>
+<section aria-label="Slayt 9"><h2>Sınırlar</h2><ul><li><b>Tek desen</b>: seçim zayıf; uçtan uca molekül hep Horspool / Allmer kuralının gerisinde (E)</li><li><b>İkili alfabe</b>: E'nin en kötü 5 vakasının 5'i</li><li><b>Karar ilk kayda göre</b> (sözleşme): ilk dosya küçükse seçim kötü olabilir</li><li><b>Ölçüm</b>: D'de uçtan uca oran 1'in altına düştü (medyan 0,951) → düzenek küçük farkı ayıramıyor; karar süresi ayrıca ölçüldü (medyan %4,1)</li><li>v3 ve v4 farklı makinelerde ölçüldü; fark ayrıştırılamaz</li></ul><span class="num">9 / 10</span></section>
+<section aria-label="Slayt 10"><h2>Ekip ve katkılar</h2><div class="table-wrap"><table><thead><tr><th>Üye</th><th>Katkı</th></tr></thead><tbody>
+<tr><td>Baki <span class="ph">[soyad, numara]</span></td><td><span class="ph">[...]</span></td></tr>
+<tr><td><span class="ph">[Üye 2 ad soyad, numara]</span></td><td><span class="ph">[...]</span></td></tr>
+</tbody></table></div><p class="muted">Yapay zekâ kullanımı ders politikasında serbest; kod, testler, atölye, site, rapor ve bu slaytlar Claude Code ile üretildi, sayılar çalıştırılan komutlardan. Sorular: <code>docs/sunum.md</code>.</p><span class="num">10 / 10</span></section>
+</div>
+<p class="help">← → ya da boşluk: ilerle · Home/End · P: yazdır (PDF)</p>
+<script>
+  // Ok tuşları, boşluk, Page Up/Down, Home/End; slayt numarası adres çubuğunda (#3).
+  const s = [...document.querySelectorAll('section')];
+  let i = Math.min(s.length - 1, Math.max(0, (parseInt(location.hash.slice(1), 10) || 1) - 1));
+  const show = (j) => { i = Math.min(s.length - 1, Math.max(0, j)); s.forEach((x, k) => x.classList.toggle('on', k === i)); history.replaceState(null, '', '#' + (i + 1)); };
+  show(i);
+  addEventListener('keydown', (e) => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(i - 1); }
+    else if (e.key === 'Home') show(0); else if (e.key === 'End') show(s.length - 1);
+    else if (e.key === 'p' || e.key === 'P') print();
+  });
+  addEventListener('click', (e) => { if (!e.target.closest('a')) show(e.clientX > innerWidth / 3 ? i + 1 : i - 1); });
+</script>
+</body>
+</html>

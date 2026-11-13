@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sonuçlar · Kod Bilimi Atölyesi</title>
+<meta name="description" content="Akıllı tam desen eşleştirme: IoS atomları, seçici molekül ve yazılım mühendisliği için Kod Bilimi Atölyesi.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header class="top"><div class="in"><a class="brand" href="index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#fff" opacity=".16"/><path d="M9 11h6M9 16h10M9 21h6" stroke="#f2c14e" stroke-width="3" stroke-linecap="round"/><circle cx="23" cy="21" r="3" fill="#36c2b4"/></svg><span>Kod Bilimi Atölyesi</span></a><nav aria-label="Site"><a href="index.html">Ana sayfa</a><a href="../web/index.html">Atölye</a><a href="bilesenler.html">Bileşenler</a><a href="sonuclar.html" aria-current="page">Sonuçlar</a><a href="rapor.html">Rapor</a><a href="ekip.html">Ekip</a></nav></div></header>
+<main>
+
+<h1>Sonuçlar</h1>
+<p class="lead">Bütün sayılar <code>bench/results/</code> altındaki ham ölçümlerden bu sayfa üretilirken hesaplandı. "Yavaşlama" = politikanın harcadığı süre / o vakadaki en hızlı atomun süresi. Satır "ExactMatch (uçtan uca, karar dahil)" molekülün kendi uçtan uca süresidir (kurulum + şekil + tahmin + arama); diğer satırlar ödevin tanımıyla yalnızca seçilen atomun süresidir.</p>
+<h2>D: çok desenli taze küme (model v4)</h2>
+<p class="small">120 vaka, tohum 16180339, k 2–120, n 12 000–900 000, m 3–100 (ızgara değerleri hariç), log / ikili / metin alfabeleri kalibrasyonda yok. Bir kez ölçüldü; sonuca bakılarak model değiştirilmedi. Ham: <a href="../bench/results/validation-d.json">validation-d.json</a>, tablo: <a href="../bench/results/validation-d.md">validation-d.md</a>.</p>
+<div class="table-wrap"><table><thead><tr><th>Politika</th><th class="n">En hızlıyı seçme</th><th class="n">%10 içinde</th><th class="n">Yavaşlama (geo. ort.)</th><th class="n">En kötü</th><th class="n">Toplam / en iyi</th></tr></thead><tbody>
+<tr class="e2e"><td>ExactMatch (uçtan uca, karar dahil)</td><td class="n">%58,3</td><td class="n">%70,0</td><td class="n">0,990</td><td class="n">3,26×</td><td class="n">1,064</td></tr>
+<tr class="hl"><td>ExactMatch (auto)</td><td class="n">%76,7</td><td class="n">%84,2</td><td class="n">1,051</td><td class="n">2,00×</td><td class="n">1,033</td></tr>
+<tr><td>her zaman WuManber</td><td class="n">%58,3</td><td class="n">%67,5</td><td class="n">1,131</td><td class="n">2,78×</td><td class="n">1,198</td></tr>
+<tr><td>her zaman AhoCorasick</td><td class="n">%33,3</td><td class="n">%36,7</td><td class="n">1,632</td><td class="n">5,02×</td><td class="n">1,291</td></tr>
+<tr><td>Allmer 2016 kuralı</td><td class="n">%2,5</td><td class="n">%5,8</td><td class="n">2,543</td><td class="n">18,71×</td><td class="n">2,658</td></tr>
+<tr><td>her zaman Horspool</td><td class="n">%4,2</td><td class="n">%9,2</td><td class="n">2,793</td><td class="n">33,44×</td><td class="n">3,086</td></tr>
+<tr><td>her zaman Bm4DnaDs</td><td class="n">%4,2</td><td class="n">%7,5</td><td class="n">2,820</td><td class="n">30,80×</td><td class="n">2,931</td></tr>
+<tr><td>her zaman Bm4DnaHmbs</td><td class="n">%0,0</td><td class="n">%0,8</td><td class="n">3,227</td><td class="n">23,14×</td><td class="n">3,255</td></tr>
+<tr><td>her zaman BoyerMoore</td><td class="n">%0,0</td><td class="n">%0,8</td><td class="n">3,255</td><td class="n">17,52×</td><td class="n">3,081</td></tr>
+<tr><td>her zaman ShiftOr</td><td class="n">%0,0</td><td class="n">%1,7</td><td class="n">6,196</td><td class="n">24,44×</td><td class="n">5,640</td></tr>
+<tr><td>her zaman Kmp</td><td class="n">%0,0</td><td class="n">%0,0</td><td class="n">9,196</td><td class="n">58,30×</td><td class="n">9,062</td></tr>
+</tbody></table></div>
+<figure><img src="../docs/rapor/sekil2_politikalar.svg" alt="D kümesinde politikaların yavaşlama geometrik ortalaması ve en kötü vakası"><figcaption>D kümesinde politikalar (log ölçek). Açık mavi: molekül uçtan uca.</figcaption></figure>
+<h2>E: tek desenli taze küme (model v4, k = 1)</h2>
+<p class="small">120 vaka, tohum 14142135. Ham: <a href="../bench/results/validation-e.json">validation-e.json</a>.</p>
+<div class="table-wrap"><table><thead><tr><th>Politika</th><th class="n">En hızlıyı seçme</th><th class="n">%10 içinde</th><th class="n">Yavaşlama (geo. ort.)</th><th class="n">En kötü</th><th class="n">Toplam / en iyi</th></tr></thead><tbody>
+<tr class="hl"><td>ExactMatch (auto)</td><td class="n">%55,0</td><td class="n">%70,8</td><td class="n">1,081</td><td class="n">2,06×</td><td class="n">1,105</td></tr>
+<tr><td>Allmer 2016 kuralı</td><td class="n">%22,5</td><td class="n">%50,8</td><td class="n">1,192</td><td class="n">2,67×</td><td class="n">1,147</td></tr>
+<tr><td>her zaman Horspool</td><td class="n">%42,5</td><td class="n">%64,2</td><td class="n">1,198</td><td class="n">5,26×</td><td class="n">1,203</td></tr>
+<tr><td>her zaman Bm4DnaDs</td><td class="n">%22,5</td><td class="n">%53,3</td><td class="n">1,257</td><td class="n">6,55×</td><td class="n">1,216</td></tr>
+<tr class="e2e"><td>ExactMatch (uçtan uca, karar dahil)</td><td class="n">%20,0</td><td class="n">%34,2</td><td class="n">1,300</td><td class="n">3,10×</td><td class="n">1,088</td></tr>
+<tr><td>her zaman WuManber</td><td class="n">%20,8</td><td class="n">%26,7</td><td class="n">1,315</td><td class="n">3,23×</td><td class="n">1,331</td></tr>
+<tr><td>her zaman BoyerMoore</td><td class="n">%5,0</td><td class="n">%9,2</td><td class="n">1,422</td><td class="n">2,50×</td><td class="n">1,350</td></tr>
+<tr><td>her zaman Bm4DnaHmbs</td><td class="n">%1,7</td><td class="n">%9,2</td><td class="n">2,020</td><td class="n">9,35×</td><td class="n">1,846</td></tr>
+<tr><td>her zaman ShiftOr</td><td class="n">%7,5</td><td class="n">%10,0</td><td class="n">2,127</td><td class="n">5,08×</td><td class="n">1,832</td></tr>
+<tr><td>her zaman Kmp</td><td class="n">%0,0</td><td class="n">%0,0</td><td class="n">2,189</td><td class="n">3,95×</td><td class="n">2,016</td></tr>
+<tr><td>her zaman AhoCorasick</td><td class="n">%0,0</td><td class="n">%1,7</td><td class="n">3,143</td><td class="n">7,03×</td><td class="n">2,373</td></tr>
+</tbody></table></div>
+<h2>Karar süresi (doğrudan ölçüm)</h2>
+<p>Doğrulamadaki uçtan uca ölçüm iki gürültülü sürenin farkına dayanır; D'de molekül, seçtiği atomdan medyanda kısa ölçüldü (oran 0,951), yani bu düzenek küçük karar süresini ayıramıyor. Bu yüzden karar adımı ayrıca, tek başına ve çok kez tekrarlanarak ölçüldü (<a href="../bench/results/karar-yuku-v4.md">karar-yuku-v4.md</a>).</p>
+<div class="table-wrap"><table><thead><tr><th>Küme</th><th class="n">Şekil v3 (medyan, ms)</th><th class="n">Şekil v4 (medyan, ms)</th><th class="n">Karar v4 (medyan, ms)</th><th class="n">Karar / seçilen atom (medyan)</th><th class="n">(%90)</th></tr></thead><tbody>
+<tr><td>D</td><td class="n">0,648</td><td class="n">0,063</td><td class="n">0,116</td><td class="n">%4,1</td><td class="n">%22,9</td></tr>
+<tr><td>E</td><td class="n">0,515</td><td class="n">0,065</td><td class="n">0,116</td><td class="n">%11,4</td><td class="n">%60,8</td></tr>
+</tbody></table></div>
+<h2>Sürüm tablosu</h2>
+<p>Model her değiştiğinde yeni bir taze kümede ölçüldü; eski sonuç dosyaları silinmedi. A, v1 ve v2'nin hataları bulunurken görüldüğü için "görülmemiş" sayılmaz. v3 ve v4 farklı makinelerde ölçüldü (son sütun); bu yüzden v3 → v4 farkının ne kadarının modelden, ne kadarının makineden geldiği ayrılamaz.</p>
+<div class="table-wrap"><table><thead><tr><th>Model</th><th>Küme</th><th class="n">Vaka</th><th class="n">Tohum</th><th class="n">En hızlı</th><th class="n">Geo. ort.</th><th class="n">En kötü</th><th class="n">Uçtan uca geo. ort.</th><th class="n">Toplam / en iyi</th><th>Makine</th></tr></thead><tbody>
+<tr><td>v1</td><td>A</td><td class="n">120</td><td class="n">20261111</td><td class="n">%66,7</td><td class="n">1,168</td><td class="n">6,11×</td><td class="n">1,573</td><td class="n">1,446</td><td>Xeon 2.30GHz</td></tr>
+<tr><td>v2</td><td>A</td><td class="n">120</td><td class="n">20261111</td><td class="n">%75,8</td><td class="n">1,078</td><td class="n">2,27×</td><td class="n">1,268</td><td class="n">1,271</td><td>Xeon 2.30GHz</td></tr>
+<tr><td>v3</td><td>A</td><td class="n">120</td><td class="n">20261111</td><td class="n">%81,7</td><td class="n">1,038</td><td class="n">1,83×</td><td class="n">1,255</td><td class="n">1,007</td><td>Xeon 2.30GHz</td></tr>
+<tr><td>v3</td><td>B (taze)</td><td class="n">120</td><td class="n">31415926</td><td class="n">%85,8</td><td class="n">1,016</td><td class="n">1,36×</td><td class="n">1,187</td><td class="n">1,032</td><td>Xeon 2.30GHz</td></tr>
+<tr><td>v3</td><td>C (k = 1)</td><td class="n">120</td><td class="n">27182818</td><td class="n">%51,7</td><td class="n">1,073</td><td class="n">2,10×</td><td class="n">1,686</td><td class="n">1,095</td><td>Xeon 2.30GHz</td></tr>
+<tr class="hl"><td>v4</td><td>D (taze)</td><td class="n">120</td><td class="n">16180339</td><td class="n">%76,7</td><td class="n">1,051</td><td class="n">2,00×</td><td class="n">0,990</td><td class="n">1,033</td><td>Xeon 2.10GHz</td></tr>
+<tr class="hl"><td>v4</td><td>E (taze, k = 1)</td><td class="n">120</td><td class="n">14142135</td><td class="n">%55,0</td><td class="n">1,081</td><td class="n">2,06×</td><td class="n">1,300</td><td class="n">1,105</td><td>Xeon 2.10GHz</td></tr>
+</tbody></table></div>
+<h2>D'de en kötü 5 seçim</h2>
+<div class="table-wrap"><table><thead><tr><th>Vaka</th><th>Alfabe</th><th class="n">n</th><th class="n">k</th><th>m</th><th>Seçilen</th><th class="n">ms</th><th>En hızlı</th><th class="n">ms</th><th class="n">Yavaşlama</th></tr></thead><tbody>
+<tr><td>119</td><td>text</td><td class="n">531 186</td><td class="n">24</td><td>92/37/150</td><td>Bm4DnaHmbs</td><td class="n">12,57</td><td>WuManber</td><td class="n">6,28</td><td class="n">2,00×</td></tr>
+<tr><td>39</td><td>log</td><td class="n">73 759</td><td class="n">39</td><td>9</td><td>WuManber</td><td class="n">3,33</td><td>AhoCorasick</td><td class="n">2,03</td><td class="n">1,64×</td></tr>
+<tr><td>99</td><td>log</td><td class="n">16 091</td><td class="n">3</td><td>20</td><td>WuManber</td><td class="n">0,235</td><td>Horspool</td><td class="n">0,154</td><td class="n">1,53×</td></tr>
+<tr><td>68</td><td>code</td><td class="n">14 926</td><td class="n">117</td><td>11/5/25</td><td>WuManber</td><td class="n">1,36</td><td>AhoCorasick</td><td class="n">0,910</td><td class="n">1,49×</td></tr>
+<tr><td>115</td><td>protein</td><td class="n">46 983</td><td class="n">13</td><td>3/3/7</td><td>AhoCorasick</td><td class="n">2,50</td><td>WuManber</td><td class="n">1,67</td><td class="n">1,49×</td></tr>
+</tbody></table></div>
+<h2>Kalibrasyon ızgarası</h2>
+<figure><img src="../docs/rapor/sekil1_kazanan.svg" alt="Kalibrasyon ızgarasında her hücrede en hızlı atom"><figcaption>180 vakada en hızlı atom (3 alfabe × 3 n × 5 m × 4 k). Ham: <a href="../bench/results/calibration.json">calibration.json</a>.</figcaption></figure>
+<figure><img src="../docs/rapor/sekil3_dagilim.svg" alt="D kümesinde yavaşlamanın birikimli dağılımı"><figcaption>D kümesinde yavaşlamanın birikimli dağılımı.</figcaption></figure>
+</main>
+<footer class="foot"><div class="in"><span>IoS atom/molekül sözleşmesine uygun bileşenler · <code>sequence.pattern-match.exact</code></span><span>Sayılar <code>bench/results/</code> dosyalarından üretildi (<code>node scripts/site-uret.js</code>).</span></div></footer>
+</body>
+</html>

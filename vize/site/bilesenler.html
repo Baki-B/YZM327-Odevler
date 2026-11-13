@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bileşenler · Kod Bilimi Atölyesi</title>
+<meta name="description" content="Akıllı tam desen eşleştirme: IoS atomları, seçici molekül ve yazılım mühendisliği için Kod Bilimi Atölyesi.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header class="top"><div class="in"><a class="brand" href="index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#fff" opacity=".16"/><path d="M9 11h6M9 16h10M9 21h6" stroke="#f2c14e" stroke-width="3" stroke-linecap="round"/><circle cx="23" cy="21" r="3" fill="#36c2b4"/></svg><span>Kod Bilimi Atölyesi</span></a><nav aria-label="Site"><a href="index.html">Ana sayfa</a><a href="../web/index.html">Atölye</a><a href="bilesenler.html" aria-current="page">Bileşenler</a><a href="sonuclar.html">Sonuçlar</a><a href="rapor.html">Rapor</a><a href="ekip.html">Ekip</a></nav></div></header>
+<main>
+
+<h1>Bileşenler</h1>
+<p class="lead">Her atom IoS atom sözleşmesine uyar: aynı girdi (<code>FASTA.Entry</code>), aynı çıktı (<code>Sequence.Match</code>), <code>manifest</code> ve <code>selection</code> alanları. Her biri için bileşen yayını biçiminde kısa bir sayfa var.</p>
+<h2>Molekül</h2>
+<div class="grid"><a class="card" href="bilesen/ExactMatch.html"><h3>ExactMatch</h3><p>Girdinin şekline bakıp en ucuz atomu seçer. <span class="badge">kind: molecule</span></p></a></div>
+<h2>Atomlar</h2>
+<div class="grid"><a class="card" href="bilesen/BoyerMooreSearch.html"><h3>BoyerMooreSearch</h3><p>Kötü karakter ve iyi sonek kurallarından büyük olanı kadar kayar..</p><p><span class="badge">Boyer &amp; Moore 1977</span><span class="badge">grup hazır örnek</span></p></a>
+<a class="card" href="bilesen/HorspoolSearch.html"><h3>HorspoolSearch</h3><p>Pencerenin son karakterine bakar.</p><p><span class="badge">Horspool 1980</span><span class="badge">grup A</span></p></a>
+<a class="card" href="bilesen/ShiftOrSearch.html"><h3>ShiftOrSearch</h3><p>Bit paralel: 32 bitlik bir sayının her biti desenin bir konumunu izler.</p><p><span class="badge">Baeza-Yates &amp; Gonnet 1992</span><span class="badge">grup A</span></p></a>
+<a class="card" href="bilesen/KmpSearch.html"><h3>KmpSearch</h3><p>Başarısızlık işleviyle metinde hiç geri dönmeden ilerler..</p><p><span class="badge">Knuth, Morris &amp; Pratt 1977</span><span class="badge">grup B</span></p></a>
+<a class="card" href="bilesen/AhoCorasickSearch.html"><h3>AhoCorasickSearch</h3><p>Bütün desenlerden tam bir otomat kurar.</p><p><span class="badge">Aho &amp; Corasick 1975</span><span class="badge">grup C</span></p></a>
+<a class="card" href="bilesen/WuManberSearch.html"><h3>WuManberSearch</h3><p>Çok desenli Horspool: pencerenin son B karakterlik bloğuna göre kayar.</p><p><span class="badge">Wu &amp; Manber 1994</span><span class="badge">grup C</span></p></a>
+<a class="card" href="bilesen/Bm4DnaDsSearch.html"><h3>Bm4DnaDsSearch</h3><p>Horspool + metnin sonuna desen kopyası (sentinel) + üç kez açılmış atlama döngüsü.</p><p><span class="badge">Allmer 2016; Hume &amp; Sunday 1991</span><span class="badge">grup A</span></p></a>
+<a class="card" href="bilesen/Bm4DnaHmbsSearch.html"><h3>Bm4DnaHmbsSearch</h3><p>Son q karakterin bit kaydırmalı özetiyle (q-gram) kayar.</p><p><span class="badge">Allmer 2016; Wu &amp; Manber 1994</span><span class="badge">grup A</span></p></a></div>
+<h2>Atölye bileşen türleri</h2>
+<p>Atölyede kutular türlü uçlarla bağlanır; yalnızca aynı türdeki uçlar bağlanabilir (<code>src/workflows/catalog.js</code>).</p>
+<div class="table-wrap"><table><thead><tr><th>Tür</th><th>Anlamı</th><th>Üreten</th><th>Kullanan</th></tr></thead><tbody>
+<tr><td><code>Source.File</code></td><td>kaynak dosya: yol + metin</td><td>Kod/Log/FASTA yapıştır, Dosya yükle, Örnek veri</td><td>Kaynak → FASTA.Entry, FASTA okuyucu</td></tr>
+<tr><td><code>FASTA.Entry</code></td><td><code>{ header, seq }</code></td><td>uyarlayıcılar</td><td>atomlar, ExactMatch</td></tr>
+<tr><td><code>Pattern.Set</code></td><td>desenler + ignoreCase</td><td>todo, secrets, banned-api, errors, özel liste</td><td>atomlar, ExactMatch (birden çok küme birleşir)</td></tr>
+<tr><td><code>Sequence.Match</code></td><td><code>{ header, pattern, position, length }</code></td><td>atomlar, ExactMatch</td><td>Eşleşme → Bulgu</td></tr>
+<tr><td><code>Finding</code></td><td>dosya:satır:sütun + desen + satır önizlemesi</td><td>Eşleşme → Bulgu</td><td>Bulgu tablosu, Özet, JSONL indir, "Bulgu varsa başarısız" kapısı</td></tr>
+</tbody></table></div>
+</main>
+<footer class="foot"><div class="in"><span>IoS atom/molekül sözleşmesine uygun bileşenler · <code>sequence.pattern-match.exact</code></span><span>Sayılar <code>bench/results/</code> dosyalarından üretildi (<code>node scripts/site-uret.js</code>).</span></div></footer>
+</body>
+</html>

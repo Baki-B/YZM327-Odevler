@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BoyerMooreSearch · Kod Bilimi Atölyesi</title>
+<meta name="description" content="Exact match (Boyer-Moore)">
+<link rel="stylesheet" href="../site.css">
+</head>
+<body>
+<header class="top"><div class="in"><a class="brand" href="../index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#fff" opacity=".16"/><path d="M9 11h6M9 16h10M9 21h6" stroke="#f2c14e" stroke-width="3" stroke-linecap="round"/><circle cx="23" cy="21" r="3" fill="#36c2b4"/></svg><span>Kod Bilimi Atölyesi</span></a><nav aria-label="Site"><a href="../index.html">Ana sayfa</a><a href="../../web/index.html">Atölye</a><a href="../bilesenler.html">Bileşenler</a><a href="../sonuclar.html">Sonuçlar</a><a href="../rapor.html">Rapor</a><a href="../ekip.html">Ekip</a></nav></div></header>
+<main>
+
+<p class="small"><a href="../bilesenler.html">← Bileşenler</a></p>
+<h1>Exact match (Boyer-Moore)</h1>
+<p><span class="badge">BoyerMooreSearch</span><span class="badge">kind: atom</span><span class="badge">task: sequence.pattern-match.exact</span><span class="badge">v0.1.0</span><span class="badge">grup hazır örnek</span></p>
+<h2>1. Ne yapar ve neden</h2>
+<p>Kötü karakter ve iyi sonek kurallarından büyük olanı kadar kayar. İyi olduğu yer: Periyodik desenlerde Horspool'dan güvenli.</p>
+<h2>2. Algoritma</h2>
+<p>Ön işleme O(m + σ); arama tipik alt doğrusal, en kötü O(n·m).</p><p><b>Sapmalar:</b> Başlangıç paketinin karşılığı olarak yeniden yazıldı (paket verilmedi).</p><p>Kaynak: Boyer &amp; Moore 1977. Kod: <code>src/functions/</code> (çekirdek), <code>src/atomic/BoyerMooreSearch.js</code> (atom).</p>
+<h2>3. Girdi ve çıktılar</h2>
+<p>Girdi <code>FASTA.Entry</code> akışı <code>{ header, seq }</code>; parametreler <code>{ patterns, ignoreCase }</code>; çıktı her eşleşme için <code>Sequence.Match</code> <code>{ header, pattern, position, length }</code>. Konumlar 0 tabanlı UTF-16; örtüşen eşleşmeler raporlanır; sıra konum, sonra desenin listedeki sırası.</p>
+<h2>4. Seçim özellikleri</h2>
+<p>Molekül bu atomun süresini şu özelliklerin kalibre edilmiş katsayılarla ağırlıklı toplamıyla tahmin eder (model v4, <code>src/molecules/coefficients.json</code>):</p>
+<dl class="kv"><dt>fixed</dt><dd>1,53e-5 s</dd><dt>base</dt><dd>6,37e-9 s</dd><dt>perPattern</dt><dd>1,79e-5 s</dd><dt>out</dt><dd>3,31e-7 s</dd><dt>scan</dt><dd>1,01e-8 s</dd><dt>prep</dt><dd>0,00e+0 s</dd></dl>
+
+<h2>5. Nasıl test edildi</h2>
+<p>Sözleşme testleri, 16 özel durum (her biri ignoreCase açık ve kapalı), NaiveSearch ile eleman eleman karşılaştırma: lambda genomu, 126 E. coli proteini, 6 sentetik alfabe, 360 tohumlu rastgele vaka (<code>tests/unit/</code>). Yasaklı işlev taraması ve mutasyon denetimi (<code>docs/mutasyon.md</code>).</p>
+<h2>6. Sonuçlar</h2>
+<div class="table-wrap"><table><thead><tr><th>Küme</th><th class="n">En hızlı olduğu vaka</th><th class="n">Molekülün seçtiği vaka</th></tr></thead><tbody>
+<tr><td>kalibrasyon ızgarası (180 vaka)</td><td class="n">1</td><td class="n">—</td></tr>
+<tr><td>D, çok desen (120 vaka, v4)</td><td class="n">0</td><td class="n">0</td></tr>
+<tr><td>E, tek desen (120 vaka, v4)</td><td class="n">6</td><td class="n">8</td></tr>
+</tbody></table></div>
+<p>Hep bu atomu kullanmak (D): yavaşlama geo. ort. 3,255, en kötü 17,52×. E: 1,422, en kötü 2,50×.</p>
+<h2>7. Sınırlar</h2>
+<p>Tablo kurmak pahalı; bu uygulamada doğrulamada hiç en hızlı olmadı.</p>
+<h2>8. Nasıl kullanılır</h2>
+<pre>node bin/ios.js run BoyerMooreSearch --patterns GATC,GGATCC &lt; tests/data/lambda_NC_001416.fa</pre>
+<p>Atölyede: <a href="../../web/index.html">sol panel → ATOMLAR → BoyerMooreSearch</a>.</p>
+</main>
+<footer class="foot"><div class="in"><span>IoS atom/molekül sözleşmesine uygun bileşenler · <code>sequence.pattern-match.exact</code></span><span>Sayılar <code>bench/results/</code> dosyalarından üretildi (<code>node scripts/site-uret.js</code>).</span></div></footer>
+</body>
+</html>
