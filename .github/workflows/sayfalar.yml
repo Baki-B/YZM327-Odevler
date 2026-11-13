@@ -1,6 +1,8 @@
-# Agora'nın tarayıcı sürümünü GitHub Pages'e yayınlar: https://baki-b.github.io/YZM327-Odevler/
-# Bir kez: depo Settings > Pages > Build and deployment > Source: "GitHub Actions" seçilmelidir.
-name: GitHub Pages (tarayıcı sürümü)
+# Vize projesini (Kod Bilimi Atölyesi: site, atölye, sunum, rapor) GitHub Pages'e yayınlar:
+#   https://baki-b.github.io/YZM327-Odevler/
+# Agora'nın tarayıcı sürümü artık burada yayınlanmıyor (yerine vize sitesi geldi).
+# Bir kez: depo Settings > Pages > Build and deployment > Source: "GitHub Actions" seçilmelidir (zaten seçili).
+name: GitHub Pages (vize sitesi)
 
 on:
   push:
@@ -21,19 +23,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.13"
+          node-version: 22
       - name: Testler (başarısızsa yayımlanmaz)
+        working-directory: vize
+        run: npm test
+      - name: Siteyi hazırla (vize/ klasörü olduğu gibi; kökteki index.html siteye yönlendirir)
         run: |
-          pip install -r requirements.txt
-          python -m unittest discover -s testler
-      - name: Siteyi derle
-        run: python tarayici/derle.py --cikti _site
-      - name: Android uygulamasını siteye ekle
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release download android -p Agora.apk -D _site --clobber --repo "$GITHUB_REPOSITORY" || echo "Henüz APK yok"
+          mkdir _site
+          cp -r vize/. _site/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

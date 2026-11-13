@@ -151,18 +151,13 @@ Sınır: `npm run paketler` ve `scripts/arayuz-denetimi.js` Agora karşılaştı
 
 ## GitHub Pages'te yayınlama
 
-Site, atölye, sunum ve rapor statik ve göreli yollarla çalışır; `vize/` klasörünün kendisi sunulursa kökteki `index.html` siteye yönlendirir. Bu depoda Pages zaten Agora için GitHub Actions ile (`.github/workflows/sayfalar.yml`, yalnızca `main`) kullanılıyor; Agora'ya dokunmamak için o dosyayı değiştirmedim. İki yol:
+Yayın adresi: **<https://baki-b.github.io/YZM327-Odevler/>** (kök siteye yönlendirir; atölye `…/web/`, sunum `…/docs/sunum/`, rapor `…/docs/rapor/Rapor.pdf`).
 
-**A. Aynı depo (önerilen):** Bu dal `main`'e birleştirildikten sonra `.github/workflows/sayfalar.yml` içindeki "Siteyi derle" adımından hemen sonra şu adımı ekleyin:
+Depodaki `.github/workflows/sayfalar.yml` artık Agora yerine bu projeyi yayınlıyor: `main` dalına her gönderimde Node 22 ile `npm test` çalıştırır (başarısızsa yayımlamaz), `vize/` klasörünü olduğu gibi siteye koyar ve yayınlar. Actions sekmesinden elle de başlatılabilir. Pages kaynağı zaten "GitHub Actions" olduğu için ayarlarda değişiklik gerekmez; dal `main`'e birleşmeden yayın güncellenmez.
 
-```yaml
-      - name: Vize projesini siteye ekle
-        run: cp -r vize _site/vize
-```
+Site, atölye, sunum ve rapor statik ve göreli yollarla çalışır; bu yüzden alt yol (`/YZM327-Odevler/`) altında da çalışır.
 
-`main`'e gönderince iş akışı çalışır; adres `https://baki-b.github.io/YZM327-Odevler/vize/` olur (Agora aynı yerde kalır). Ayarlarda değişiklik gerekmez (Pages kaynağı zaten "GitHub Actions").
-
-**B. Teslim dalından ayrı depo:** `vize-teslim` dalını yeni bir depoya gönderirseniz: depo **Settings → Pages → Build and deployment → Source: "Deploy from a branch"**, **Branch: `main` (ya da `vize-teslim`), klasör `/ (root)`** → Save. Birkaç dakika sonra adres `https://<kullanıcı>.github.io/<depo>/` olur.
+**Ayrı depo (isteğe bağlı):** `vize-teslim` dalını yeni bir depoya gönderirseniz: depo **Settings → Pages → Build and deployment → Source: "Deploy from a branch"**, **Branch: `main` (ya da `vize-teslim`), klasör `/ (root)`** → Save. Birkaç dakika sonra adres `https://<kullanıcı>.github.io/<depo>/` olur.
 
 ## Veri kaynakları
 

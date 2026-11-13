@@ -4,7 +4,7 @@ Herkesin konu açıp fikir yazabildiği, fikirlerin tur tur oylanarak tek bir ka
 
 Yazılım Mühendisliğine Giriş dersi ödevi.
 
-**Hemen dene (kurulum gerekmez):** <https://baki-b.github.io/YZM327-Odevler/>. Uygulamanın tamamı tarayıcıda çalışır. Telefonda açmanın yolları aşağıda, [Telefonda aç](#telefonda-aç) bölümünde.
+**Not:** Deponun GitHub Pages adresi (<https://baki-b.github.io/YZM327-Odevler/>) artık vize projesini (Kod Bilimi Atölyesi, `vize/`) yayınlıyor; Agora'nın tarayıcı sürümü orada yayında değil. Agora'yı tarayıcıda denemek için aşağıdaki "Tarayıcı sürümü" bölümündeki gibi yerelde derleyip açın; Android uygulaması [Releases](https://github.com/Baki-B/YZM327-Odevler/releases/latest) sayfasında.
 
 | Belge | İçinde |
 |---|---|
@@ -52,7 +52,7 @@ GitHub Pages yalnızca dosya sunar, Python çalıştırmaz. Bu yüzden Agora'nı
 |---|---|
 | `python tarayici/derle.py` | Siteyi `_site/` klasörüne üretir (Pyodide ve paketleri indirip SHA-256 özetlerini doğrular) |
 | `python -m http.server -d _site 8000` | Yerelde dener: <http://localhost:8000/> |
-| GitHub'da bir kez: **Settings › Pages › Source: GitHub Actions** | Sonra `main` dalına her gönderimde `.github/workflows/sayfalar.yml` testleri çalıştırır, siteyi derler ve yayınlar (Actions sekmesinden elle de başlatılabilir) |
+| (Eskiden) GitHub Pages | `.github/workflows/sayfalar.yml` bu siteyi yayınlıyordu; artık aynı adreste vize projesini yayınlıyor. Agora'yı yeniden yayınlamak için o dosyanın git geçmişindeki önceki sürümü geri alınabilir |
 
 İlk açılışta yaklaşık 15 MB indirilir (sonra önbellekten); site bir kez açıldıktan sonra internetsiz de çalışır. Sunum kipi açıktır ("Süreyi ilerlet"). Kabuktaki **Sıfırla** düğmesi bu tarayıcıdaki verileri silip demoyu baştan yükler.
 
@@ -62,7 +62,7 @@ GitHub Pages yalnızca dosya sunar, Python çalıştırmaz. Bu yüzden Agora'nı
 
 | Yol | Nasıl |
 |---|---|
-| **Android uygulaması** | [Agora.apk](https://baki-b.github.io/YZM327-Odevler/Agora.apk) dosyasını telefonda Chrome ile indirip aç ([Releases](https://github.com/Baki-B/YZM327-Odevler/releases/latest) sayfasında da var). Chrome "zararlı olabilir" derse *Yine de indir*; Android izin isterse *bu kaynaktan yüklemeye izin ver*; Play Protect uyarırsa *Ayrıntılar › Yine de yükle*. Uygulama siteyi tam ekran açar. |
+| **Android uygulaması** | [Releases](https://github.com/Baki-B/YZM327-Odevler/releases/latest) sayfasındaki Agora.apk dosyasını telefonda Chrome ile indirip aç. Chrome "zararlı olabilir" derse *Yine de indir*; Android izin isterse *bu kaynaktan yüklemeye izin ver*; Play Protect uyarırsa *Ayrıntılar › Yine de yükle*. Uygulama siteyi tam ekran açar. |
 | **Ana ekrana ekle** (Android ve iPhone) | QR kodu okut ya da siteyi aç; Chrome'da ⋮ menüsünden, Safari'de paylaş düğmesinden "Ana ekrana ekle". Uygulama gibi açılır, internetsiz de çalışır. |
 | **Expo Go** | `mobil-expo/` klasörü. Expo Go'da **"Sunucusuz demoyu aç"** düğmesi siteyi açar; kendi sunucuna bağlanmak da mümkün. Adımlar `mobil-expo/BENIOKU.md` dosyasında. |
 
