@@ -109,6 +109,8 @@ Desen `ACGTAC`, q = 3, metin `TTTTxACGTAC`. Pencere `TTTxAC` (konum 1–6) iken 
 
 İlk kaydın uzunluğu n, farklı karakter sayısı σ, **etkin alfabe** σe = 1/Σp², desen sayısı k, desen uzunlukları.
 
+**Örneklem (v4):** Metin 16 384 karakterden uzunsa harfler metnin tamamından değil, eşit aralıklı 64 parçadan (her biri 256 karakter) sayılır. Neden: karar, aramanın kendisinden uzun sürmemeli. Bir anket gibi düşünün: bütün şehri saymak yerine 64 mahalleden birer sokak sayarsınız; oranlar (σe) neredeyse aynı çıkar, ama nadir bir karakter (σ) kaçabilir.
+
 **σe neden var?** Kaynak kodda 90 farklı karakter olabilir, ama boşluk ve `e` çok sık geçer. İki rastgele karakterin aynı çıkma olasılığı tekdüze 90 harflik alfabeden çok daha yüksektir. σe bunu ölçer: kod için ~25, DNA için ~4. Beklenen kayma σ'ya değil σe'ye bağlıdır.
 
 ### `src/molecules/costModel.js`: maliyet modeli
@@ -148,7 +150,9 @@ Açık/Kapalı ilkesi: sistem genişlemeye açık, değişikliğe kapalı. Yeni 
 | `molecule.test.js` | record alanları, en ucuz seçim, zorla seçilen strateji, sahte atom, uygulanamaz atom, ilk kayda göre karar |
 | `forbidden.test.js` | Atomlarda indexOf/RegExp/console/Node modülü/saat/rastgelelik yok (kaynak tarama + negatif kontrol) |
 | `cli.test.js` | `bin/ios.js` alt süreç olarak: run, explain, scan, hatalar |
-| `core.test.js` | FASTA, şekil, NNLS, uyarlayıcı, CodeScan |
+| `core.test.js` | FASTA, şekil (örneklem dahil), NNLS, katsayı dosyalarının eşitliği, uyarlayıcı, CodeScan |
+| `engine.test.js` | İş akışı motoru: tür denetimi, döngü, topolojik sıra, çalıştırma, hata yayılması, JSON, açıklama, sahte atom |
+| `packages.test.js` | Altı hazır paket: beklenen bulgu sayısı ve motordan bağımsız hesapla aynı sonuç |
 
 **Oracle nedir?** Sonucu kesin doğru bilinen yavaş uygulama. Hızlı atomun sonucu onunkiyle eleman eleman aynı olmalı.
 
@@ -158,3 +162,49 @@ Açık/Kapalı ilkesi: sistem genişlemeye açık, değişikliğe kapalı. Yeni 
 - **Medyan:** 5 tekrarın ortadaki değeri. Ortalamadan farkı, tek bir aşırı yavaş ölçümden etkilenmemesi.
 - **Dönüşümlü ölçüm:** Her turda her atom bir kez çalışır. Makine bir an yavaşlarsa hepsini aynı biçimde etkiler.
 - **Kalibrasyon / doğrulama ayrımı:** Katsayılar 180 vakada bulundu. Başarı ise hiç görülmemiş 120 vakada ölçüldü (farklı tohum, ızgara arası değerler, yeni alfabeler). Sınavda daha önce çözülmüş soruyu sormamak gibi.
+
+## 8. Kod Bilimi Atölyesi (arayüz)
+
+**Ne yapar:** Tarayıcıda çalışan bir iş akışı düzenleyicisi (workflow editor). Soldan bileşen (kutu) alıp tuvale koyarsınız, kutuların uçlarını (port) birbirine bağlarsınız, "Tarayıcıda çalıştır"a basarsınız. Altı hazır paket tek tıkla açılır: teknik borç (TODO/FIXME), gizli bilgi sızıntısı, riskli API, log incelemesi, büyük dosya, biyoloji köprüsü.
+
+**Benzetme:** Bir fabrika bandı. Her kutu bir makine; bant (kablo) yalnızca uyan parçaları taşır. "Dosya" çıkaran makineyi doğrudan "FASTA kaydı" bekleyen makineye bağlayamazsınız; araya bir dönüştürücü (uyarlayıcı) koymanız gerekir. Atölye bunu bağlamaya çalıştığınız anda söyler.
+
+| Kutu grubu | Örnek | Çıkış türü |
+|---|---|---|
+| Kaynaklar | Kod yapıştır, Dosya yükle, Log yapıştır, FASTA, Örnek veri | `Source.File` |
+| Uyarlayıcılar | Kaynak → FASTA.Entry, FASTA okuyucu, Eşleşme → Bulgu | `FASTA.Entry`, `Finding` |
+| Desen kümeleri | todo, secrets, banned-api, errors, özel liste | `Pattern.Set` |
+| Atomlar / molekül | HorspoolSearch … / ExactMatch | `Sequence.Match` |
+| Çıktılar | Bulgu tablosu, Özet, JSONL indir, "Bulgu varsa başarısız" kapısı | (yok) |
+
+**Neden böyle yazıldı:**
+- **Algoritmalar kopyalanmadı.** `web/` dosyaları `../src/` altındaki modülleri doğrudan içe aktarır. Komut satırı ve atölye aynı kodu çalıştırır; bu yüzden altı paketin altısında da bulgu sayıları aynı (`npm run paketler`).
+- **Arayüz donmaz.** Arama bir Web Worker (arka plan iş parçacığı) içinde çalışır; arayüz yalnızca ilerleme iletilerini alır. Tarayıcı Worker açamazsa aynı kod ana iş parçacığında, kutular arasında nefes alarak çalışır.
+- **Bağımlılık yok.** npm paketi, CDN, çerçeve, derleme adımı yok: düz HTML, CSS ve ES modülleri. Bu yüzden `file://` ile değil, küçük bir sunucuyla açılır (`npm run web`).
+- **Klavye ve telefon.** Bileşen listesinde Enter kutu ekler; kutuda ok tuşları taşır, Delete siler; bir uçta Enter, karşı uçta Enter bağlar. 390 px genişlikte kenar çubuğu çekmeceye dönüşür.
+
+**Hoca sorarsa:** "IoS'taki atom ve molekülü biyoloji yerine yazılım mühendisliğine uyguladık. Atölye, CI'da kullanılan `ios scan --fail` kuralını görsel bir kutu olarak gösteriyor: gizli bilgi bulunursa kapı 'kaldı' der, yani derleme durur."
+
+## 9. İş akışı motoru (`src/workflows/engine.js`)
+
+**Ne yapar:** Kutuları ve bağlantıları tutan, denetleyen ve çalıştıran saf bir modül. Ekrana, dosyaya ve ağa dokunmaz (DOM'suz). Aynı dosya tarayıcıda Worker içinde ve Node'da testlerde çalışır.
+
+| İşlev | Ne yapar | Benzetme |
+|---|---|---|
+| `canConnect` | Bağlantı kurulabilir mi? Tür aynı mı, giriş dolu mu, döngü olur mu? Olmazsa nedenini Türkçe cümleyle verir | Prize uymayan fişi takmaya çalışınca uyarı |
+| `topologicalOrder` | Kahn algoritmasıyla çalışma sırası: her kutu, girdilerini üreten kutulardan sonra | Yemek tarifinde "önce soğanı doğra, sonra kavur" |
+| `runWorkflow` | Kutuları bu sırayla çalıştırır; biri hata verirse ona bağlı olanlar "atlandı" olur, diğerleri devam eder | Bir makine bozulunca yalnızca onun bandı durur |
+| `validateWorkflow` | Çalıştırmadan önce eksik girişleri ve döngüleri listeler | Uçuş öncesi kontrol listesi |
+| `serialize` / `deserialize` | JSON'a çevirir ve geri kurar (dışa/içe aktarma, paylaşım bağlantısı) | Kaydet / aç |
+| `explainWorkflow` | İş akışını sırayla düz Türkçe cümlelerle anlatır; kurala dayalıdır, yapay zekâ servisi kullanmaz | Tarifin yazılı hâli |
+
+**Tür denetimi neden önemli:** Atomlar `FASTA.Entry` bekler. Bir kaynak dosyayı (`Source.File`) doğrudan atoma bağlamak sözleşmeyi bozar. Motor bunu kablo çekilirken engeller ve "Araya 'Kaynak → FASTA.Entry' koyun" der. Bu, derleyicinin tür hatasını çalıştırmadan önce yakalamasına benzer.
+
+**Genişletilebilirlik:** Katalog (`catalog.js`) atom kutularını kayıt defterinden kurar. Yeni bir atom kaydedilince atölyede kendiliğinden bir kutu olarak görünür; bunu `engine.test.js`'teki sahte atom testi gösteriyor.
+
+## 10. Karar yükü ve v4 (sunumda sorulursa)
+
+- **Sorun:** v3'te molekül karar için metni 262 144 karaktere kadar sayıyordu. Küçük ve tek desenli girdide bu sayım aramanın kendisi kadar sürdü.
+- **Çözüm:** 64 × 256 karakterlik örneklem. Şekil hesabı D'de medyanda 0,648 ms'den 0,063 ms'ye indi.
+- **Dürüstlük:** Değişiklik eski kümeleri gördükten sonra yapıldığı için yeni iki taze kümede (D, E) bir kez ölçüldü ve sonuca göre ayarlanmadı. Tek desende molekül uçtan uca hâlâ hep Horspool'un gerisinde; bu raporda yazılı.
+- **Ölçüm sapması:** D'de molekül, kendi seçtiği atomdan medyanda kısa ölçüldü (0,951). Bu olanaksız; iki ayrı gürültülü ölçümün farkı küçük karar süresini ayıramıyor. Bu yüzden karar süresini ayrıca tek başına ölçtük.

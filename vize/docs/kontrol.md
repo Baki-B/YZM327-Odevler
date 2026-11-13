@@ -1,6 +1,6 @@
 # Ödev kontrol listesi
 
-Ödev metnindeki (bölüm 4, 6, 7, 9) her madde ve karşılığı.
+Ödev metnindeki (bölüm 4, 6, 7, 9) her madde, hocanın netleştirmeleri ve karşılıkları.
 
 ## Teknik sözleşme (bölüm 4)
 
@@ -31,11 +31,11 @@
 | 3. Seçim yöntemi gerekçeli | maliyet modeli | rapor bölüm 4 |
 | 3. Molekül testleri (record, en ucuz, zorla seçilen, sahte atom, uygulanamaz) | yapıldı | `molecule.test.js` |
 | 4.1 Kalibrasyon ≥ 3 alfabe × 3 n × 5 m × 4 k | 3 × 3 × 5 × 4 = 180 | `tests/benchmarks/calibrate.js`, `bench/results/calibration.json` |
-| 4.2 Doğrulama ≥ 100 görülmemiş vaka, ara değerler, yeni alfabe | 120 (A) + 120 (taze B) + 120 (tek desen C, k = 1) | `tests/benchmarks/validate.js`, `bench/results/validation*.json` |
-| 4.3 Karşılaştırma: her zaman X, Allmer kuralı | yapıldı | `bench/results/validation-taze.md` |
+| 4.2 Doğrulama ≥ 100 görülmemiş vaka, ara değerler, yeni alfabe | v4: 120 (taze D) + 120 (taze E, k = 1); v3: A, B, C (saklandı) | `tests/benchmarks/validate.js`, `bench/results/validation*.json` |
+| 4.3 Karşılaştırma: her zaman X, Allmer kuralı (+ molekül uçtan uca) | yapıldı | `bench/results/validation-d.md`, `validation-e.md` |
 | 4.4 Ölçütler (en hızlı oranı, %10, geo. ort., en kötü, toplam oran) | yapıldı | aynı dosya |
 | Ölçüm kuralları: ısınma, ≥ 3 tekrar medyan, makine bilgisi | ısınma + 5 tekrar, dönüşümlü | `bench/timing.js`; makine bilgisi sonuç dosyalarında |
-| 5. Rapor ≤ 6 sayfa + ekler, 8 bölüm, şekil (m × k haritası), yanlış seçim analizi | ana metin 6 sayfa + 2 sayfa ek | `docs/rapor/Rapor.pdf` |
+| 5. Rapor ≤ 6 sayfa + ekler, 8 bölüm, şekil (m × k haritası), yanlış seçim analizi | ana metin 5 sayfa + ekler (gereksinimler, SOLID, test stratejisi, 7 UML diyagramı) | `docs/rapor/Rapor.pdf` |
 
 ## Teslim edilecekler (bölüm 7)
 
@@ -45,9 +45,12 @@
 | README: kurulum, npm test, calibrate, bench, katkılar | yapıldı | `README.md` |
 | Ham ölçümler (JSON) ve doğrulama tablosu | yapıldı | `bench/results/` |
 | Rapor PDF | yapıldı | `docs/rapor/Rapor.pdf` |
-| Sunum hazırlığı | yapıldı | `docs/sunum.md`, `docs/anlatim.md` |
+| Sunum | 10 slayt + konuşma notları; canlı demo atölyede | `docs/sunum/index.html`, `docs/sunum.md`, `docs/anlatim.md` |
+| Site | yapıldı (sayılar sonuç dosyalarından üretilir) | `site/`, `scripts/site-uret.js` |
+| Arayüz (Kod Bilimi Atölyesi) | yapıldı; 29/29 tarayıcı denetimi | `web/`, `scripts/arayuz-denetimi.js` |
+| UML diyagramları | 7 diyagram (kullanım durumu, 2 sınıf, 3 sıralı, paket) | `docs/uml/` |
 | Depo yapısı (src/functions, src/atomic, src/molecules/ExactMatch.js, src/registry.js, src/shape.js, bin/ios.js, bench/, tests/unit/, tests/benchmarks/) | yapıldı | README "Depo yapısı" |
-| `npm test` temiz kopyada, bağımlılıksız | 328/328 | temiz klonda denendi |
+| `npm test` temiz kopyada, bağımlılıksız | 360/360 | temiz klonda denendi |
 
 ## Bonus (bölüm 9)
 
@@ -56,12 +59,22 @@
 | İleri atom (Wu-Manber), molekülde seçilebilir ve testli | yapıldı; doğrulamada en sık seçilen atom |
 | Performans yarışması | gizli kümeye bağlı; ölçülemez |
 
+## Hocanın netleştirmeleri
+
+| Netleştirme | Karşılığı |
+|---|---|
+| Arayüz önemli; örnek IoS iş akışı düzenleyicisi | Kod Bilimi Atölyesi (`web/`): kategorili bileşen listesi, noktalı tuval, uçlu kutular, özellikler paneli, ad + hedef + çalıştır + durum rozeti + Açıkla |
+| IoS fikri yazılım mühendisliğine uygulanacak | Ana konu kaynak kod ve log taraması (5 paket), biyoloji ikincil (1 paket) |
+| Başlangıç paketi verilmeyecek | Paket verilmedi, karşılığı yazıldı; proje kendi başına çalışır |
+| Yapay zekâ serbest | README ve rapor Ek F |
+| Teslim: rapor, sunum, site, GitHub | `docs/rapor/Rapor.pdf`, `docs/sunum/index.html`, `site/`, bu depo |
+| Grup çalışması | Katkı tablosu README, rapor, site ve slaytlarda; adlar köşeli parantezle boş |
+
 ## Kullanıcının yapması gerekenler
 
-- Hocadan başlangıç paketini isteyin. Gelirse aynı adlı dosyaları değiştirip `npm test` çalıştırın.
-- Yapay zekâ politikasını öğrenip README ve rapor Ek F'yi güncelleyin.
-- Teslimden önce kendi bilgisayarınızda `npm run calibrate`, `npm run bench`, taze küme ve tek desen kümesi komutlarını ve ardından `npm run figures`, `npm run report` çalıştırın. Rapordaki sayıları yeni `bench/results/*.md` dosyalarına göre güncelleyin.
-- Ders kodu, öğretim elemanı ve grup bilgilerini rapor başlığına ekleyin.
+- Köşeli parantezli alanları doldurun: ders kodu ve adı, öğretim elemanı, üye adları, numaralar, katkılar (README, `docs/rapor/rapor.html`, `scripts/site-uret.js` içindeki ekip sayfası ve slaytlar; sonra `node scripts/site-uret.js` ve `npm run report`).
+- GitHub Pages: README "GitHub Pages'te yayınlama" bölümündeki A ya da B yolu.
+- Teslim yapısı: README "Teslim yapısı" bölümündeki `git subtree split` önerisini uygulayıp uygulamamaya karar verin.
 
 ## Son denetim (11 Kasım 2026)
 
@@ -78,7 +91,19 @@ Teslim öncesi bütün iş yeniden denetlendi. Sonuçlar:
 | Mutasyon denetimi yeniden çalıştırıldı | `docs/mutasyon.md` |
 | Rapor: ana metin ≤ 6 sayfa | 6 + 2 ek sayfa |
 
-Denetimde bulunan iki yeni zayıflık rapora eklendi (bölüm 6–7):
+Denetimde bulunan iki zayıflık rapora eklendi (bölüm 6–7). İkincisi v4'te uygulandı (aşağıda):
 
 1. **Tek desende seçim zayıf.** B'de k en az 2'ydi. k = 1 için ek küme C ölçüldü: molekül %51,7 en hızlı, geo. ort. 1,073, en kötü 2,10×. Yine bütün politikalardan iyi (en iyi tek atom 1,224), ama fark küçük. En kötü vakaların hepsi ikili alfabede.
 2. **Karar süresi tek desende ağır.** Molekül karar için metni bir kez sayıyor; tek desen araması metnin yalnızca bir kısmına baktığı için bu sayım aramayla aynı mertebede. Karar süresi dahil edilince B'de geo. ort. 1,187 olur, "her zaman Wu-Manber"in 1,139'undan kötü. Toplam süre oranında molekül yine iyi (1,169'a karşı 1,218). Çözüm önerisi (daha küçük örneklem) raporda; model doğrulamadan sonra değiştirilmedi.
+
+### Bulgu 2'nin uygulanması (model v4, 13 Kasım 2026)
+
+| Adım | Sonuç |
+|---|---|
+| `src/shape.js`: örneklem 64 parça × 256 karakter (16 384 karakterden uzun metinde) | şekil hesabı D'de medyanda 0,648 ms → 0,063 ms; σe hatası medyanda %0,15, en kötü %7,00 (`bench/results/karar-yuku-v4.md`) |
+| Karar adımındaki diğer işler | profil: 8 atomun tahmini birlikte yaklaşık 0,02 ms; değiştirilmedi (KARARLAR 19) |
+| Katsayılar | kalibrasyon bu makinede yeniden ölçüldü (233,9 s; makinede başka iş yokken) |
+| Taze kümeler, birer kez | D (tohum 16180339, çok desen): seçilen atom 1,051 / en kötü 2,00×; uçtan uca 0,990 / 3,26×. E (tohum 14142135, k = 1): 1,081 / 2,06×; uçtan uca 1,300 |
+| Dürüstlük | uçtan uca oranın 1'in altına düşmesi ölçüm sapması (D'de molekül / seçilen atom medyanı 0,951); karar süresi ayrıca ölçüldü: medyanda seçilen atom süresinin %4,1'i (D), %11,4'ü (E). Tek desende molekül uçtan uca hep Horspool (1,198) ve Allmer kuralının (1,192) gerisinde: olduğu gibi raporlandı |
+| Eski sonuçlar | silinmedi; sürüm tablosunda v1–v4 (rapor bölüm 6, `site/sonuclar.html`) |
+| İkili alfabede tek desen | düzeltilmedi; sınır olarak raporda |

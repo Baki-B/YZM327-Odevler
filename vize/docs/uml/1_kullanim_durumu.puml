@@ -1,0 +1,29 @@
+@startuml 1_kullanim_durumu
+!include _stil.iuml
+title Kullanım durumu diyagramı
+left to right direction
+actor "Yazılım\ngeliştirici" as G
+actor "Biyoinformatikçi" as B
+actor "Sürekli\nentegrasyon (CI)" as CI
+rectangle "Kod Bilimi Atölyesi + ios komut satırı" {
+  usecase "Hazır paketi çalıştır" as P
+  usecase "İş akışı kur\n(kutu ekle, uçları bağla)" as K
+  usecase "Kaynak kodu / logu tara" as T
+  usecase "Molekülün kararını\nincele (explain)" as E
+  usecase "Atomları yarıştır" as Y
+  usecase "Genomda desen ara" as GN
+  usecase "En hızlı atomu seç" as S
+  usecase "Bulgu varsa\nderlemeyi durdur" as D
+}
+G -- P
+G -- K
+G -- T
+G -- E
+G -- Y
+B -- E
+B -- GN
+CI -- D
+T ..> S : <<include>>
+GN ..> S : <<include>>
+D ..> T : <<extend>>
+@enduml

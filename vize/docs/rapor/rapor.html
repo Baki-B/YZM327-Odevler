@@ -37,7 +37,9 @@
   .small { font-size: 8.4pt; }
   .ekler { break-before: page; }
   .ekler h2 { border-top: none; }
+  .ekler table, .ekler figure { break-inside: avoid; }
   .avoid { break-inside: avoid; }
+  .ph { background: #fff3d1; color: #7a5200; padding: 0 2px; border-radius: 2px; }
   @media screen { body { padding: 16px; } }
   @media screen and (max-width: 640px) { .two { display: block; } table { display: block; overflow-x: auto; } }
 </style>
@@ -45,203 +47,215 @@
 <body>
 <main>
 
-<h1>Akıllı Tam Desen Eşleştirme</h1>
-<p class="sub">Internet of Science (IoS) için yedi atom ve girdinin şekline göre seçim yapan bir molekül: <code>sequence.pattern-match.exact</code></p>
-<div class="meta">Vize projesi · Hazırlayan: Baki · Sürüm 0.1.0 · Kasım 2026 · Kod: <code>vize/</code> (README.md) · Ölçüm makinesi: Intel Xeon 2,30 GHz, 4 çekirdek, 16 GB, Node v22.23.4, Linux</div>
+<h1>Akıllı Tam Desen Eşleştirme ve Kod Bilimi Atölyesi</h1>
+<p class="sub">Internet of Science (IoS) için sekiz atom, girdinin şekline göre seçim yapan bir molekül ve bunları yazılım mühendisliğinde kullanan bir iş akışı düzenleyicisi: <code>sequence.pattern-match.exact</code></p>
+<div class="meta">Vize projesi · Ders: <span class="ph">[ders kodu ve adı]</span> · Öğretim elemanı: <span class="ph">[ad soyad]</span> · Grup: Baki <span class="ph">[soyad, numara]</span>, <span class="ph">[Üye 2 ad soyad, numara]</span> · Model v4 · Kasım 2026 · Kod: <code>vize/</code> (README.md) · Ölçüm makinesi (v4): Intel Xeon 2,10 GHz, 4 çekirdek, 16 GB, Node v22.23.4, Linux</div>
 
 <h2>1. Ne yapar ve neden</h2>
-<p>Bir metinde (genom, protein, kaynak kod, log) bir ya da daha çok desenin geçtiği <b>bütün</b> yerleri bulmak, biyoinformatiğin ve yazılım araçlarının en temel işlerinden biridir. Bu işi yapan algoritmalardan hiçbiri her durumda en hızlı değildir. Kısa desende iyi olan uzun desende, tek desende iyi olan çok desende geri kalır. Bu çalışma üç şey yapar:</p>
+<p>Bir metinde (genom, protein, kaynak kod, log) bir ya da daha çok desenin geçtiği <b>bütün</b> yerleri bulmak hem biyoinformatiğin hem de yazılım araçlarının temel işidir. Bu işi yapan algoritmalardan hiçbiri her durumda en hızlı değildir. Bu çalışmanın katkıları:</p>
 <ol>
-  <li><b>Yedi yeni atom:</b> Horspool, Shift-Or, bm4DNADS, bm4DNAHMbs (A grubu), Knuth-Morris-Pratt (B), Aho-Corasick ve Wu-Manber (C). Hepsi IoS atom sözleşmesine uyar ve 8. bir atom olan Boyer-Moore ile aynı arayüzü paylaşır.</li>
-  <li><b>ExactMatch molekülü:</b> İlk kaydın şekline (n, σ, k, desen uzunlukları) bakıp her atomun süresini kalibre edilmiş bir <b>maliyet modeliyle</b> tahmin eder ve en ucuzunu seçer. Atomlar bir kayıt defterinden gelir; yeni atom eklemek molekülü değiştirmez.</li>
-  <li><b>Kanıt:</b> 328 birim testi (her atom ve molekül referans uygulamayla birebir), 180 vakalık kalibrasyon ızgarası ve kalibrasyonda hiç görülmemiş 120 vakalık <b>taze</b> bir doğrulama kümesi.</li>
+  <li><b>Yedi yeni atom</b> (Horspool, Shift-Or, bm4DNADS, bm4DNAHMbs, KMP, Aho-Corasick, Wu-Manber) ve Boyer-Moore; hepsi IoS atom sözleşmesine uyar.</li>
+  <li><b>ExactMatch molekülü:</b> ilk kaydın şekline bakıp her atomun süresini kalibre edilmiş bir <b>maliyet modeliyle</b> tahmin eder ve en ucuzunu seçer. Atomlar bir kayıt defterinden gelir; yeni atom eklemek molekülü değiştirmez.</li>
+  <li><b>Yazılım mühendisliğine aktarım:</b> IoS fikri biyoloji içindir; biz aynı bileşenleri kaynak kod ve log taramasına taşıdık. Bir uyarlayıcı dosyayı FASTA kaydına çevirir; hazır desen kümeleri teknik borç, gizli bilgi, riskli API ve log hatası arar. <b>Kod Bilimi Atölyesi</b> (Şekil 2) bu bileşenleri tarayıcıda türlü uçlarla bağlanan kutular olarak sunar (Bölüm 8, Ek B). Gereksinimler, tasarım ilkeleri ve UML diyagramları Ek C'dedir.</li>
+  <li><b>Kanıt:</b> 360 birim testi, 180 vakalık kalibrasyon, model her değiştiğinde yeni ve yalnızca bir kez ölçülen taze doğrulama kümeleri.</li>
 </ol>
-<div class="box"><b>Ana sonuç (taze doğrulama kümesi, 120 vaka):</b> Molekül vakaların <b>%85,8</b>'inde en hızlı atomu seçti, <b>%92,5</b>'inde en hızlının %10 yakınında kaldı. Yavaşlamanın geometrik ortalaması <b>1,016</b>, en kötü vaka <b>1,36×</b>. En iyi tek atom (hep Wu-Manber) 1,139 ve 2,30×, Allmer 2016 kuralı 3,143 ve 59,5× aldı.</div>
-<p><b>Kapsam:</b> Yalnızca tam eşleşme. Yaklaşık eşleşme (BLAST, Smith-Waterman, k uyumsuzluk) kapsam dışıdır. Ödevin "yazılım mühendisliğine uygulayın" isteği için aynı molekül kaynak kod ve log dosyalarında da çalışır (<code>ios scan</code>, Ek B). Kalibrasyona "kaynak kod" alfabesi, doğrulamaya "log" alfabesi eklendi.</p>
+<div class="box"><b>Ana sonuç (model v4, taze küme D, 120 vaka, çok desen):</b> Molekülün seçtiği atom vakaların %76,7'sinde en hızlıydı, %84,2'sinde en hızlının %10 yakınında kaldı; yavaşlamanın geometrik ortalaması <b>1,051</b>, en kötü <b>2,00×</b>. Karar süresi dahil <b>uçtan uca</b>: geo. ort. <b>0,990</b>, en kötü 3,26× (1'in altı ölçüm sapmasıdır, Bölüm 6). En iyi tek atom (hep Wu-Manber) 1,131 ve 2,78×, Allmer 2016 kuralı 2,543 ve 18,71×. <b>Tek desende</b> (E, 120 vaka) seçilen atomla 1,081, uçtan uca 1,300; burada molekül uçtan uca hep Horspool (1,198) ve Allmer kuralının (1,192) gerisinde kalıyor.</div>
+<p><b>Kapsam:</b> yalnızca tam eşleşme. IoS düzenleyicisi (hub.ioscience.org) bu çalışma ortamından açılamadı (ağ vekili erişimi reddetti); atölyenin düzeni ödevle verilen tarife göre kuruldu.</p>
 
 <h2>2. Algoritmalar</h2>
-<p>Bütün atomlar ortak bir üst sınıftan (<code>ExactSearchAtom</code>, Template Method deseni) türer. Ortak sınıf parametre denetimini, ASCII ignoreCase'i, <b>alfabe küçültmeyi</b> ve çıktı sıralamasını yapar. Alfabe küçültmede desenlerdeki her karakter 1, 2, … numarasını alır, desende olmayan her karakter 0 olur. Tablolar 65 536 yerine σ<sub>desen</sub>+1 elemanlıdır. Aynı desen iki kez verilmişse bir kez aranır, iki kez raporlanır. Atom yalnızca <code>prepare()</code> ve <code>scanText()</code> yazar.</p>
+<p>Bütün atomlar ortak bir üst sınıftan (<code>ExactSearchAtom</code>, Template Method deseni) türer. Ortak sınıf parametre denetimini, ASCII ignoreCase'i, <b>alfabe küçültmeyi</b> (desende geçen her karakter 1, 2, …; geçmeyen 0) ve çıktı sıralamasını yapar; atom yalnızca <code>prepare()</code> ve <code>scanText()</code> yazar.</p>
 <table>
   <tr><th>Atom</th><th>Fikir</th><th>Ön işleme</th><th>Arama (tipik / en kötü)</th></tr>
   <tr><td>Horspool</td><td>Pencerenin son karakterine göre kötü karakter kayması</td><td>O(m+σ)</td><td>O(n/m) / O(nm)</td></tr>
   <tr><td>Boyer-Moore</td><td>Kötü karakter + iyi sonek, büyük olan kadar kay</td><td>O(m+σ)</td><td>alt doğrusal / O(nm)</td></tr>
-  <tr><td>bm4DNADS</td><td>Horspool + metnin sonuna desen kopyası (sentinel) + 3 kez açılmış atlama döngüsü; son karakterin kayması 0</td><td>O(m+σ)</td><td>O(n/m) / O(nm)</td></tr>
+  <tr><td>bm4DNADS</td><td>Horspool + metnin sonuna desen kopyası (sentinel) + 3 kez açılmış atlama döngüsü</td><td>O(m+σ)</td><td>O(n/m) / O(nm)</td></tr>
   <tr><td>bm4DNAHMbs</td><td>Son q karakterin bit kaydırmalı özetiyle kayma; q·⌈log₂σ⌉ ≤ 16 bit</td><td>O(m)</td><td>O(nq/(m−q+1)) / O(nm)</td></tr>
   <tr><td>Shift-Or</td><td>Bit paralel: <code>D = (D&lt;&lt;1) | maske[c]</code>; m ≤ 32</td><td>O(m+σ)</td><td>O(n) / O(n)</td></tr>
   <tr><td>KMP</td><td>Başarısızlık işleviyle metinde geri dönmeden</td><td>O(m)</td><td>O(n) / O(n)</td></tr>
-  <tr><td>Aho-Corasick</td><td>Bütün desenlerden tam otomat; tek geçiş, sözlük bağlarıyla iç içe desenler</td><td>O(Σm·σ)</td><td>O(n+z) / O(n+z)</td></tr>
-  <tr><td>Wu-Manber</td><td>Çok desenli blok kayması: son B karakter → SHIFT; 0 ise kovadaki desenleri doğrula</td><td>O(Σm + tablo)</td><td>O(nB/kayma) / O(nΣm)</td></tr>
+  <tr><td>Aho-Corasick</td><td>Bütün desenlerden tam otomat; tek geçiş, sözlük bağları</td><td>O(Σm·σ)</td><td>O(n+z) / O(n+z)</td></tr>
+  <tr><td>Wu-Manber</td><td>Çok desenli blok kayması; kayma 0 ise kovadaki desenleri doğrula</td><td>O(Σm + tablo)</td><td>O(nB/kayma) / O(nΣm)</td></tr>
 </table>
-<p class="small">Tek desenli algoritmalar (ilk beş satır ve KMP) her benzersiz desen için ayrı geçer (k geçiş). z = eşleşme sayısı.</p>
-<p><b>Makaleden ve klasik tariflerden ayrılan noktalar</b> (tamamı Ek A'da ve <code>docs/sapmalar.md</code>'de). Allmer 2016'nın PDF'ine bu çalışma ortamından erişilemedi. Bu yüzden bm4DNA atomları ödev tablosundaki tarife, Hume &amp; Sunday 1991 ve Wu &amp; Manber 1994'e göre yazıldı. Bilinen tuzaklar testlerle kapatıldı:</p>
-<ul>
-  <li><b>bm4DNAHMbs, desende hiç geçmeyen q-gram:</b> güvenli kayma <b>m − q + 1</b>'dir, m değil. Desen, pencerenin son q−1 karakterinden başlıyor olabilir. Örnek: desen <code>ACGTAC</code>, q = 3, metin <code>TTTTxACGTAC</code>. Pencere 1–6 iken son q-gram <code>xAC</code> desende yok; 6 kaymak 5. konumdaki eşleşmeyi atlar. Bu hata mutasyon denetiminde bilerek yerleştirildi ve 33 test başarısız oldu (Bölüm 5).</li>
-  <li><b>bm4DNADS:</b> Döngü sentinel'de durunca <code>j ≥ n</code> denetimi yapılır, sahte eşleşme raporlanmaz. Doğrulamadan sonraki kayma (shift2), son karakterin <i>ilk m−1</i> karakterdeki en sağ yerinden hesaplanır. Aksi halde kayma 0 olur ve döngü sonsuza kadar döner.</li>
-  <li><b>Shift-Or, m &gt; 32:</b> Atom yanlış sonuç vermesin diye ilk 32 karakterle süzüp kalanını doğrular, ama <code>applicable()</code> ile kendini "uygun değil" ilan eder; molekül onu seçmez.</li>
-  <li><b>Wu-Manber tablosu:</b> İlk sürüm hep 2¹⁸ elemanlı tablo kuruyordu. 10⁴ karakterlik metinde tabloyu sıfırlamak aramadan uzun sürdü. Tablo boyu artık desenlerdeki blok sayısının ~8 katı; çakışmada en küçük (güvenli) kayma tutulur.</li>
-</ul>
+<p><b>Makaleden ayrılan noktalar</b> (tamamı Ek A ve <code>docs/sapmalar.md</code>). Allmer 2016'nın PDF'ine bu ortamdan erişilemedi; bm4DNA atomları ödev tablosundaki tarife, Hume &amp; Sunday 1991 ve Wu &amp; Manber 1994'e göre yazıldı. En önemlisi: bm4DNAHMbs'de desende hiç geçmeyen q-gram için güvenli kayma <b>m − q + 1</b>'dir, m değil; desen pencerenin son q−1 karakterinden başlıyor olabilir (desen <code>ACGTAC</code>, q = 3, metin <code>TTTTxACGTAC</code>: 6 kaymak 5. konumdaki eşleşmeyi atlar). bm4DNADS'te sentinel'de durunca <code>j ≥ n</code> denetlenir; Shift-Or m &gt; 32'de doğru çalışır ama kendini "uygun değil" ilan eder.</p>
 
 <h2>3. Girdi ve çıktılar, parametreler</h2>
-<div class="two">
-<div>
-<p><b>Girdi:</b> FASTA.Entry akışı <code>{ header: "&gt;chr1 …", seq: "ACGT…" }</code>.<br>
-<b>Parametreler:</b> <code>patterns</code>: boş olmayan dizgilerden oluşan boş olmayan liste. <code>ignoreCase</code>: yalnızca ASCII A–Z/a–z eşit sayılır. Molekülde ek olarak <code>strategy</code>: <code>"auto"</code> ya da bir atomun adı.<br>
-<b>Çıktı:</b> Her eşleşme için <code>{ header, pattern, position, length }</code>.</p>
-</div>
-<div>
-<ul class="small">
-  <li>Konumlar 0 tabanlı, UTF-16 kod birimi; örtüşen eşleşmeler raporlanır.</li>
-  <li>Sıra: kayıt → konum → desenin listedeki sırası. Tekrarlanan desen ayrı raporlanır.</li>
-  <li><code>pattern</code> verildiği gibi yazılır. Desen metinden uzunsa ya da metin boşsa sonuç boştur; boş liste ya da boş desen hata verir.</li>
-  <li>Molekül <code>record = { requested, selected, shape, estimates, why }</code>; bilinmeyen strateji geçerli adları listeleyen bir hata verir.</li>
-</ul>
-</div>
-</div>
+<p><b>Girdi:</b> FASTA.Entry akışı <code>{ header, seq }</code>. <b>Parametreler:</b> <code>patterns</code> (boş olmayan dizgilerden boş olmayan liste), <code>ignoreCase</code> (yalnızca ASCII), molekülde <code>strategy</code> (<code>"auto"</code> ya da atom adı; bilinmeyen ad geçerli adları listeleyen bir hata verir). <b>Çıktı:</b> her eşleşme için <code>{ header, pattern, position, length }</code>; konumlar 0 tabanlı UTF-16, örtüşenler raporlanır, sıra kayıt → konum → desenin listedeki sırası; tekrarlanan desen ayrı raporlanır. Molekül <code>record = { requested, selected, shape, estimates, why }</code> üretir. Atölyede aynı veriler türlü uçlarla akar: <code>Source.File</code> → <code>FASTA.Entry</code> + <code>Pattern.Set</code> → <code>Sequence.Match</code> → <code>Finding</code> (dosya:satır:sütun).</p>
 
 <h2>4. Seçim yöntemi</h2>
-<p><b>Veri şekli</b> (<code>src/shape.js</code>, ilk kayıttan): n, σ (farklı karakter sayısı), k, mMin, mMax, mMean. Bunlara <b>etkin alfabe büyüklüğü</b> σe = 1/Σp² eklendi: iki rastgele karakterin aynı çıkma olasılığının tersi. Beklenen kayma σ'ya değil σe'ye bağlıdır. Ölçümlerde DNA σ = 4 / σe = 4,0; protein 20 / 16,7; kaynak kod 128 / 18,1. 262 144 karakterden uzun metinde σ eşit aralıklı 64 parçadan deterministik olarak sayılır.</p>
-<p><b>Maliyet modeli.</b> Her atom şekilden "adım sayısı" özellikleri hesaplar (<code>selection.features</code>). Tahmini süre = Σ<sub>f</sub> c<sub>f</sub>·x<sub>f</sub>. Bütün atomlarda ortak özellikler: <i>fixed</i> (kurulum), <i>base</i> = n (metni kodlama), <i>perPattern</i> = k, <i>out</i> (eşleşme sayısı). Atoma özgü olanlar: Horspool ailesi için <i>scan</i> = Σ<sub>i</sub> n/E[kayma(m<sub>i</sub>, σe)] ve <i>verify</i> = scan/σe; Shift-Or ve KMP için k·n; Aho-Corasick için n ve tablo boyu (önbellek etkisi için log₂ ölçek); Wu-Manber için pencere sayısı × B, kova doğrulama sayısı ve tablo boyu; bm4DNAHMbs için q-gram pencere sayısı. E[kayma], tekdüze rastgele metin için kapalı formülle hesaplanır.</p>
-<p><b>Kalibrasyon.</b> 3 alfabe (DNA, protein, kaynak kod) × n ∈ {10⁴, 10⁵, 10⁶} × m ∈ {4, 8, 16, 32, 64} × k ∈ {1, 4, 16, 64} = 180 vaka; her vakada 8 atom (Shift-Or yalnızca m ≤ 32). Ölçüm kuralları:</p>
-<ul>
-  <li>Atomlar <b>dönüşümlü</b> ölçüldü: her turda her atom bir kez çalışır, makinedeki anlık yavaşlama hepsini etkiler.</li>
-  <li>Isınma turundan sonra <b>5 tekrarın medyanı</b> alındı; 10 ms'den kısa ölçümler blok içinde tekrarlanıp ortalandı.</li>
-  <li>Her tekrardan önce çöp toplayıcı çağrıldı; ızgara 167 s sürdü.</li>
-</ul>
-<p>Katsayılar <b>negatif olmayan en küçük kareler</b> (Lawson–Hanson) ile, <b>göreli hatayla</b> uyduruldu. Böylece 0,05 ms'lik vaka ile 50 ms'lik vaka eşit ağırlık taşır. Eşleşme başına iş (toplayıcıya ekleme ve çıktı nesnesi) koddaki aynı parçalarla yapıldığı için <i>out</i> katsayısı bütün atomlarda <b>ortak</b> tutuldu: atom başına uydurulan değerlerin medyanı, 1,19·10⁻⁷ s. Uydurmanın medyan göreli hatası atoma göre %9 (Horspool) ile %21 (KMP) arasında (<code>bench/results/calibration-fit.md</code>).</p>
-<p><b>Neden kural yerine model?</b> Eşik kuralları (örn. "k ≥ 32 ise Aho-Corasick") her yeni atomda elle yeniden düşünülmelidir. Modelde yeni atom yalnızca kendi özelliklerini yazar; <code>npm run calibrate</code> katsayıları bulur. Uygulanamazlık (Shift-Or m &gt; 32, Aho-Corasick tablo &gt; 3·10⁷ hücre) <code>applicable()</code> ile bildirilir, nedeni <code>record</code>'a yazılır.</p>
+<p><b>Veri şekli</b> (<code>src/shape.js</code>, ilk kayıttan): n, σ, k, mMin, mMax, mMean ve <b>etkin alfabe</b> σe = 1/Σp² (iki rastgele karakterin aynı çıkma olasılığının tersi; beklenen kayma σ'ya değil σe'ye bağlıdır). Kalibrasyon metinlerinde (n = 10⁶) DNA σ = 4 / σe = 4,0; protein 20 / 16,6; kaynak kod 103 / 18,3. <b>v4 değişikliği:</b> 16 384 karakterden uzun metinde σ ve σe, eşit aralıklı 64 parça × 256 karakterden sayılır (v3: 64 × 4096, 262 144 karaktere kadar tam sayım). Kaynak kodda örneklem nadir karakterleri kaçırır (v3'te tam sayımla σ = 128); σe neredeyse değişmez (Bölüm 6).</p>
+<p><b>Maliyet modeli.</b> Her atom şekilden "adım sayısı" özellikleri hesaplar (<code>selection.features</code>); tahmini süre = Σ<sub>f</sub> c<sub>f</sub>·x<sub>f</sub>. Ortak özellikler: kurulum, n (metni kodlama), k, tahmini eşleşme sayısı. Atoma özgü olanlar: Horspool ailesi için Σ<sub>i</sub> n/E[kayma(m<sub>i</sub>, σe)], Shift-Or ve KMP için k·n, Aho-Corasick için n ve tablo boyu, Wu-Manber için pencere × B, kova doğrulaması ve tablo, bm4DNAHMbs için q-gram pencereleri. <b>Kalibrasyon:</b> 3 alfabe (DNA, protein, kaynak kod) × n ∈ {10⁴, 10⁵, 10⁶} × m ∈ {4, 8, 16, 32, 64} × k ∈ {1, 4, 16, 64} = 180 vaka; atomlar dönüşümlü ölçüldü (her turda her atom bir kez), ısınma + 5 tekrarın medyanı, kısa ölçümler blok içinde tekrarlandı; ızgara 233,9 s sürdü. Katsayılar <b>negatif olmayan en küçük kareler</b> (Lawson–Hanson) ile, <b>göreli hatayla</b> uyduruldu; eşleşme başına maliyet bütün atomlarda ortak (3,31·10⁻⁷ s). Medyan göreli hata %15,5 (Horspool) ile %23,6 (bm4DNAHMbs) arası. <b>Neden kural yerine model?</b> Eşikler her yeni atomda elle yeniden düşünülmeli; modelde atom kendi özelliklerini yazar, <code>npm run calibrate</code> katsayıları bulur. <b>Tasarım:</b> atomlar Strategy, ortak sınıf Template Method, kayıt defteri Açık/Kapalı ilkesini uygular; molekülün kodunda hiçbir atom adı geçmez (Ek C, Şekil 4).</p>
 
 <h2>5. Nasıl test edildi</h2>
 <table>
   <tr><th>Test dosyası</th><th>Ne sınıyor</th><th class="n">Test</th></tr>
-  <tr><td>contract.test.js</td><td>Sözleşme, her atom için: alanlar, 0 tabanlı konum, örtüşme, sıra, tekrar eden desen, ASCII ignoreCase (İ/ı/é dokunulmaz), UTF-16 (emoji), boş girdi, hatalar, determinizm</td><td class="n">117</td></tr>
-  <tr><td>atoms.test.js</td><td>Her atom için 16 özel durum (periyodik ABAB, tek harf, desen alfabesinde olmayan karakter, desen = metin, 31/32/33 sınırı, vekil çift, boşluklu metin…) ve iç parçalar (KMP, iyi sonek, shift2, q seçimi)</td><td class="n">135</td></tr>
-  <tr><td>oracle.test.js</td><td>Her atom + molekül NaiveSearch ile eleman eleman: lambda genomu (kısa, uzun, 300 desen, ignoreCase, 10 kayıt), 126 E. coli proteini, 6 sentetik alfabe, ATAT…/AAAA…, <b>360 tohumlu rastgele vaka</b></td><td class="n">19</td></tr>
-  <tr><td>molecule.test.js</td><td>record alanları, en ucuz seçim, zorla seçilen 9 strateji aynı sonuç, sahte atom (molekül değişmeden seçilir), uygulanamaz atom seçilmez, ilk kayda göre karar</td><td class="n">15</td></tr>
-  <tr><td>forbidden / cli / core</td><td>Atomlarda indexOf, RegExp, console, Node modülü, saat, rastgelelik yok; <code>bin/ios.js</code> uçtan uca; FASTA, şekil, NNLS, kod tarama</td><td class="n">42</td></tr>
+  <tr><td>contract / atoms</td><td>Her atom için sözleşme (konum, örtüşme, sıra, ASCII ignoreCase, UTF-16, hatalar) ve 16 özel durum (ABAB, tek harf, 31/32/33 sınırı, vekil çift, boşluklu metin…)</td><td class="n">117 + 135</td></tr>
+  <tr><td>oracle.test.js</td><td>Her atom + molekül NaiveSearch ile eleman eleman: lambda genomu, 126 E. coli proteini, 6 sentetik alfabe, <b>360 tohumlu rastgele vaka</b></td><td class="n">19</td></tr>
+  <tr><td>molecule.test.js</td><td>record, en ucuz seçim, zorla seçilen 9 strateji aynı sonuç, sahte atom molekül değişmeden seçilir, uygulanamaz atom seçilmez</td><td class="n">15</td></tr>
+  <tr><td>engine / packages</td><td>İş akışı motoru: tür denetimi, döngü, topolojik sıra, çalıştırma, JSON, açıklama; altı hazır paket bağımsız hesapla aynı</td><td class="n">21 + 8</td></tr>
+  <tr><td>forbidden / cli / core</td><td>Atomlarda indexOf, RegExp, console, Node modülü, saat, rastgelelik yok; komut satırı; FASTA, şekil, örnekleme, NNLS</td><td class="n">45</td></tr>
 </table>
-<p><b>Gerçek veri:</b> lambda faj genomu NC_001416.1 (48 502 baz) ve 126 E. coli K-12 UniProt proteini (34 004 amino asit; kaynakları <code>tests/data/*.kaynak.tsv</code>). <b>Negatif kontroller:</b> (1) Yasaklı işlev taraması, kendisine verilen kötü örnekleri yakaladığını da sınar. (2) <b>Mutasyon denetimi</b> (<code>npm run mutation</code>) koda 12 küçük hata yerleştirdi: Horspool kayması bir fazla, KMP sınırı unutur, sentinel denetimi, m − q + 1 yerine m, sıralamasız çıktı, ters sıralı molekül vb. <b>12'si de yakalandı</b>: 11'inde 1 ile 81 arası test başarısız oldu, bm4DNADS mutasyonu ise sonsuz döngüye yol açtı ve testler bitmedi (<code>docs/mutasyon.md</code>). <code>npm test</code> temiz kopyada, bağımlılık kurmadan yaklaşık 3 saniyede 328/328 geçiyor.</p>
+<p><b>Negatif kontroller:</b> yasaklı işlev taraması kendisine verilen kötü örnekleri yakaladığını da sınar. <b>Mutasyon denetimi</b> (<code>npm run mutation</code>) koda 12 küçük hata yerleştirdi; <b>12'si de yakalandı</b> (<code>docs/mutasyon.md</code>). <b>Arayüz:</b> <code>scripts/arayuz-denetimi.js</code> gerçek Chromium'da altı paketi çalıştırır ve bulgu sayılarını komut satırıyla karşılaştırır (hepsi aynı), sürükle-bırak, uyumsuz bağlantının reddi, klavye, dışa/içe aktarma ve 390 px görünümü dener. <code>npm test</code> temiz kopyada, bağımlılık kurmadan 360/360 geçiyor.</p>
 
 <h2>6. Sonuçlar</h2>
-<p><b>Kalibrasyon ızgarası (Şekil 1).</b> Çok desende (k ≥ 4) Wu-Manber, kısa desen ve çok desende (m = 4, k ≥ 16) Aho-Corasick kazanıyor. Tek desende ise alfabe belirleyici.</p>
-<p><b>Yazılım mühendisliği verisinde ne değişiyor?</b> Kaynak kodda 128 farklı karakter var, ama boşluk, girinti ve sık harfler yüzünden etkin alfabe yalnızca 18. Bu yüzden kodda tek desen aramasında kazanan, DNA'dakinden farklı olarak, tek karakterle kayan basit Horspool ailesi. Bir karakterin desende geçme olasılığı DNA'dakinden çok düşük ve kaymalar m'ye yaklaşıyor. 10⁶ karakterde k = 1 için Horspool'un KMP'ye süre oranı DNA'da 0,44–0,70, kodda 0,48–0,72; m = 64'te DNA 0,70, kod 0,48. Çok desende (TODO/FIXME/gizli anahtar kümeleri gibi) kodda da Wu-Manber ve Aho-Corasick kazanıyor.</p>
-
 <figure class="wide">
   <img src="sekil1_kazanan.svg" alt="Kalibrasyon ızgarasında her (alfabe, n, m, k) hücresi için en hızlı atom">
-  <figcaption><b>Şekil 1.</b> Kalibrasyon ızgarasında en hızlı atom. Çok desende (k ≥ 4) Wu-Manber baskın. Kısa desen ve çok desende (m = 4, k ≥ 16) Aho-Corasick kazanıyor. Tek desende alfabe belirleyici: DNA'da (σe = 4) tek karakter kayması en fazla ~4 olduğu için blok kayan Wu-Manber kazanıyor (15 vakanın 8'i). Protein ve kaynak kodda (σe ≈ 17–18) basit Horspool ailesi (bm4DNADS, Horspool) kazanıyor (30 vakanın 29'u).</figcaption>
+  <figcaption><b>Şekil 1.</b> Kalibrasyon ızgarasında en hızlı atom. Çok desende (k ≥ 4) Wu-Manber baskın (135 vakanın 97'si); kısa desen ve çok desende (m = 4, k ≥ 16) Aho-Corasick (18 vakanın 12'si). Tek desende alfabe belirleyici: DNA'da (σe = 4) tek karakter kayması kısa kaldığı için blok kayan Wu-Manber (15 vakanın 7'si); protein ve kaynak kodda (σe ≈ 17–18) Horspool ailesi (bm4DNADS, Horspool: 30 vakanın 30'u).</figcaption>
 </figure>
-<h3>Doğrulama</h3>
-<p>Doğrulama kümeleri kalibrasyonda kullanılmadı: farklı tohumlar, ızgara noktalarının <i>arasından</i> değerler (n 12 000–900 000, k 2–120, m 3–100, ızgara değerleri hariç), vakaların %30'unda karışık desen uzunlukları ve kalibrasyonda olmayan üç alfabe (log, ikili <code>ab</code>, İngilizce benzeri metin). Yavaşlama = seçilen atomun süresi / o vakadaki en hızlı atomun süresi.</p>
+<p><b>Doğrulama tasarımı.</b> Kümeler kalibrasyonda kullanılmadı: farklı tohumlar, ızgara noktalarının <i>arasından</i> değerler (n 12 000–900 000, k 2–120, m 3–100), vakaların %30'unda karışık desen uzunlukları ve kalibrasyonda olmayan üç alfabe (log, ikili <code>ab</code>, İngilizce benzeri metin). Yavaşlama = harcanan süre / o vakadaki en hızlı atomun süresi. "Uçtan uca" satırı molekülün kendi süresidir (kurulum + şekil + tahmin + arama, aynı turlarda ölçüldü).</p>
 <table class="avoid">
-  <tr><th>Politika (taze küme B, 120 vaka)</th><th class="n">En hızlıyı seçme</th><th class="n">%10 içinde</th><th class="n">Yavaşlama (geo. ort.)</th><th class="n">En kötü</th><th class="n">Toplam süre / en iyi</th></tr>
-  <tr class="hl"><td>ExactMatch (auto)</td><td class="n">%85,8</td><td class="n">%92,5</td><td class="n">1,016</td><td class="n">1,36×</td><td class="n">1,032</td></tr>
-  <tr><td>her zaman Wu-Manber</td><td class="n">%63,3</td><td class="n">%66,7</td><td class="n">1,139</td><td class="n">2,30×</td><td class="n">1,218</td></tr>
-  <tr><td>her zaman Aho-Corasick</td><td class="n">%29,2</td><td class="n">%33,3</td><td class="n">1,599</td><td class="n">4,24×</td><td class="n">1,413</td></tr>
-  <tr><td>Allmer 2016 kuralı (mMean &lt; 50 → bm4DNADS, değilse bm4DNAHMbs)</td><td class="n">%5,8</td><td class="n">%7,5</td><td class="n">3,143</td><td class="n">59,49×</td><td class="n">4,728</td></tr>
-  <tr><td>her zaman bm4DNAHMbs</td><td class="n">%0,0</td><td class="n">%0,0</td><td class="n">3,446</td><td class="n">24,94×</td><td class="n">4,275</td></tr>
-  <tr><td>her zaman bm4DNADS</td><td class="n">%6,7</td><td class="n">%10,0</td><td class="n">3,500</td><td class="n">59,49×</td><td class="n">5,668</td></tr>
-  <tr><td>her zaman Horspool</td><td class="n">%0,8</td><td class="n">%8,3</td><td class="n">3,526</td><td class="n">70,05×</td><td class="n">6,113</td></tr>
-  <tr><td>her zaman Boyer-Moore</td><td class="n">%0,0</td><td class="n">%0,0</td><td class="n">3,771</td><td class="n">33,13×</td><td class="n">4,804</td></tr>
-  <tr><td>her zaman Shift-Or</td><td class="n">%0,0</td><td class="n">%0,8</td><td class="n">6,633</td><td class="n">48,13×</td><td class="n">9,011</td></tr>
-  <tr><td>her zaman KMP</td><td class="n">%0,0</td><td class="n">%0,0</td><td class="n">10,688</td><td class="n">136,56×</td><td class="n">17,077</td></tr>
+  <tr><th>Politika (taze küme D, v4, 120 vaka)</th><th class="n">En hızlıyı seçme</th><th class="n">%10 içinde</th><th class="n">Yavaşlama (geo. ort.)</th><th class="n">En kötü</th><th class="n">Toplam / en iyi</th></tr>
+  <tr class="hl"><td>ExactMatch: seçilen atom</td><td class="n">%76,7</td><td class="n">%84,2</td><td class="n">1,051</td><td class="n">2,00×</td><td class="n">1,033</td></tr>
+  <tr class="hl"><td>ExactMatch: uçtan uca (karar dahil)</td><td class="n">%58,3</td><td class="n">%70,0</td><td class="n">0,990</td><td class="n">3,26×</td><td class="n">1,064</td></tr>
+  <tr><td>her zaman Wu-Manber</td><td class="n">%58,3</td><td class="n">%67,5</td><td class="n">1,131</td><td class="n">2,78×</td><td class="n">1,198</td></tr>
+  <tr><td>her zaman Aho-Corasick</td><td class="n">%33,3</td><td class="n">%36,7</td><td class="n">1,632</td><td class="n">5,02×</td><td class="n">1,291</td></tr>
+  <tr><td>Allmer 2016 kuralı (mMean &lt; 50 → bm4DNADS, değilse bm4DNAHMbs)</td><td class="n">%2,5</td><td class="n">%5,8</td><td class="n">2,543</td><td class="n">18,71×</td><td class="n">2,658</td></tr>
+  <tr><td>her zaman Horspool / bm4DNADS / BM / bm4DNAHMbs / Shift-Or / KMP</td><td class="n">%0,0–4,2</td><td class="n">%0,0–9,2</td><td class="n">2,793–9,196</td><td class="n">17,52–58,30×</td><td class="n">2,931–9,062</td></tr>
 </table>
-<figure>
-  <img src="sekil2_politikalar.svg" alt="Taze doğrulama kümesinde politikaların yavaşlama geometrik ortalaması ve en kötü vakası">
-  <figcaption><b>Şekil 2.</b> Taze küme B'de politikaların yavaşlaması (log ölçek). Sağdaki sütun en kötü vaka. Birikimli dağılım Ek D'de (Şekil 3).</figcaption>
-</figure>
-<p><b>Modelin gelişimi ve dürüstlük notu.</b> İlk doğrulama kümesi A (tohum 20261111) üzerinde iki model hatası bulundu ve düzeltildi. Katsayılar her seferinde <b>yalnızca kalibrasyon ölçümlerinden</b> yeniden uyduruldu; doğrulama verisine göre katsayı ayarlanmadı. Ancak düzeltmeler A'daki yanlış seçimlere bakılarak bulunduğu için A artık "görülmemiş" sayılmaz. Bu yüzden son model, hiçbir karar için kullanılmamış <b>taze küme B</b>'de (tohum 31415926) ayrıca ölçüldü; yukarıdaki tablo B'dir.</p>
+<p><b>Karar yükü (denetim bulgusu ve düzeltmesi).</b> v3'te molekül karar için metni 262 144 karaktere kadar sayıyordu; küçük ve tek desenli girdide bu, aramanın kendisi kadar sürdü ve uçtan uca B'de geo. ort. 1,187 ile "hep Wu-Manber"in (1,139) gerisinde kaldı. v4 örneklemi küçülttü. Doğrulamadaki uçtan uca ölçüm iki gürültülü sürenin farkına dayandığı için küçük karar süresini ayıramıyor: D'de molekül, seçtiği atomun tek başına süresinden medyanda kısa ölçüldü (oran 0,951), uçtan uca geo. ort. bu yüzden 1'in altına düştü. Karar adımı bu nedenle ayrıca, tek başına ölçüldü (<code>bench/results/karar-yuku-v4.md</code>):</p>
 <table class="avoid">
-  <tr><th>Sürüm</th><th>Değişiklik</th><th>Küme</th><th class="n">En hızlı</th><th class="n">%10 içinde</th><th class="n">Geo. ort.</th><th class="n">En kötü</th><th class="n">Toplam / en iyi</th></tr>
-  <tr><td>v1</td><td>İlk model</td><td>A</td><td class="n">%66,7</td><td class="n">%78,3</td><td class="n">1,168</td><td class="n">6,11×</td><td class="n">1,446</td></tr>
-  <tr><td>v2</td><td>Tek desenli atomların maliyeti en kısa / ortalama / en uzun desenin ortalamasıyla</td><td>A</td><td class="n">%75,8</td><td class="n">%79,2</td><td class="n">1,078</td><td class="n">2,27×</td><td class="n">1,271</td></tr>
-  <tr><td>v3</td><td>Eşleşme başına maliyet ortak, gerçek eşleşme sayısıyla uydurulur</td><td>A</td><td class="n">%81,7</td><td class="n">%88,3</td><td class="n">1,038</td><td class="n">1,83×</td><td class="n">1,007</td></tr>
-  <tr class="hl"><td>v3</td><td>Aynı model, taze küme</td><td>B</td><td class="n">%85,8</td><td class="n">%92,5</td><td class="n">1,016</td><td class="n">1,36×</td><td class="n">1,032</td></tr>
+  <tr><th>Küme</th><th class="n">Şekil v3 (medyan)</th><th class="n">Şekil v4 (medyan)</th><th class="n">Karar v4 (medyan)</th><th class="n">Karar / seçilen atom (medyan)</th><th class="n">(%90)</th></tr>
+  <tr><td>D (çok desen)</td><td class="n">0,648 ms</td><td class="n">0,063 ms</td><td class="n">0,116 ms</td><td class="n">%4,1</td><td class="n">%22,9</td></tr>
+  <tr><td>E (k = 1)</td><td class="n">0,515 ms</td><td class="n">0,065 ms</td><td class="n">0,116 ms</td><td class="n">%11,4</td><td class="n">%60,8</td></tr>
 </table>
+<p>Örneklemin bedeli: σe'nin tam sayıma göre hatası D'de medyanda %0,15, en kötü %7,00; σ, örneklenen 112 vakanın 29'unda eksik sayıldı (en çok %23,5).</p>
+<p><b>Dürüstlük protokolü ve sürümler.</b> Katsayılar her seferinde <b>yalnızca kalibrasyon ölçümlerinden</b> uyduruldu. Model her değiştiğinde yeni bir taze kümede, bir kez ölçüldü; sonuca bakarak model ayarlanmadı. v4'ün kümeleri (D, E) karar yükü düzeltmesinden sonra yeni tohumlarla üretildi. Eski sonuç dosyaları silinmedi:</p>
+<table class="avoid">
+  <tr><th>Sürüm</th><th>Değişiklik</th><th>Küme</th><th class="n">En hızlı</th><th class="n">Geo. ort.</th><th class="n">En kötü</th><th class="n">Uçtan uca geo. ort.</th><th class="n">Toplam / en iyi</th></tr>
+  <tr><td>v1</td><td>İlk model</td><td>A</td><td class="n">%66,7</td><td class="n">1,168</td><td class="n">6,11×</td><td class="n">1,573</td><td class="n">1,446</td></tr>
+  <tr><td>v2</td><td>Tek desenli atomlarda en kısa / ortalama / en uzun desen</td><td>A</td><td class="n">%75,8</td><td class="n">1,078</td><td class="n">2,27×</td><td class="n">1,268</td><td class="n">1,271</td></tr>
+  <tr><td>v3</td><td>Eşleşme başına maliyet ortak</td><td>A</td><td class="n">%81,7</td><td class="n">1,038</td><td class="n">1,83×</td><td class="n">1,255</td><td class="n">1,007</td></tr>
+  <tr><td>v3</td><td>Aynı model, taze</td><td>B</td><td class="n">%85,8</td><td class="n">1,016</td><td class="n">1,36×</td><td class="n">1,187</td><td class="n">1,032</td></tr>
+  <tr><td>v3</td><td>Aynı model, k = 1</td><td>C</td><td class="n">%51,7</td><td class="n">1,073</td><td class="n">2,10×</td><td class="n">1,686</td><td class="n">1,095</td></tr>
+  <tr class="hl"><td>v4</td><td>Şekil örneklemi 64 × 256; yeniden kalibrasyon</td><td>D</td><td class="n">%76,7</td><td class="n">1,051</td><td class="n">2,00×</td><td class="n">0,990</td><td class="n">1,033</td></tr>
+  <tr class="hl"><td>v4</td><td>Aynı model, k = 1</td><td>E</td><td class="n">%55,0</td><td class="n">1,081</td><td class="n">2,06×</td><td class="n">1,300</td><td class="n">1,105</td></tr>
+</table>
+<p class="small">A, v1 ve v2'nin hataları bulunurken görüldüğü için "görülmemiş" sayılmaz. v1–v3 Xeon 2,30 GHz'de, v4 Xeon 2,10 GHz'de ölçüldü; yeni makine aynı kalibrasyon ölçümlerini medyanda 1,74 kat yavaş yaptı ve daha gürültülüydü (<code>bench/results/makine-karsilastirma.md</code>). Bu yüzden seçilen atomun B'deki 1,016'dan D'de 1,051'e kötüleşmesinin ne kadarının modelden, ne kadarının makineden geldiği ayrılamaz.</p>
 
 <h3>Yanlış seçimlerin analizi</h3>
 <ul>
-  <li><b>v1, karışık uzunlukta desen (A'daki en kötü 5 vakanın 5'i):</b> Örnek vaka 90: DNA, k = 9, m = 7/3/17. Model bm4DNAHMbs seçti (3,09 ms), en hızlı Aho-Corasick'ti (0,51 ms); yavaşlama 6,1×. Neden: tek desenli algoritmaların maliyeti ortalama uzunlukla (mMean = 9) hesaplanıyordu. Toplam işi ise en kısa desen (m = 3, kayma ≈ 1) belirler. v2'de özellik Σ<sub>i</sub> f(m<sub>i</sub>) ≈ k·[f(mMin)+f(mMean)+f(mMax)]/3 oldu.</li>
-  <li><b>v2, ikili alfabe (kalibrasyonda görülmemiş):</b> Vaka 52: n = 206 551, k = 3, m = 3. bm4DNAHMbs 17,6 ms tutarken Aho-Corasick 8,0 ms; yavaşlama 2,2×. Neden: <i>out</i> katsayısı atom başına serbestti ve 45 kat değişiyordu (bm4DNAHMbs için 1,6·10⁻⁸, KMP için 7,2·10⁻⁷). İkili alfabede eşleşme sayısı kalibrasyondakinden çok büyük olduğu için, çıktı maliyeti düşük sayılan atom yapay olarak ucuz göründü. v3'te bu katsayı ortak tutuldu.</li>
-  <li><b>v3, kalan hatalar (B):</b> En kötü vaka 81: log, n = 289 868, k = 10, m = 3. Wu-Manber 5,41 ms, Aho-Corasick 3,98 ms; 1,36×. İkinci kötü vaka 104: kaynak kod, k = 24, m = 9/5/21, 1,31×. Her ikisinde de en kısa desen çok kısa, Wu-Manber'in blok kayması küçük. Log ve kodda tekrarlı parçalar (zaman damgası, girinti) aday kova doğrulamasını, tekdüze rastgele metin varsayımının öngördüğünden sık yapıyor. Wu-Manber ile Aho-Corasick sınırı mMin ≤ 5'te en belirsiz bölge.</li>
+  <li><b>v1, karışık uzunlukta desen (düzeltildi):</b> A'da vaka 90: DNA, k = 9, m = 7/3/17; bm4DNAHMbs 3,09 ms, Aho-Corasick 0,51 ms (6,1×). Tek desenli atomların maliyeti ortalama uzunlukla hesaplanıyordu; toplam işi en kısa desen (kayma ≈ 1) belirler.</li>
+  <li><b>v2, ikili alfabe (düzeltildi):</b> eşleşme başına maliyet atom başına serbestti ve 45 kat değişiyordu; eşleşmenin çok olduğu girdide çıktı maliyeti düşük sayılan atom yapay olarak ucuz göründü. v3'te ortak tutuldu.</li>
+  <li><b>v4, kalan en kötü vaka (D, vaka 119):</b> İngilizce benzeri metin (kalibrasyonda yok), n = 531 186, k = 24, m = 92/37/150. Seçilen bm4DNAHMbs: tahmin 7,23 ms, ölçülen 12,57 ms; en hızlı Wu-Manber: tahmin 11,17 ms, ölçülen 6,28 ms (2,00×). İki tahmin <b>ters yönde</b> yanıldı. Olası neden: model metni tekdüze rastgele sayar; kelimelerden oluşan metinde sık q-gramlar desende de geçer ve q-gram kayması öngörülenden kısa kalır. Bu vaka görüldükten sonra model değiştirilmedi.</li>
 </ul>
-<p><b>Tek desenli ek küme C.</b> B'de k en az 2 olduğu için tek desen ayrıca denendi: 120 vaka, k = 1, tohum 27182818, n ve m ızgara arasından (k = 1 ızgarada da var; bu yüzden C k bakımından "ızgara arası" değildir). Model değiştirilmeden bir kez ölçüldü. Tek desende atomlar birbirine çok yakın ve seçim belirgin biçimde zayıflıyor; molekül yine bütün politikalardan iyi, ama fark küçük. Zayıf nokta ikili alfabe: geo. ort. 1,194 (diğer alfabelerde 1,025–1,065), en kötü 5 vakanın 5'i ikili.</p>
-<table class="avoid">
-  <tr><th>Politika (küme C, k = 1, 120 vaka)</th><th class="n">En hızlıyı seçme</th><th class="n">%10 içinde</th><th class="n">Geo. ort.</th><th class="n">En kötü</th><th class="n">Toplam / en iyi</th></tr>
-  <tr class="hl"><td>ExactMatch (auto)</td><td class="n">%51,7</td><td class="n">%79,2</td><td class="n">1,073</td><td class="n">2,10×</td><td class="n">1,095</td></tr>
-  <tr><td>her zaman Wu-Manber</td><td class="n">%30,8</td><td class="n">%47,5</td><td class="n">1,224</td><td class="n">3,27×</td><td class="n">1,276</td></tr>
-  <tr><td>her zaman Horspool</td><td class="n">%32,5</td><td class="n">%61,7</td><td class="n">1,272</td><td class="n">4,61×</td><td class="n">1,259</td></tr>
-  <tr><td>Allmer 2016 kuralı</td><td class="n">%26,7</td><td class="n">%53,3</td><td class="n">1,276</td><td class="n">3,89×</td><td class="n">1,239</td></tr>
-  <tr><td>her zaman bm4DNADS</td><td class="n">%29,2</td><td class="n">%59,2</td><td class="n">1,297</td><td class="n">4,79×</td><td class="n">1,287</td></tr>
-</table>
-<p><b>Molekülün kendi yükü.</b> Yukarıdaki tablolar ödevin tanımıyla <i>seçilen atomun</i> süresini karşılaştırır. Karar için şekli hesaplamak ve tahmin yapmak, uçtan uca sürede seçilen atoma göre B'de medyanda %14 ek getirdi (%90'lık dilimde %68; bu dilimdeki vakalarda seçilen atom çoğunlukla 1,3 ms'den kısa sürüyor). Bu yük dahil edilince molekülün B'deki yavaşlama geo. ortalaması 1,187 olur ve "her zaman Wu-Manber"in 1,139'undan <b>kötüdür</b>; toplam süre oranında ise molekül yine iyidir (1,169'a karşı 1,218). C'de yük medyanda %59; uçtan uca geo. ort. 1,686, "her zaman Horspool" 1,272. Nedeni: şekil sayımı metni (262 144 karaktere kadar) bir kez tam okur; tek desen araması ise metnin yalnızca bir kısmına bakar. Örnek: 200 000 karakterlik proteinde sayım 0,76 ms, seçilen Horspool'un kendisi 0,51 ms.</p>
+<p><b>Tek desen (E).</b> Seçim zayıf: %55,0 en hızlı, geo. ort. 1,081, en kötü 2,06×; en kötü 5 vakanın 5'i ikili alfabede (ikili alfabede geo. ort. 1,222, diğer alfabelerde 1,029–1,096). Seçilen atomla molekül yine bütün politikalardan iyi (Allmer 1,192, hep Horspool 1,198), ama karar yükü dahil uçtan uca 1,300 ile ikisinin de gerisinde. Tam tablolar: Ek D.</p>
 
 <h2>7. Sınırlar</h2>
 <ul>
-  <li><b>Karar ilk kayda göre verilir</b> (sözleşme gereği). İlk kayıt kısa, sonrakiler çok uzunsa seçim kötü olabilir; bu durum <code>molecule.test.js</code>'te bilerek gösteriliyor. Kaynak kod taramasında ilk dosya küçükse aynı risk geçerli.</li>
-  <li><b>Özellikler tekdüze rastgele metin varsayar.</b> σe sıklık farkını yakalar ama tekrarlı yapıyı (log zaman damgaları, kod girintisi) yakalamaz. Kalan yanlış seçimler buradan geliyor.</li>
-  <li><b>Kalibrasyon ızgarasında desenlerin hepsi aynı uzunlukta.</b> Karışık uzunluk davranışı yalnızca formülle (üç nokta yaklaşımı) aktarılıyor, ölçülerek öğrenilmiyor.</li>
-  <li><b>Ölçümler tek bir paylaşımlı bulut makinesinde yapıldı.</b> Katsayılar makineye özgü; teslimden önce <code>npm run calibrate</code> ve <code>npm run bench</code> yeniden çalıştırılmalı. 0,1 ms'nin altındaki farklar yorumlanmadı. En hızlı atomun ≥ 1 ms sürdüğü 62 vakalık alt kümede sonuç benzer: %80,6 en hızlı, geo. ort. 1,024, en kötü 1,36×.</li>
-  <li><b>Hiç kazanmayan atomlar:</b> Bu uygulamada Boyer-Moore, Shift-Or, KMP ve bm4DNAHMbs doğrulamada hiçbir vakada en hızlı olmadı. Shift-Or ve KMP desen başına ayrı geçer. bm4DNAHMbs'nin q-gram özeti JavaScript'te her pencere için q okuma gerektiriyor; uzun DNA deseninde aynı işi Wu-Manber'in blok tablosu daha ucuza yapıyor. Allmer kuralının kötü sonucu (geo. ort. 3,14) bu uygulamaya özgüdür; C'deki özgün uygulama için genelleme yapılamaz.</li>
-  <li><b>Karar maliyeti küçük girdide ve tek desende ağır.</b> Örnekleme sınırını düşürmek (ör. 64 parça × 256 karakter) bu yükü küçültür: ölçtüğümüz 47 metinde σe hatası medyanda %0,03, en kötü %6; farklı karakter sayısı σ ise en fazla %23 eksik sayıldı. Bu değişiklik doğrulamadan sonra bulunduğu için uygulanmadı; uygulanırsa katsayılar yeniden uydurulmalı ve yeni bir taze kümede ölçülmelidir.</li>
-  <li><b>Bellek</b> modelde yok. Aho-Corasick için yalnızca bir üst sınır var (3·10⁷ hücre).</li>
+  <li><b>Karar ilk kayda göre verilir</b> (sözleşme). İlk kayıt (kod taramasında ilk dosya) kısa, sonrakiler uzunsa seçim kötü olabilir.</li>
+  <li><b>Özellikler tekdüze rastgele metin varsayar.</b> σe sıklık farkını yakalar ama tekrarlı yapıyı (kelimeler, zaman damgaları, girinti) yakalamaz; kalan yanlış seçimler buradan geliyor.</li>
+  <li><b>Tek desende ve ikili alfabede</b> seçim zayıf; tek desende karar yükü uçtan uca hâlâ ölçülebilir (karar / atom medyanda %11,4). İkili alfabedeki zayıflık düzeltilmedi.</li>
+  <li><b>Ölçüm.</b> Paylaşımlı bulut makinesi; katsayılar makineye özgü (teslimden önce <code>npm run calibrate</code> ve <code>npm run bench</code> yeniden çalıştırılmalı). Doğrulama düzeneği molekül ile atomu ayrı işler olarak ölçtüğü için küçük farkları ayıramıyor (D'de oran 0,951); en hızlı atomun ≥ 1 ms sürdüğü 92 vakada sonuç benzer: %78,3 en hızlı, geo. ort. 1,042.</li>
+  <li><b>Hiç kazanmayan atomlar:</b> Boyer-Moore, Shift-Or, KMP ve bm4DNAHMbs D'de hiçbir vakada en hızlı olmadı. Allmer kuralının sonucu bu JavaScript uygulamasına özgüdür.</li>
+  <li><b>Bellek</b> modelde yok; Aho-Corasick için yalnızca bir üst sınır var (3·10⁷ hücre).</li>
 </ul>
 
 <h2>8. Nasıl kullanılır</h2>
-<pre>npm test                                   # 328 test, ~3 sn, bağımlılık yok
+<figure>
+  <img src="../ekran/atolye-masaustu.png" alt="Kod Bilimi Atölyesi: solda bileşenler ve hazır paketler, ortada bağlanmış kutular, sağda molekülün karar kaydı">
+  <figcaption><b>Şekil 2.</b> Kod Bilimi Atölyesi (<code>web/</code>): "tek desen, büyük dosya" paketi. Aynı 880 KB kaynak kod dosyasında üst dal tek desen ("return"), alt dal 16 Python anahtar sözcüğü arar; molekül üstte bm4DNADS, altta Aho-Corasick seçer. Sağda seçili molekülün karar kaydı: veri şekli ve her atomun tahmini süresi.</figcaption>
+</figure>
+<pre>npm test                                   # 360 test, bağımlılık yok
+npm run web                                # atölye: http://localhost:8327/web/  (site: /site/, sunum: /docs/sunum/)
 npm run calibrate &amp;&amp; npm run bench          # katsayıları yenile, doğrula (bench/results/)
-node bin/ios.js run ExactMatch --patterns GATC,GGATCC --strategy auto &lt; tests/data/lambda_NC_001416.fa &gt; cikti.jsonl
 node bin/ios.js explain --patterns GATC,GGATCC &lt; tests/data/lambda_NC_001416.fa
-node bin/ios.js run KmpSearch --patterns acgt --ignoreCase &lt; girdi.fasta        # bir atomu adıyla
+node bin/ios.js run ExactMatch --patterns GATC,GGATCC &lt; tests/data/lambda_NC_001416.fa &gt; cikti.jsonl
 node bin/ios.js scan --preset secrets --fail src/                               # kodda gizli bilgi izi → çıkış kodu 1</pre>
-<p class="small">Lambda genomunda <code>explain</code> çıktısından (kısaltılmış): <code>"selected": "BoyerMooreSearch"</code>, <code>"shape": {"n": 48502, "sigma": 4, "sigmaEff": 3.992, "k": 2, "mMin": 4, "mMax": 6, "mMean": 5}</code>, tahminler (ms): Boyer-Moore 0,455; bm4DNADS 0,457; Horspool 0,477; Aho-Corasick 0,535; Shift-Or 0,551; KMP 0,590; Wu-Manber 0,604; bm4DNAHMbs 0,983. <code>run</code> 121 eşleşme yazar; ilki <code>{"pattern":"GATC","position":415,"length":4}</code>.</p>
+<p class="small">Atölyede: soldan bir hazır paket seçin (ya da bileşenleri tuvale sürükleyip uçlarını bağlayın), "Tarayıcıda çalıştır"a basın; ExactMatch kutusunu seçince <code>explain</code> çıktısı sağ panelde görünür. Lambda genomunda <code>explain</code>: <code>"selected": "Bm4DnaDsSearch"</code>, şekil n = 48 502, σ = 4, σe = 3,994, k = 2, m = 4..6; tahminler (ms): bm4DNADS 0,775; Horspool 0,799; Boyer-Moore 0,812. <code>run</code> 121 eşleşme yazar; ilki <code>{"pattern":"GATC","position":415,"length":4}</code>.</p>
 
 <!-- ============================== EKLER ============================== -->
 <section class="ekler">
 <h2>Ek A. Makaleden ve klasik tariflerden sapmalar</h2>
 <table>
   <tr><th>#</th><th>Atom</th><th>Uygulama</th><th>Neden</th></tr>
-  <tr><td>H1</td><td>bm4DNAHMbs</td><td>Desende olmayan q-gram için kayma m − q + 1</td><td>m kadar kaymak, pencerenin son q−1 karakterinden başlayan eşleşmeyi atlar (Bölüm 2'deki örnek).</td></tr>
+  <tr><td>H1</td><td>bm4DNAHMbs</td><td>Desende olmayan q-gram için kayma m − q + 1</td><td>m kadar kaymak, pencerenin son q−1 karakterinden başlayan eşleşmeyi atlar (Bölüm 2). Mutasyonla sınandı: 34 test başarısız oldu.</td></tr>
   <tr><td>H2</td><td>bm4DNAHMbs</td><td>Son q-gram için tabloda 0; doğrulamadan sonra ayrı hesaplanan shift2</td><td>Tablodaki 0 doğrulamadan sonra da kullanılırsa döngü yerinde sayar.</td></tr>
   <tr><td>H3</td><td>bm4DNAHMbs</td><td>Karakter başına ⌈log₂ σ⌉ bit; DNA için 3 bit, q = 5; özet çakışmasız</td><td>0 kimliği "desende olmayan karakter" için ayrıldığından DNA 2 bite sığmaz.</td></tr>
-  <tr><td>H5</td><td>bm4DNAHMbs</td><td>Bütün desenler tek tabloyu paylaşır; her desen yalnızca kendi girdilerini yazar ve siler</td><td>Desen başına 64 K tablo, çok desende belleği ve kurulum süresini patlatır.</td></tr>
+  <tr><td>H5</td><td>bm4DNAHMbs</td><td>Bütün desenler tek tabloyu paylaşır; her desen yalnızca kendi girdilerini yazar ve siler</td><td>Desen başına 64 K tablo çok desende belleği ve kurulum süresini patlatır.</td></tr>
   <tr><td>D1</td><td>bm4DNADS</td><td>Metin kodlanırken sona en uzun desen kadar boş yer; her desen kendi sentinel'ini yazar</td><td>Sentinel metne yazılırsa sonraki desen bozuk metinde arar.</td></tr>
-  <tr><td>D2</td><td>bm4DNADS</td><td>Döngü durunca <code>j ≥ n</code> denetimi</td><td>Sentinel her zaman "eşleşir"; denetimsiz sahte sonuç çıkar. Mutasyonda (j &gt; n) m = 1 için döngü dizinin dışına taşıp bitmiyor.</td></tr>
+  <tr><td>D2</td><td>bm4DNADS</td><td>Döngü durunca <code>j ≥ n</code> denetimi</td><td>Sentinel her zaman "eşleşir"; mutasyonda (j &gt; n) döngü bitmedi.</td></tr>
   <tr><td>D4</td><td>bm4DNADS</td><td>shift2 son karakterin ilk m−1 karakterdeki en sağ yerinden</td><td>Son karakter sayılırsa kayma 0, sonsuz döngü.</td></tr>
-  <tr><td>S1</td><td>Shift-Or</td><td>m &gt; 32: süzgeç + doğrulama; <code>applicable()</code> = uygun değil</td><td>Atom her girdide doğru olmalı; bit paralel avantajı kaybolduğu için molekül seçmez.</td></tr>
-  <tr><td>W1</td><td>Wu-Manber</td><td>Tablo boyu ≈ 8 × desen bloğu (2⁸–2¹⁸); küçük alfabede birebir indeks, değilse karma; çakışmada en küçük kayma</td><td>Büyük sabit tablo küçük metinde aramadan pahalı; en küçük kayma doğruluğu korur.</td></tr>
+  <tr><td>S1</td><td>Shift-Or</td><td>m &gt; 32: süzgeç + doğrulama; <code>applicable()</code> = uygun değil</td><td>Atom her girdide doğru olmalı; molekül seçmez.</td></tr>
+  <tr><td>W1</td><td>Wu-Manber</td><td>Tablo boyu ≈ 8 × desen bloğu (2⁸–2¹⁸); çakışmada en küçük kayma</td><td>Büyük sabit tablo küçük metinde aramadan pahalı; en küçük kayma doğruluğu korur.</td></tr>
 </table>
 
-<h2>Ek B. Yazılım mühendisliği uygulaması</h2>
-<p><code>src/adapters/sourceToEntry.js</code> bir kaynak dosyayı <code>{ header: "&gt;yol", seq: içerik }</code> kaydına çevirir (Adapter deseni). Atomlara dokunulmadan aynı altyapı kodda çalışır. <code>src/workflows/CodeScan.js</code> molekülü kullanır ve konumları satır ve sütuna çevirir (satır başları hazır işlev kullanmadan bulunur, ikili aramayla eşlenir). Hazır kümeler: <code>todo</code> (TODO, FIXME, HACK, XXX), <code>secrets</code> (password=, api_key, AKIA, özel anahtar başlıkları; büyük/küçük harf duyarsız), <code>banned-api</code> (eval(, exec(, pickle.loads, os.system(, innerHTML…), <code>errors</code> (log hataları). <code>--fail</code> bulgu varsa çıkış kodu 1 döndürür; sürekli entegrasyonda derlemeyi durdurmak için kullanılır. Bu deponun Agora projesinde <code>ios scan --preset banned-api ../forum</code> komutu <code>static/app.js</code> içinde 3 <code>innerHTML</code> kullanımı buldu; seçilen atom Horspool. Kaynak kodda boşluk anlamlı olduğu için korunur (FASTA'da <code>seq</code> boşluksuzdur; atomlar her ikisinde de doğru çalışır).</p>
+<h2>Ek B. Yazılım mühendisliği uygulaması ve atölye</h2>
+<p><b>Katmanlar.</b> <code>src/adapters/sourceToEntry.js</code> bir kaynak dosyayı <code>{ header: "&gt;yol", seq: içerik }</code> kaydına çevirir (Adapter deseni); atomlara dokunulmaz. <code>src/workflows/CodeScan.js</code> konumları satır ve sütuna çevirir. Hazır kümeler: <code>todo</code>, <code>secrets</code> (büyük/küçük harf duyarsız), <code>banned-api</code>, <code>errors</code>. <code>ios scan --fail</code> bulgu varsa çıkış kodu 1 döndürür (sürekli entegrasyon). Agora projesinde <code>ios scan --preset banned-api ../forum</code> <code>static/app.js</code> içinde 3 <code>innerHTML</code> buldu; seçilen atom Horspool.</p>
+<p><b>İş akışı motoru</b> (<code>src/workflows/engine.js</code>) DOM'a, dosyaya ve ağa dokunmaz: düğüm ekleme/silme, türlü uçlar arasında bağlantı (uyumsuz tür, döngü ve tek girişli uca ikinci bağlantı nedeniyle reddedilir), Kahn algoritmasıyla topolojik sıra, düğüm düğüm çalıştırma (hata veren kutudan sonrakiler "atlandı"), JSON dışa/içe aktarma ve kurala dayalı Türkçe açıklama. Aynı modül tarayıcıda bir Web Worker içinde ve Node'da testlerde çalışır. <b>Atölye</b> (<code>web/</code>) saf HTML, CSS ve ES modülleridir; derleme adımı, paket ya da CDN yoktur ve algoritmalar kopyalanmaz: katalog kayıt defterini, molekülü ve uyarlayıcıları doğrudan <code>../src/</code>'den içe aktarır. Tarayıcıda çalışmayan tek şey JSON içe aktarma sözdizimiydi; katsayılar ayrıca bir ES modülü olarak yazıldı (iki dosyanın aynı olduğunu bir test denetler).</p>
+<table>
+  <tr><th>Hazır paket</th><th>Örnek veri (depodaki gerçek dosyalar)</th><th class="n">Bulgu (atölye = komut satırı)</th><th>Seçilen atom</th></tr>
+  <tr><td>Teknik borç avı</td><td>Agora <code>forum/</code>, 114 dosya</td><td class="n">18</td><td>Horspool</td></tr>
+  <tr><td>Gizli bilgi sızıntısı (+ kapı)</td><td>3 açıkça sahte örnek dosya</td><td class="n">7</td><td>Wu-Manber</td></tr>
+  <tr><td>Yasaklı / riskli API</td><td>Agora <code>forum/</code></td><td class="n">3</td><td>Horspool</td></tr>
+  <tr><td>Log incelemesi</td><td>log üreticisi + 3 Traceback örneği</td><td class="n">117</td><td>Wu-Manber</td></tr>
+  <tr><td>Tek desen, büyük dosya</td><td><code>bench/corpus/kod.txt</code></td><td class="n">882 + 7 715</td><td>bm4DNADS / Aho-Corasick</td></tr>
+  <tr><td>Biyoloji köprüsü</td><td>lambda genomu</td><td class="n">121 + 121</td><td>bm4DNADS</td></tr>
+</table>
 
-<h2>Ek C. Tasarım notu</h2>
+<h2>Ek C. Yazılım mühendisliği: gereksinimler, tasarım ilkeleri, test stratejisi ve UML</h2>
+<h3>C.1 Gereksinimler ve izlenebilirlik</h3>
+<p class="small">İG: işlevsel gereksinim (sistemin ne yapacağı); İOG: işlevsel olmayan gereksinim (nasıl yapacağı: hız, taşınabilirlik, erişilebilirlik). Her gereksinim onu doğrulayan teste ya da ölçüme bağlıdır (izlenebilirlik).</p>
+<table>
+  <tr><th>#</th><th>Gereksinim</th><th>Karşılayan</th><th>Doğrulama</th></tr>
+  <tr><td>İG1</td><td>Bir ya da çok desenin bütün geçişleri, sözleşmedeki sırayla (konum, desen sırası), örtüşenler dahil</td><td>8 atom, <code>ExactSearchAtom</code></td><td>contract, atoms, oracle (360 rastgele vaka)</td></tr>
+  <tr><td>İG2</td><td>Girdinin şekline göre atom seçimi ve gerekçeli karar kaydı</td><td><code>ExactMatch</code>, <code>costModel</code>, <code>shape</code></td><td>molecule.test.js; doğrulama kümeleri D, E</td></tr>
+  <tr><td>İG3</td><td>Molekül değişmeden yeni atom eklenebilmeli</td><td><code>Registry</code></td><td>sahte atom testleri (molecule, engine)</td></tr>
+  <tr><td>İG4</td><td>Kaynak kod ve log taraması; dosya:satır:sütun; bulgu varsa CI'da başarısızlık</td><td><code>sourceToEntry</code>, <code>CodeScan</code>, <code>ios scan --fail</code></td><td>cli.test.js, core.test.js</td></tr>
+  <tr><td>İG5</td><td>Tarayıcıda iş akışı kurma: kutu ekleme, türlü uçları bağlama, uyumsuz bağlantıyı nedeniyle reddetme, çalıştırma, açıklama, dışa/içe aktarma, paylaşım bağlantısı</td><td><code>engine</code>, <code>catalog</code>, <code>web/</code></td><td>engine.test.js; arayüz denetimi (29 denetim)</td></tr>
+  <tr><td>İG6</td><td>Hazır paketler komut satırıyla aynı sonucu vermeli</td><td><code>packages.js</code></td><td>packages.test.js, <code>npm run paketler</code>, arayüz denetimi</td></tr>
+  <tr><td>İOG1</td><td>Node 22+, ES modülleri, npm paketi yok; atomlarda hazır arama işlevi, console, dosya, ağ yok</td><td>bütün <code>src/</code></td><td>forbidden.test.js; temiz kopyada <code>npm test</code></td></tr>
+  <tr><td>İOG2</td><td>Seçim hızlı olmalı: karar süresi aramaya göre küçük</td><td>v4 örneklemi (64 × 256)</td><td><code>karar-yuku-v4.md</code>: medyanda %4,1 (D)</td></tr>
+  <tr><td>İOG3</td><td>Arayüz donmamalı, klavyeyle kullanılabilmeli, 1280 px ve 390 px'te bozulmamalı, açık/koyu tema</td><td>Web Worker, <code>app.css</code></td><td>arayüz denetimi (yatay taşma 0 px, klavye, tema)</td></tr>
+  <tr><td>İOG4</td><td>Sonuçlar dürüst ve yeniden üretilebilir: tohumlu veri, bir kez ölçülen taze kümeler, sayılar dosyalardan</td><td><code>bench/</code>, <code>tests/benchmarks/</code></td><td>sayı denetimi betiği; sürüm tablosu</td></tr>
+</table>
+<h3>C.2 Tasarım ilkeleri (SOLID) ve desenler</h3>
 <table>
   <tr><th>İlke / desen</th><th>Nerede</th><th>Ne kazandırıyor</th></tr>
-  <tr><td>Template Method</td><td><code>src/atomic/ExactSearchAtom.js</code> (<code>process</code> iskelet; <code>prepare</code>, <code>scanText</code>, <code>padding</code> kancalar)</td><td>Sözleşme kuralları tek yerde; atom yalnızca algoritmasını yazar.</td></tr>
-  <tr><td>Strategy</td><td>Her atom bir arama stratejisi; <code>ExactMatch</code> çalışma anında birini seçer</td><td>Aynı arayüz, birbirinin yerine takılabilir uygulamalar.</td></tr>
-  <tr><td>Registry + Açık/Kapalı ilkesi</td><td><code>src/registry.js</code>; <code>ExactMatch.js</code>'te atom adı geçmez (testle denetlenir)</td><td>Yeni atom = yeni dosya + bir satır; molekül değişmez.</td></tr>
-  <tr><td>Adapter</td><td><code>src/adapters/sourceToEntry.js</code></td><td>Kod/log dosyaları FASTA.Entry'ye çevrilir.</td></tr>
-  <tr><td>Saf çekirdek / ince kabuk</td><td><code>src/functions</code> (yalnızca sayı dizileri), G/Ç yalnızca <code>bin/ios.js</code>'te</td><td>Atomlar tarayıcıda da çalışır; test edilmesi kolay.</td></tr>
+  <tr><td>Tek sorumluluk (S)</td><td>Çekirdek (<code>src/functions</code>), atom (sözleşme), molekül (seçim), motor (iş akışı), arayüz (çizim) ayrı modüller</td><td>Her modül tek bir nedenle değişir; ayrı test edilir.</td></tr>
+  <tr><td>Açık/Kapalı (O) + Registry</td><td><code>Registry</code>; <code>ExactMatch</code>'te ve atölye kataloğunda atom adı geçmez</td><td>Yeni atom = yeni dosya + bir satır; molekül ve atölye değişmez.</td></tr>
+  <tr><td>Yerine geçebilme (L) + Strategy</td><td>Her atom aynı girdi/çıktı sözleşmesi; NaiveSearch ile birebir</td><td>Molekül atomları birbirinin yerine takar.</td></tr>
+  <tr><td>Arayüz ayrımı (I)</td><td>Atom yalnızca <code>prepare</code>, <code>scanText</code> yazar; seçim bilgisi ayrı <code>selection</code> nesnesinde</td><td>Atom yazarı molekülün içini bilmek zorunda değil.</td></tr>
+  <tr><td>Bağımlılığın tersine çevrilmesi (D)</td><td>Molekül somut atomlara değil kayıt defterine; motor somut bileşenlere değil kataloğa bağlı; örnek veri <code>ctx.loadSample</code> ile dışarıdan</td><td>Testte sahte atom ve sahte yükleyici takılabilir.</td></tr>
+  <tr><td>Template Method</td><td><code>ExactSearchAtom.process</code> iskelet; kancalar alt sınıfta</td><td>Sözleşme kuralları tek yerde.</td></tr>
+  <tr><td>Adapter</td><td><code>sourceToEntry</code>, <code>parseFasta</code>, eşleşme → bulgu</td><td>Kod, log ve FASTA aynı atomlara akar.</td></tr>
+  <tr><td>Saf çekirdek / ince kabuk</td><td><code>src/</code> G/Ç'siz; G/Ç <code>bin/ios.js</code> ve <code>web/</code>'de (Şekil 9)</td><td>Aynı kod Node'da, tarayıcıda ve Worker'da çalışır.</td></tr>
 </table>
+<h3>C.3 Test stratejisi</h3>
+<p class="small">Birim testleri (atom, şekil, NNLS, motor) → bütünleşme testleri (komut satırı alt süreç olarak; paketler uçtan uca motorla) → kabul testleri (gerçek tarayıcıda arayüz denetimi; altı paket = komut satırı) → test kalitesinin denetimi (mutasyon: 12/12) → performans doğrulaması (kalibrasyondan ayrı, bir kez ölçülen taze kümeler). Referans uygulama (oracle) yöntemi: hızlı her atomun çıktısı yavaş ama kesin doğru NaiveSearch'ünkiyle eleman eleman karşılaştırılır.</p>
+<h3>C.4 UML diyagramları</h3>
+<p class="small">Kaynaklar <code>docs/uml/*.puml</code> (PlantUML); çizimler <code>docs/uml/svg/</code>, hepsi tek dosyada <code>docs/uml/UML_Diyagramlari.pdf</code>.</p>
+<figure><img src="../uml/svg/1_kullanim_durumu.svg" alt="Kullanım durumu diyagramı"><figcaption><b>Şekil 3.</b> Kullanım durumu: geliştirici, biyoinformatikçi ve CI; tarama ve genom araması "en hızlı atomu seç"i içerir (include), derlemeyi durdurma taramayı genişletir (extend).</figcaption></figure>
+<figure><img src="../uml/svg/2a_sinif_atom_molekul.svg" alt="Sınıf diyagramı: atomlar, molekül, kayıt defteri"><figcaption><b>Şekil 4.</b> Sınıf diyagramı 1: Template Method (ExactSearchAtom), Strategy (atomlar), Registry ve molekül.</figcaption></figure>
+<figure><img src="../uml/svg/2b_sinif_is_akisi.svg" alt="Sınıf diyagramı: iş akışı motoru"><figcaption><b>Şekil 5.</b> Sınıf diyagramı 2: iş akışı motoru, uç türleri ve atölye.</figcaption></figure>
+<figure><img src="../uml/svg/3a_sirali_molekul_karari.svg" alt="Sıralı diyagram: molekülün kararı"><figcaption><b>Şekil 6.</b> Sıralı diyagram: <code>ios explain / run</code> ile molekülün kararı.</figcaption></figure>
+<figure><img src="../uml/svg/3b_sirali_atolye_calistirma.svg" alt="Sıralı diyagram: atölyede çalıştırma"><figcaption><b>Şekil 7.</b> Sıralı diyagram: atölyede çalıştırma (Web Worker, topolojik sıra).</figcaption></figure>
+<figure><img src="../uml/svg/3c_sirali_baglanti.svg" alt="Sıralı diyagram: bağlantı ve reddi"><figcaption><b>Şekil 8.</b> Sıralı diyagram: iki ucu bağlama ve uyumsuz bağlantının reddi.</figcaption></figure>
+<figure><img src="../uml/svg/4_katmanlar.svg" alt="Paket diyagramı"><figcaption><b>Şekil 9.</b> Paket (katman) diyagramı: bağımlılıklar yalnızca aşağı doğru.</figcaption></figure>
 
-<div class="keep">
 <h2>Ek D. Ek sonuçlar</h2>
-<figure>
-  <img src="sekil3_dagilim.svg" alt="Taze kümede yavaşlamanın birikimli dağılımı: molekül, Allmer kuralı ve hep Wu-Manber">
-  <figcaption><b>Şekil 3.</b> Taze küme B'de yavaşlamanın birikimli dağılımı. Molekül vakaların %85,8'inde 1×'te (en hızlı); en kötü vakası 1,36×.</figcaption>
-</figure>
-</div>
 <table>
-  <tr><th>Alt küme (B)</th><th>Politika</th><th class="n">Vaka</th><th class="n">En hızlı</th><th class="n">%10 içinde</th><th class="n">Geo. ort.</th><th class="n">En kötü</th></tr>
-  <tr><td>Görülen alfabeler (DNA, protein, kod)</td><td>ExactMatch</td><td class="n">60</td><td class="n">%88,3</td><td class="n">%95,0</td><td class="n">1,013</td><td class="n">1,31×</td></tr>
-  <tr><td>Görülen alfabeler</td><td>Allmer 2016</td><td class="n">60</td><td class="n">%8,3</td><td class="n">%10,0</td><td class="n">3,238</td><td class="n">38,34×</td></tr>
-  <tr><td>Görülmeyen alfabeler (log, ikili, metin)</td><td>ExactMatch</td><td class="n">60</td><td class="n">%83,3</td><td class="n">%90,0</td><td class="n">1,019</td><td class="n">1,36×</td></tr>
-  <tr><td>Görülmeyen alfabeler</td><td>Allmer 2016</td><td class="n">60</td><td class="n">%3,3</td><td class="n">%5,0</td><td class="n">3,051</td><td class="n">59,49×</td></tr>
+  <tr><th>Politika (taze küme E, v4, k = 1, 120 vaka)</th><th class="n">En hızlı</th><th class="n">%10 içinde</th><th class="n">Geo. ort.</th><th class="n">En kötü</th><th class="n">Toplam / en iyi</th></tr>
+  <tr class="hl"><td>ExactMatch: seçilen atom</td><td class="n">%55,0</td><td class="n">%70,8</td><td class="n">1,081</td><td class="n">2,06×</td><td class="n">1,105</td></tr>
+  <tr class="hl"><td>ExactMatch: uçtan uca</td><td class="n">%20,0</td><td class="n">%34,2</td><td class="n">1,300</td><td class="n">3,10×</td><td class="n">1,088</td></tr>
+  <tr><td>Allmer 2016 kuralı</td><td class="n">%22,5</td><td class="n">%50,8</td><td class="n">1,192</td><td class="n">2,67×</td><td class="n">1,147</td></tr>
+  <tr><td>her zaman Horspool</td><td class="n">%42,5</td><td class="n">%64,2</td><td class="n">1,198</td><td class="n">5,26×</td><td class="n">1,203</td></tr>
+  <tr><td>her zaman bm4DNADS</td><td class="n">%22,5</td><td class="n">%53,3</td><td class="n">1,257</td><td class="n">6,55×</td><td class="n">1,216</td></tr>
+  <tr><td>her zaman Wu-Manber</td><td class="n">%20,8</td><td class="n">%26,7</td><td class="n">1,315</td><td class="n">3,23×</td><td class="n">1,331</td></tr>
 </table>
-<p class="small">Ham ölçümler: <code>bench/results/calibration.json</code>, <code>validation.json</code> (A, v3), <code>validation-v1.json</code>, <code>validation-v2.json</code>, <code>validation-taze.json</code> (B), <code>validation-tek.json</code> (C, k = 1). Tablolar aynı adlı <code>.md</code> dosyalarında. Makine: Intel Xeon 2,30 GHz, 4 çekirdek, 16 GB, Linux 6.18, Node v22.23.4; ölçümlerde <code>--expose-gc</code> açık.</p>
+<table>
+  <tr><th>Alt küme (D)</th><th>Politika</th><th class="n">Vaka</th><th class="n">En hızlı</th><th class="n">%10 içinde</th><th class="n">Geo. ort.</th><th class="n">En kötü</th></tr>
+  <tr><td>Görülen alfabeler (DNA, protein, kod)</td><td>ExactMatch (seçilen)</td><td class="n">60</td><td class="n">%80,0</td><td class="n">%86,7</td><td class="n">1,040</td><td class="n">1,49×</td></tr>
+  <tr><td>Görülen alfabeler</td><td>Allmer 2016</td><td class="n">60</td><td class="n">%1,7</td><td class="n">%6,7</td><td class="n">2,680</td><td class="n">18,71×</td></tr>
+  <tr><td>Görülmeyen alfabeler (log, ikili, metin)</td><td>ExactMatch (seçilen)</td><td class="n">60</td><td class="n">%73,3</td><td class="n">%81,7</td><td class="n">1,061</td><td class="n">2,00×</td></tr>
+  <tr><td>Görülmeyen alfabeler</td><td>Allmer 2016</td><td class="n">60</td><td class="n">%3,3</td><td class="n">%5,0</td><td class="n">2,413</td><td class="n">17,71×</td></tr>
+</table>
+<div class="two">
+<figure><img src="sekil2_politikalar.svg" alt="D kümesinde politikaların yavaşlaması"><figcaption><b>Şekil 10.</b> D'de politikaların yavaşlaması (log ölçek); açık mavi: molekül uçtan uca.</figcaption></figure>
+<figure><img src="sekil3_dagilim.svg" alt="D kümesinde yavaşlamanın birikimli dağılımı"><figcaption><b>Şekil 11.</b> D'de yavaşlamanın birikimli dağılımı.</figcaption></figure>
+</div>
+<p class="small">Ham ölçümler (<code>bench/results/</code>): <code>calibration.json</code> (v4), <code>calibration-v3.json</code>, <code>validation-v1/-v2.json</code>, <code>validation.json</code> (A), <code>validation-taze.json</code> (B), <code>validation-tek.json</code> (C), <code>validation-d.json</code> (D), <code>validation-e.json</code> (E), <code>karar-yuku-v4.json</code>; tablolar aynı adlı <code>.md</code> dosyalarında. Ölçümlerde <code>--expose-gc</code> açık. Rapordaki her sayı <code>scripts/sayi-denetimi.js</code> ile bu dosyalara karşı denetlenir.</p>
 
 <h2>Ek E. Kaynaklar</h2>
 <ol class="small">
-  <li>Allmer J. (2016). Exact pattern matching: Adapting the Boyer-Moore algorithm for DNA searches. PeerJ PrePrints 4:e1758v1. (Bu çalışma ortamından erişilemedi; Bölüm 2.)</li>
+  <li>Allmer J. (2016). Exact pattern matching: Adapting the Boyer-Moore algorithm for DNA searches. PeerJ PrePrints 4:e1758v1. (Bu çalışma ortamından erişilemedi.)</li>
   <li>Boyer R. S., Moore J. S. (1977). A fast string searching algorithm. CACM 20(10).</li>
   <li>Horspool R. N. (1980). Practical fast searching in strings. Software: Practice and Experience 10(6).</li>
   <li>Hume A., Sunday D. (1991). Fast string searching. Software: Practice and Experience 21(11).</li>
@@ -250,12 +264,14 @@ node bin/ios.js scan --preset secrets --fail src/                               
   <li>Aho A. V., Corasick M. J. (1975). Efficient string matching. CACM 18(6).</li>
   <li>Wu S., Manber U. (1994). A fast algorithm for multi-pattern searching. TR-94-17, University of Arizona.</li>
   <li>Lawson C. L., Hanson R. J. (1974). Solving Least Squares Problems. Prentice-Hall (NNLS).</li>
-  <li>Charras C., Lecroq T. Exact String Matching Algorithms (çevrimiçi el kitabı; iyi sonek tablosu kuruluşu).</li>
-  <li>Veri: NCBI NC_001416.1 (bowtie2 deposundaki kopya); UniProtKB/Swiss-Prot E. coli K-12 kayıtları (GitHub'daki açık FASTA dosyaları, <code>tests/data/*.kaynak.tsv</code>).</li>
+  <li>Kahn A. B. (1962). Topological sorting of large networks. CACM 5(11) (iş akışı motorundaki sıra).</li>
+  <li>Charras C., Lecroq T. Exact String Matching Algorithms (çevrimiçi el kitabı).</li>
+  <li>Internet of Science: hub.ioscience.org/p/learn/ (bu ortamdan açılamadı; atölye düzeni ödevdeki tarife göre).</li>
+  <li>Veri: NCBI NC_001416.1 (bowtie2 deposundaki kopya); UniProtKB/Swiss-Prot E. coli K-12 kayıtları (<code>tests/data/*.kaynak.tsv</code>); bu deponun Agora projesi (<code>forum/</code>).</li>
 </ol>
 
-<h2>Ek F. Yapay zekâ kullanımı</h2>
-<p>Kod, testler, ölçüm betikleri, şekiller ve bu rapor bir yapay zekâ kodlama aracıyla (Claude Code) üretildi. Bütün sayılar bu çalışma sırasında çalıştırılan komutların çıktısından alındı (Ek D'deki dosyalar). Dersin yapay zekâ politikası (izinli / kısıtlı / yasak) henüz belli değildir; öğrenildiğinde bu bölüm güncellenecektir. Sunumda her bölümün anlatılabilmesi için <code>docs/anlatim.md</code> hazırlandı.</p>
+<h2>Ek F. Yapay zekâ kullanımı ve ekip</h2>
+<p>Ders politikası yapay zekâ kullanımını serbest bırakıyor. Kod, testler, ölçüm betikleri, iş akışı motoru ve atölye, site, slaytlar, şekiller ve bu rapor bir yapay zekâ kodlama aracıyla (Claude Code) üretildi. Bütün sayılar bu çalışma sırasında çalıştırılan komutların çıktısından alındı. Sunumda her bölümün anlatılabilmesi için <code>docs/anlatim.md</code> hazırlandı. Grup üyelerinin katkıları: Baki <span class="ph">[soyad, numara]</span>: <span class="ph">[...]</span>; <span class="ph">[Üye 2 ad soyad, numara]</span>: <span class="ph">[...]</span>.</p>
 </section>
 
 </main>

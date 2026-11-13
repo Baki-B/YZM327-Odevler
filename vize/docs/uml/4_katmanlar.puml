@@ -1,0 +1,28 @@
+@startuml 4_katmanlar
+!include _stil.iuml
+title Paket (katman) diyagramı: modüller ve bağımlılık yönü
+package "bin/ios.js «komut satırı»" as CLI
+package "web/ «atölye (tarayıcı)»" as WEB
+package "tests/ + scripts/ «doğrulama»" as TST
+package "src/workflows «iş akışı»" as WF
+package "src/adapters + fasta «uyarlayıcı»" as AD
+package "src/molecules «molekül»" as MOL
+package "src/registry.js «kayıt defteri»" as REG
+package "src/shape.js «veri şekli»" as SH
+package "src/atomic «atomlar»" as AT
+package "src/functions «saf çekirdekler»" as FN
+CLI ..> WF
+WEB ..> WF
+WF ..> AD
+WF ..> MOL
+MOL ..> REG
+MOL ..> SH
+MOL ..> AT
+REG ..> AT
+AT ..> FN
+note right of AD
+  Bağımlılıklar yalnızca aşağı doğru.
+  src/ G/Ç yapmaz: dosya, ağ ve DOM
+  yalnızca bin/ios.js ve web/ içinde.
+end note
+@enduml

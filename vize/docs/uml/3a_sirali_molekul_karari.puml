@@ -1,0 +1,37 @@
+@startuml 3a_sirali_molekul_karari
+!include _stil.iuml
+title Sıralı diyagram 1: molekülün kararı (ios explain / run)
+autonumber
+hide footbox
+actor Kullanıcı as U
+participant "bin/ios.js" as CLI
+participant ExactMatch as EM
+participant shape as SH
+participant Registry as RG
+participant costModel as CM
+participant "Seçilen atom" as AT
+U -> CLI : explain --patterns GATC,GGATCC < lambda.fa
+CLI -> CLI : parseFasta(stdin)
+CLI -> EM : new ExactMatch({ patterns, strategy: "auto" })
+CLI -> EM : decide(ilk kayıt)
+EM -> SH : computeShape(kayıt, desenler)
+SH --> EM : n, σ, σe, k, mMin, mMax, mMean (64 × 256 örneklem)
+EM -> RG : candidates()
+RG --> EM : aday atom sınıfları
+loop her aday atom
+  EM -> CM : applicable(şekil)? ise estimateCost(atom, şekil, katsayılar)
+  CM --> EM : tahmini süre (ms)
+end
+EM -> EM : en ucuzu seç; record = { requested, selected, shape, estimates, why }
+EM -> AT : new Atom(params): desenleri bir kez ön işle
+EM --> CLI : record
+alt explain
+  CLI --> U : record (JSON)
+else run
+  loop her kayıt
+    EM -> AT : process(kayıt)
+    AT --> EM : Sequence.Match …
+  end
+  CLI --> U : stdout: JSONL; stderr: karar özeti
+end
+@enduml

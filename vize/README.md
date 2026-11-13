@@ -1,24 +1,36 @@
-# Akıllı Tam Desen Eşleştirme (IoS: `sequence.pattern-match.exact`)
+# Akıllı Tam Desen Eşleştirme ve Kod Bilimi Atölyesi (IoS: `sequence.pattern-match.exact`)
 
-Vize projesi. Bir metin (genom, protein, kaynak kod, log) içinde bir ya da daha çok desenin geçtiği bütün yerleri bulan **yedi yeni atom** ve girdinin şekline bakıp bunlardan en hızlısını seçen **ExactMatch molekülü** içerir. Seçim, ölçümle kalibre edilmiş bir maliyet modeliyle yapılır.
+Vize projesi (grup çalışması). Bir metinde (genom, protein, kaynak kod, log) bir ya da daha çok desenin geçtiği bütün yerleri bulan **yedi yeni atom** (+ Boyer-Moore), girdinin şekline bakıp en hızlısını seçen **ExactMatch molekülü** ve bunları yazılım mühendisliğinde kullanan tarayıcı tabanlı bir iş akışı düzenleyicisi: **Kod Bilimi Atölyesi**. Seçim, ölçümle kalibre edilmiş bir maliyet modeliyle yapılır.
 
-**Sonuç (kalibrasyonda görülmemiş 120 vakalık taze küme):** Molekül vakaların %85,8'inde en hızlı atomu seçti, %92,5'inde en hızlının %10 yakınında kaldı. Yavaşlamanın geometrik ortalaması 1,016, en kötü vaka 1,36×. En iyi tek atom (hep Wu-Manber) 1,139 ve 2,30×, Allmer 2016 kuralı 3,143 ve 59,5× aldı.
+**Sonuç (model v4, kalibrasyonda ve hiçbir kararda kullanılmamış taze kümeler, birer kez ölçüldü):**
 
-Tek desende (ek küme C, k = 1, 120 vaka) seçim zayıflar: %51,7 en hızlı, geo. ort. 1,073, en kötü 2,10× (en iyi tek atom 1,224). Bu tablolar ödevin tanımıyla seçilen atomun süresini karşılaştırır; molekülün karar süresi dahil edilince B'de geo. ort. 1,187 olur (hep Wu-Manber 1,139). Ayrıntı rapor bölüm 6–7'de.
+- **Çok desen (D, 120 vaka):** molekülün seçtiği atom %76,7 en hızlı, %84,2 en hızlının %10 yakınında; yavaşlamanın geometrik ortalaması **1,051**, en kötü **2,00×**. Karar süresi dahil **uçtan uca**: **0,990**, en kötü 3,26×. En iyi tek atom (hep Wu-Manber) 1,131 ve 2,78×; Allmer 2016 kuralı 2,543 ve 18,71×.
+- **Tek desen (E, 120 vaka):** seçilen atomla 1,081, en kötü 2,06×; uçtan uca 1,300. Burada molekül uçtan uca hep Horspool (1,198) ve Allmer kuralının (1,192) gerisinde.
+- **Karar yükü:** v3'te karar için metin 262 144 karaktere kadar sayılıyordu; v4 en fazla 64 × 256 karakter sayar. Şekil hesabı D'de medyanda 0,648 ms'den 0,063 ms'ye indi; karar süresi / seçilen atomun süresi medyanda %4,1 (D), %11,4 (E). Uçtan uca oranın 1'in altına düşmesi ölçüm sapmasıdır (molekül, kendi seçtiği atomdan medyanda kısa ölçüldü: 0,951); bu yüzden karar süresi ayrıca ölçüldü.
+- v3 (A, B, C) ile v4 (D, E) farklı makinelerde ölçüldü; yeni makine aynı ölçümleri medyanda 1,74 kat yavaş yaptı. Ayrıntı: rapor bölüm 6–7, [bench/results/makine-karsilastirma.md](bench/results/makine-karsilastirma.md).
 
-Hocanın "yazılım mühendisliğine uygulayın" isteği için aynı molekül kaynak kod ve log dosyalarında da çalışır: `ios scan --preset todo src/`.
+## Teslim parçaları
+
+| Parça | Nerede |
+|---|---|
+| **Rapor** | [docs/rapor/Rapor.pdf](docs/rapor/Rapor.pdf): IoS bileşen yayını biçiminde 8 bölüm (ana metin 5 sayfa) + ekler (gereksinimler, SOLID, test stratejisi, UML) |
+| **Sunum** | [docs/sunum/index.html](docs/sunum/index.html): 10 slayt, ← → ile ilerler, `P` ile PDF'ye yazdırılır; konuşma notları [docs/sunum.md](docs/sunum.md) |
+| **Site** | [site/index.html](site/index.html): ana sayfa, atölye, bileşenler (her bileşen için yayın sayfası), sonuçlar, rapor, ekip |
+| **Atölye** | [web/index.html](web/index.html): iş akışı düzenleyicisi (aşağıda nasıl açılacağı) |
+| **UML** | [docs/uml/](docs/uml/README.md): kullanım durumu, 2 sınıf, 3 sıralı, paket diyagramı; tek dosyada [UML_Diyagramlari.pdf](docs/uml/UML_Diyagramlari.pdf) |
+| **GitHub** | bu depo; commit geçmişi |
 
 | Belge | İçinde |
 |---|---|
-| [docs/rapor/Rapor.pdf](docs/rapor/Rapor.pdf) | Rapor (IoS bileşen yayını biçiminde, 8 bölüm + ekler) |
-| [bench/results/validation-taze.md](bench/results/validation-taze.md) | **Doğrulama tablosu** (taze küme B: hiçbir karar için kullanılmamış 120 vaka) |
-| [bench/results/validation-tek.md](bench/results/validation-tek.md) | Tek desenli ek küme C (k = 1, 120 vaka) |
-| [bench/results/validation.md](bench/results/validation.md) | İlk doğrulama kümesi A, son model (v1 ve v2 sonuçları `validation-v1.md`, `validation-v2.md`) |
-| [bench/results/calibration-fit.md](bench/results/calibration-fit.md) | Kalibrasyon katsayıları ve uydurma kalitesi |
-| [docs/sapmalar.md](docs/sapmalar.md) | Allmer 2016'dan ve klasik tariflerden sapmalar, gerekçeleriyle |
-| [docs/mutasyon.md](docs/mutasyon.md) | Mutasyon denetimi: testler bilerek konan hataları yakalıyor mu? |
-| [docs/anlatim.md](docs/anlatim.md) | Her dosyanın ve algoritmanın sade anlatımı (sunum hazırlığı için) |
-| [docs/sunum.md](docs/sunum.md) | 5 dakikalık sunum akışı ve olası sorular |
+| [bench/results/validation-d.md](bench/results/validation-d.md) | **Doğrulama tablosu**, v4, çok desen (D) |
+| [bench/results/validation-e.md](bench/results/validation-e.md) | v4, tek desen (E) |
+| [bench/results/karar-yuku-v4.md](bench/results/karar-yuku-v4.md) | Karar süresinin doğrudan ölçümü, örneklem doğruluğu |
+| `validation-taze.md`, `validation-tek.md`, `validation.md`, `validation-v1.md`, `validation-v2.md` | Eski sürümlerin kümeleri (B, C, A); silinmedi |
+| [bench/results/calibration-fit.md](bench/results/calibration-fit.md) | Kalibrasyon katsayıları (v4); v3: `calibration-fit-v3.md` |
+| [docs/sapmalar.md](docs/sapmalar.md) | Allmer 2016'dan ve klasik tariflerden sapmalar |
+| [docs/mutasyon.md](docs/mutasyon.md) | Mutasyon denetimi |
+| [docs/anlatim.md](docs/anlatim.md) | Her dosyanın, atölyenin ve iş akışı motorunun sade anlatımı |
+| [docs/kontrol.md](docs/kontrol.md) | Ödev kontrol listesi |
 | [KARARLAR.md](KARARLAR.md) | Ödev metninin açık bıraktığı noktalarda verilen kararlar |
 
 ## Kurulum
@@ -29,18 +41,40 @@ Node.js 22 ya da üstü yeterlidir. Hiçbir npm paketi kullanılmaz; `npm instal
 node --version
 ```
 
+## Atölyeyi, siteyi ve sunumu yerelde açmak
+
+Atölye ES modülleri ve Web Worker kullandığı için `file://` ile değil, bir sunucudan açılmalıdır. Depoda bağımlılıksız bir sunucu var (yalnızca Node'un kendi modülleri, yalnızca 127.0.0.1):
+
+```bash
+npm run web
+```
+
+Sonra tarayıcıda: atölye `http://localhost:8327/web/`, site `http://localhost:8327/site/`, sunum `http://localhost:8327/docs/sunum/`. Başka bir bağlantı noktası için: `node scripts/sunucu.js --port 9000`.
+
+Atölyede: soldan bir hazır paket seçin (ya da bileşenleri tuvale sürükleyip uçlarını bağlayın) ve **Tarayıcıda çalıştır**'a basın. ExactMatch kutusunu seçince molekülün karar kaydı (`explain`) sağ panelde görünür; **Açıkla** iş akışını Türkçe cümlelerle anlatır; **Atomları yarıştır** aynı girdide bütün atomları tarayıcıda ölçer (gösterim amaçlı; rapordaki sayılar Node ölçümleridir). Kutu ekleme, taşıma ve bağlama klavyeyle de yapılır (Enter, ok tuşları, Delete, Esc; Ctrl+Enter çalıştırır).
+
+Hazır paketler: teknik borç avı, gizli bilgi sızıntısı (+ CI kapısı), yasaklı / riskli API, log incelemesi, tek desen / büyük dosya, biyoloji köprüsü (lambda genomu). Her birinin bulgu sayısı komut satırıyla aynıdır (`npm run paketler`).
+
 ## Komutlar
 
-| Komut | Ne yapar | Süre (bu makinede) |
-|---|---|---|
-| `npm test` | 328 birim testi: sözleşme, özel durumlar, oracle karşılaştırması (gerçek + sentetik + 360 rastgele vaka), molekül, komut satırı, yasaklı işlev taraması | ~3 sn |
-| `npm run calibrate` | Kalibrasyon ızgarasını ölçer (180 vaka × 8 atom), katsayıları `src/molecules/coefficients.json` dosyasına yazar | ~3 dk |
-| `npm run bench` | Doğrulama: 120 görülmemiş vaka, politikaların karşılaştırması → `bench/results/validation.md`. Taze küme için: `node --expose-gc tests/benchmarks/validate.js --seed 31415926 --name validation-taze`; tek desenli küme için aynı komuta `--seed 27182818 --name validation-tek --k 1` | ~2,5 dk |
-| `npm run figures` | Rapor şekillerini ölçüm dosyalarından üretir (`docs/rapor/*.svg`) | 1 sn |
-| `npm run mutation` | Mutasyon denetimi (12 bilerek konmuş hata) → `docs/mutasyon.md` | ~3 dk |
-| `npm run report` | `docs/rapor/rapor.html` → `docs/rapor/Rapor.pdf` (Playwright + Chromium gerekir; yalnızca bu komut için) | 5 sn |
+| Komut | Ne yapar |
+|---|---|
+| `npm test` | 360 birim testi: sözleşme, özel durumlar, oracle karşılaştırması, molekül, iş akışı motoru, hazır paketler, komut satırı, yasaklı işlev taraması |
+| `npm run calibrate` | Kalibrasyon ızgarasını ölçer (180 vaka × 8 atom), katsayıları `src/molecules/coefficients.json` ve `.js`'e yazar (bu makinede 233,9 s) |
+| `npm run bench` | Doğrulama kümesi A. Taze kümeler: `node --expose-gc tests/benchmarks/validate.js --seed 16180339 --name validation-d` (D) ve `... --seed 14142135 --name validation-e --k 1` (E). `--retable` ölçüm yapmadan tabloları yeniden kurar |
+| `npm run karar-yuku` | Karar süresinin doğrudan ölçümü ve örneklem doğruluğu → `bench/results/karar-yuku-v4.md` |
+| `npm run figures` | Rapor şekilleri (`docs/rapor/*.svg`) |
+| `npm run mutation` | Mutasyon denetimi (12 bilerek konmuş hata) → `docs/mutasyon.md` |
+| `npm run web` | Bağımlılıksız yerel sunucu (atölye, site, sunum) |
+| `npm run paketler` | Hazır paketleri iş akışı motoruyla çalıştırıp komut satırıyla karşılaştırır (`../forum` gerekir) |
+| `npm run ornekler` | Atölyenin örnek verilerini depodaki gerçek dosyalardan üretir (`web/data/`) |
+| `node scripts/site-uret.js` | Siteyi ve slaytları `bench/results/`'tan üretir (sayılar elle yazılmaz) |
+| `node scripts/uml-ciz.js --pdf` | UML diyagramları (`docs/uml/`) |
+| `node scripts/sayi-denetimi.js` | Rapor, README, sunum, site ve kontrol listesindeki her sayıyı kaynak dosyalara karşı denetler |
+| `node scripts/arayuz-denetimi.js` | Atölyenin gerçek Chromium'da uçtan uca denetimi (Playwright gerekir), ekran görüntüleri `docs/ekran/` |
+| `npm run report` | `docs/rapor/rapor.html` → `Rapor.pdf` (Playwright gerekir) |
 
-Ölçüm yaparken makinede başka ağır iş çalışmamalı. Sonuçlar makineye bağlıdır: teslimden önce `npm run calibrate` ve ardından `npm run bench` kendi bilgisayarınızda yeniden çalıştırılmalıdır.
+Ölçüm yaparken makinede başka ağır iş çalışmamalı. Sonuçlar makineye bağlıdır: teslimden önce `npm run calibrate` ve ardından taze kümeler kendi bilgisayarınızda yeniden çalıştırılabilir (yeni tohumla; eski sonuçlar silinmeden).
 
 ## Komut satırı
 
@@ -53,16 +87,12 @@ node bin/ios.js explain --patterns GATC,GGATCC < tests/data/lambda_NC_001416.fa
 ```
 
 ```bash
-node bin/ios.js run HorspoolSearch --patterns acgt --ignoreCase < girdi.fasta
-```
-
-```bash
 node bin/ios.js scan --preset todo ../forum
 ```
 
 - `run`: stdout'a satır başına bir `Sequence.Match` (JSONL) yazar; karar özeti stderr'e gider. Bileşen adı `ExactMatch` ya da bir atomun adı olabilir.
 - `explain`: yalnızca molekülün kararını (`record`) JSON olarak yazar.
-- `scan`: dosya ya da klasörlerde arar; çıktı `dosya:satır:sütun: desen`. Hazır kümeler: `todo`, `secrets`, `banned-api`, `errors`. Diğer seçenekler: `--json` (JSONL çıktı), `--fail` (bulgu varsa çıkış kodu 1, sürekli entegrasyonda kullanmak için).
+- `scan`: dosya ya da klasörlerde arar; çıktı `dosya:satır:sütun: desen`. Hazır kümeler: `todo`, `secrets`, `banned-api`, `errors`. `--json` (JSONL), `--fail` (bulgu varsa çıkış kodu 1; sürekli entegrasyon için).
 - `list`: kayıtlı atomları listeler.
 
 Kod içinden kullanım:
@@ -79,39 +109,79 @@ console.log(em.record); // { requested, selected, shape, estimates, why }
 ```
 src/functions/   algoritma çekirdekleri (saf; yalnızca sayı dizileri üzerinde çalışır)
 src/atomic/      atom sınıfları: manifest + selection + process (ExactSearchAtom ortak sınıf)
-src/molecules/   ExactMatch.js (molekül), costModel.js (tahmin + NNLS), coefficients.json
+src/molecules/   ExactMatch.js (molekül), costModel.js (tahmin + NNLS), coefficients.json/.js
 src/registry.js  kayıt defteri: yeni atom eklemek molekülü değiştirmez
-src/shape.js     veri şekli: n, σ, σe, k, mMin, mMax, mMean
+src/shape.js     veri şekli: n, σ, σe, k, mMin, mMax, mMean (64 × 256 karakterlik örneklem)
 src/adapters/    kaynak dosya → FASTA.Entry uyarlayıcısı
-src/workflows/   CodeScan (kaynak kod / log tarama) ve hazır desen kümeleri
+src/workflows/   iş akışı motoru (engine), atölye kataloğu, hazır paketler, atom yarışı, CodeScan
 bin/ios.js       komut satırı
-bench/           veri üretici (data.js), zaman ölçümü (timing.js), kod korpusu, sonuçlar (results/)
+web/             Kod Bilimi Atölyesi (saf HTML/CSS/JS; ../src modüllerini doğrudan içe aktarır)
+site/            proje sitesi (scripts/site-uret.js ile üretilir)
+bench/           veri üretici, zaman ölçümü, kod korpusu, sonuçlar (results/)
 tests/unit/      birim testleri (npm test)
-tests/benchmarks/ kalibrasyon, doğrulama ve şekil betikleri
+tests/benchmarks/ kalibrasyon, doğrulama, ölçütler, şekiller
 tests/data/      gerçek veri: lambda faj genomu, 126 E. coli K-12 proteini
-docs/            rapor, sapmalar, mutasyon, anlatım, sunum
-scripts/         korpus üretimi, mutasyon denetimi, PDF üretimi
+docs/            rapor, sunum, UML, sapmalar, mutasyon, anlatım, kontrol listesi, ekran görüntüleri
+scripts/         sunucu, örnek veri, paket karşılaştırması, site/UML üretimi, denetimler, PDF
 ```
 
-## Yeni bir atom eklemek
+## Teslim yapısı (ödev depo kökünde `src/`, `bin/`, `package.json` bekliyor)
 
-1. Çekirdeği `src/functions/` altına yazın.
-2. `ExactSearchAtom`'dan türeyen sınıfı `src/atomic/` altına yazın. Sınıf `manifest`, `selection.features`, `selection.defaults` ve gerekirse `selection.applicable` alanlarını, ayrıca `prepare()` ve `scanText()` yöntemlerini içerir.
-3. `src/registry.js` içindeki `BUILTIN` listesine ekleyin ya da çalışma anında `registry.register(YeniAtom)` çağırın.
-4. `npm run calibrate` çalıştırın.
+Proje bu deponun `vize/` klasöründe. Ödevin beklediği kök düzeni için önerilen yol: **yalnızca `vize/` geçmişini taşıyan ayrı bir dal**. Bu, mevcut dalları ve geçmişi değiştirmez; yeni bir dal oluşturur. Komutlar depo kökünden, `vize/` değişiklikleri commit edildikten sonra:
 
-`ExactMatch.js` değişmez. Bunu `tests/unit/molecule.test.js` içindeki sahte atom testi gösterir.
+```bash
+git subtree split --prefix=vize -b vize-teslim
+```
+
+```bash
+git push -u origin vize-teslim
+```
+
+`vize-teslim` dalının kökünde doğrudan `src/`, `bin/`, `package.json`, `tests/` bulunur ve `vize/` klasörünü değiştiren her commit (yol önekleri atılmış hâliyle) geçmişte yer alır. Denetim: dalı ayrı bir klasöre alıp `npm test` çalıştırın (testler `vize/` dışındaki hiçbir dosyaya bağlı değil):
+
+```bash
+git worktree add ../teslim vize-teslim
+```
+
+```bash
+cd ../teslim && npm test
+```
+
+Sınır: `npm run paketler` ve `scripts/arayuz-denetimi.js` Agora karşılaştırması için `../forum` klasörünü kullanır; teslim dalında bu iki betik yalnızca ana depoda çalışır (atölyenin örnek verisi `web/data/agora.json` dala dahildir). Teslim .zip olarak isteniyorsa: `git archive --format=zip -o vize-teslim.zip vize-teslim` (ödev `.git` klasörünü istiyorsa dal ayrı bir klasöre klonlanıp sıkıştırılmalı).
+
+## GitHub Pages'te yayınlama
+
+Site, atölye, sunum ve rapor statik ve göreli yollarla çalışır; `vize/` klasörünün kendisi sunulursa kökteki `index.html` siteye yönlendirir. Bu depoda Pages zaten Agora için GitHub Actions ile (`.github/workflows/sayfalar.yml`, yalnızca `main`) kullanılıyor; Agora'ya dokunmamak için o dosyayı değiştirmedim. İki yol:
+
+**A. Aynı depo (önerilen):** Bu dal `main`'e birleştirildikten sonra `.github/workflows/sayfalar.yml` içindeki "Siteyi derle" adımından hemen sonra şu adımı ekleyin:
+
+```yaml
+      - name: Vize projesini siteye ekle
+        run: cp -r vize _site/vize
+```
+
+`main`'e gönderince iş akışı çalışır; adres `https://baki-b.github.io/YZM327-Odevler/vize/` olur (Agora aynı yerde kalır). Ayarlarda değişiklik gerekmez (Pages kaynağı zaten "GitHub Actions").
+
+**B. Teslim dalından ayrı depo:** `vize-teslim` dalını yeni bir depoya gönderirseniz: depo **Settings → Pages → Build and deployment → Source: "Deploy from a branch"**, **Branch: `main` (ya da `vize-teslim`), klasör `/ (root)`** → Save. Birkaç dakika sonra adres `https://<kullanıcı>.github.io/<depo>/` olur.
 
 ## Veri kaynakları
 
 - **Lambda faj genomu:** NC_001416.1, 48 502 baz. `tests/data/lambda_NC_001416.fa` (bowtie2 deposundaki örnek dosya, NCBI kaydının kopyası).
-- **E. coli K-12 proteinleri:** 126 UniProtKB/Swiss-Prot kaydı (OX=83333), erişim numarasına göre ilk 126. `tests/data/ecoli_k12_126_proteins.fasta`; her kaydın kaynağı yanındaki `.kaynak.tsv` dosyasında.
-- **Kaynak kod korpusu:** bu deponun kendi Agora projesi (`forum/`, `testler/`, `tarayici/`, `olcum/`, `laboratuvar/`). `bench/corpus/kod.txt`, `scripts/korpus.js` ile üretilir.
+- **E. coli K-12 proteinleri:** 126 UniProtKB/Swiss-Prot kaydı (OX=83333). `tests/data/ecoli_k12_126_proteins.fasta`; her kaydın kaynağı `.kaynak.tsv` dosyasında.
+- **Kaynak kod korpusu:** bu deponun Agora projesi (`forum/`, `testler/`, `tarayici/`, `olcum/`, `laboratuvar/`) → `bench/corpus/kod.txt`.
+- **Atölye örnekleri** (`web/data/`, `npm run ornekler`): Agora `forum/` klasörü (114 dosya), bench/data.js log üreticisinden örnek log (+ 3 elle yazılmış örnek Traceback bloğu), açıkça **sahte** gizli bilgi örnekleri (gerçek anahtar yok; AKIA ile başlayan değer AWS belgelerindeki resmî örnek anahtardır).
+
+## Başlangıç paketi
+
+Paket verilmedi; karşılığı ödevin 4. ve 5. bölümüne göre yazıldı (`ExactSearchAtom`, `NaiveSearch`, `BoyerMooreSearch`, `alphabet.js`, `hits.js`, `fasta.js`, `bench/data.js`, `bench/timing.js`, `contract.test.js`). Proje kendi başına çalışır.
 
 ## Katkılar
 
-| Kişi | Katkı |
-|---|---|
-| Baki | Proje sahibi; kararların onayı, ölçümlerin kendi makinesinde yenilenmesi, sunum |
+| Üye | Numara | Katkı |
+|---|---|---|
+| Baki [soyad] | [numara] | [...] |
+| [Üye 2 ad soyad] | [numara] | [...] |
 
-**Yapay zekâ kullanımı:** Kod, testler, ölçüm betikleri, rapor ve belgeler bir yapay zekâ kodlama aracıyla (Claude Code) üretildi. Ders politikası (izinli / kısıtlı / yasak) henüz belli değil; öğrenilince bu bölüm ve raporun ilgili kısmı güncellenmeli. Sunumda her bölümün anlatılabilmesi için [docs/anlatim.md](docs/anlatim.md) hazırlandı.
+Ders: [ders kodu ve adı] · Öğretim elemanı: [ad soyad]
+
+**Yapay zekâ kullanımı:** Ders politikası yapay zekâ kullanımını serbest bırakıyor. Kod, testler, ölçüm betikleri, iş akışı motoru ve atölye, site, slaytlar, UML diyagramları, rapor ve belgeler bir yapay zekâ kodlama aracıyla (Claude Code) üretildi. Bütün sayılar bu çalışmada çalıştırılan komutların çıktısından alındı ve `scripts/sayi-denetimi.js` ile denetlendi. Sunumda her bölümün anlatılabilmesi için [docs/anlatim.md](docs/anlatim.md) hazırlandı.

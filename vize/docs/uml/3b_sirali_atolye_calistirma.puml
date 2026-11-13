@@ -1,0 +1,36 @@
+@startuml 3b_sirali_atolye_calistirma
+!include _stil.iuml
+title Sıralı diyagram 2: atölyede "Tarayıcıda çalıştır"
+autonumber
+hide footbox
+actor Kullanıcı as U
+participant "Arayüz\napp.js" as UI
+participant "runner.js" as RN
+participant "Web Worker\ncore.js" as WK
+participant engine as EN
+participant "Bileşen\n(katalog)" as CP
+participant "ExactMatch\n/ atom" as EM
+U -> UI : "Tarayıcıda çalıştır"
+UI -> EN : validateWorkflow(wf) (ana iş parçacığı)
+EN --> UI : sorun listesi
+alt sorun var
+  UI --> U : rozet "hata: …", sorunlar özellikler panelinde
+else sorun yok
+  UI -> RN : runWorkflowRemote(JSON)
+  RN -> WK : postMessage({ cmd: "run", JSON })
+  WK -> EN : runWorkflow(wf, katalog, ctx)
+  EN -> EN : topologicalOrder()
+  loop her kutu, topolojik sırayla
+    EN -> CP : run(girdiler, ayarlar, ctx)
+    opt arama kutusu
+      CP -> EM : run(entries) / process()
+      EM --> CP : eşleşmeler + record
+    end
+    CP --> EN : çıkışlar + bilgi (özet, süre)
+    WK --> RN : postMessage(progress)
+    RN --> UI : kutu durumu (çalışıyor → bitti)
+  end
+  WK --> RN : sonuç (bilgiler; büyük metinler gönderilmez)
+  UI --> U : "bitti: N bulgu, X ms", bulgu tablosu, karar kaydı
+end
+@enduml

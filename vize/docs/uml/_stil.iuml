@@ -1,0 +1,22 @@
+' Ortak görünüm: atölyenin renkleri (mürdüm çizgi, açık zemin, camgöbeği kullanım durumları)
+skinparam defaultFontName Inter
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #4C2A4A
+skinparam ActorBorderColor #4C2A4A
+skinparam UsecaseBorderColor #127C86
+skinparam UsecaseBackgroundColor #E6F4F5
+skinparam ClassBorderColor #4C2A4A
+skinparam ClassBackgroundColor #FAF7FA
+skinparam ClassHeaderBackgroundColor #EFE3EE
+skinparam PackageBorderColor #4C2A4A
+skinparam PackageBackgroundColor #FAF7FA
+skinparam NoteBackgroundColor #FFF6DC
+skinparam NoteBorderColor #C9B37A
+skinparam SequenceParticipantBackgroundColor #EFE3EE
+skinparam SequenceParticipantBorderColor #4C2A4A
+skinparam SequenceLifeLineBorderColor #A49AA6
+hide circle
+set separator none

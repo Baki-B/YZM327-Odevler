@@ -36,7 +36,7 @@ Yedek: atölye açılmazsa aynı kararı terminalde gösterin (aşağıdaki "Yed
 ### Canlı demo (atölye, ~80 sn)
 
 1. Sol panel → **# tek-desen-büyük-dosya**. "Aynı 880 KB kaynak kod dosyası, iki dal: üstte tek desen, altta 16 Python anahtar sözcüğü."
-2. **Tarayıcıda çalıştır.** Rozet: "bitti: 8.597 bulgu". "Arama tarayıcıda, Web Worker içinde; algoritmalar `src/` modüllerinin kendisi, kopya değil."
+2. **Tarayıcıda çalıştır.** Rozet: "bitti: 8 597 bulgu" (882 + 7 715). "Arama tarayıcıda, Web Worker içinde; algoritmalar `src/` modüllerinin kendisi, kopya değil."
 3. Alt daldaki **ExactMatch** kutusuna tıklayın. Sağ panel = `explain` çıktısı: "Şekil: n = 881 771, σ = 111 ama etkin alfabe 19,7; k = 16. Her atomun tahmini süresi burada. Seçilen Aho-Corasick; gerekçe 'neden' kutusunda." Üst daldaki molekül tek desende bm4DNADS seçti: "Girdi değişti, kod değişmedi, karar değişti."
 4. **Atomları yarıştır.** "Aynı girdide sekiz atomu tarayıcıda ölçüyor, tahminle yan yana koyuyor. Bu ölçüm gösterim amaçlı; rapordaki sayılar Node ölçümleri."
 5. (Zaman kalırsa) **# gizli-bilgi-sızıntısı** → çalıştır: rozet kırmızı "kapı kaldı". "Sürekli entegrasyonda derlemeyi durduran kural: `ios scan --fail`." **Açıkla** düğmesi iş akışını Türkçe cümlelerle anlatır.

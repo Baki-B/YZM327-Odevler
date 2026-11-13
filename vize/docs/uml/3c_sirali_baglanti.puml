@@ -1,0 +1,20 @@
+@startuml 3c_sirali_baglanti
+!include _stil.iuml
+title Sıralı diyagram 3: iki ucu bağlama ve uyumsuz bağlantının reddi
+autonumber
+hide footbox
+actor Kullanıcı as U
+participant "Arayüz\napp.js" as UI
+participant engine as EN
+U -> UI : çıkış ucundan sürükle, giriş ucuna bırak (ya da iki uçta Enter)
+UI -> EN : canConnect(wf, katalog, from, to)
+EN -> EN : aynı tür mü? giriş dolu mu? döngü olur mu?
+alt uygun
+  EN --> UI : { ok: true }
+  UI -> EN : connect(…): bağlantı eklenir
+  UI --> U : kablo çizilir, son sonuç "değişti" olur
+else uygun değil
+  EN --> UI : { ok: false, reason }
+  UI --> U : "Tür uyuşmuyor: Source.File → FASTA.Entry; araya uyarlayıcı koyun"
+end
+@enduml

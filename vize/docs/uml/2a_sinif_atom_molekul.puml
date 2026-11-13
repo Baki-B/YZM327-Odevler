@@ -1,0 +1,56 @@
+@startuml 2a_sinif_atom_molekul
+!include _stil.iuml
+title Sınıf diyagramı (1/2): atomlar, molekül ve kayıt defteri (Template Method + Strategy + Registry)
+class Registry {
+  - atoms : Map<ad, Atom>
+  + register(Atom)
+  + get(ad) : Atom
+  + names() : ad[]
+  + candidates() : Atom[]
+  + clone() : Registry
+}
+abstract class ExactSearchAtom <<abstract>> {
+  + {static} manifest
+  + {static} selection
+  + patterns : dizgi[]
+  + ignoreCase : bool
+  # unique, groups
+  + process(entry) : Match* «şablon yöntem»
+  # prepare() «kanca»
+  # scanText(text, n, hits) «kanca»
+  # padding() : sayı
+}
+class ExactMatch <<molecule>> {
+  + strategy : "auto" | ad
+  + record : Record
+  + run(entries) : Match*
+  + decide(entry) : Record
+}
+class costModel <<modül>> {
+  estimateCost(Atom, shape, c)
+  fitNonNegative(x, t) «NNLS»
+}
+class shape <<modül>> {
+  computeShape(entry, params)
+}
+class HorspoolSearch
+class WuManberSearch
+class AhoCorasickSearch
+class NaiveSearch <<test oracle>> {
+  + process(entry)
+}
+class "src/functions" as F <<saf çekirdekler>>
+ExactSearchAtom <|-- HorspoolSearch
+ExactSearchAtom <|-- WuManberSearch
+ExactSearchAtom <|-- AhoCorasickSearch
+ExactSearchAtom <|-- NaiveSearch
+Registry o-- "*" ExactSearchAtom : kayıtlı atomlar
+ExactMatch ..> Registry : candidates()
+ExactMatch --> "1" ExactSearchAtom : seçilen atom
+ExactMatch ..> costModel : tahmin
+ExactMatch ..> shape : şekil
+HorspoolSearch ..> F
+WuManberSearch ..> F
+AhoCorasickSearch ..> F
+note "+5 atom daha: Boyer-Moore, Shift-Or, KMP, bm4DNADS, bm4DNAHMbs.\nYeni atom = yeni sınıf + registry.register(); molekül değişmez." as N1
+@enduml

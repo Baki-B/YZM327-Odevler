@@ -1,0 +1,61 @@
+@startuml 2b_sinif_is_akisi
+!include _stil.iuml
+title Sınıf diyagramı (2/2): iş akışı motoru, katalog ve atölye
+class Workflow <<veri>> {
+  + name : dizgi
+  + target : dizgi
+}
+class Node <<veri (kutu)>> {
+  + id, type : dizgi
+  + x, y : sayı
+  + params : nesne
+}
+class Edge <<veri (bağlantı)>> {
+  + from : { node, port }
+  + to : { node, port }
+}
+class Component <<katalog girdisi>> {
+  + type, category, title
+  + run(inputs, params, ctx)
+  + describe(params) : dizgi
+}
+class Port <<uç>> {
+  + name : dizgi
+  + type : UcTuru
+  + multi, optional : bool
+}
+enum UcTuru {
+  Source.File
+  FASTA.Entry
+  Pattern.Set
+  Sequence.Match
+  Finding
+}
+class engine <<modül, DOM'suz>> {
+  addNode(), removeNode()
+  canConnect() : { ok, reason }
+  connect(), removeEdge()
+  topologicalOrder() «Kahn»
+  validateWorkflow() : sorun[]
+  runWorkflow(wf, katalog, ctx)
+  serialize / deserializeWorkflow()
+  explainWorkflow() : Türkçe metin
+}
+class catalog <<modül>> {
+  createCatalog(registry) : Map<type, Component>
+}
+class "web/app.js" as UI <<arayüz>>
+class "web/worker.js" as W <<Web Worker>>
+Workflow *-- "*" Node : kutular
+Workflow *-- "*" Edge : bağlantılar
+Edge --> "2" Node : from, to
+Node ..> Component : type ile
+Component *-- "*" Port : giriş/çıkış
+Port --> UcTuru
+engine ..> Workflow : okur, değiştirir, çalıştırır
+engine ..> catalog : bileşen sorar
+catalog --> Component : üretir
+UI ..> engine
+W ..> engine
+UI ..> W : postMessage
+@enduml
